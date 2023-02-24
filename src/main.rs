@@ -12,7 +12,8 @@ impl PrimalMachine {
         }
     }
 
-    fn run_circuit(&self, circuit: Option<usize>, input: &[u8]) -> [u8; 128 >> 3] {
+    fn run_circuit(&self, circuit: Option<usize>, input: &[u8], level: u8) -> [u8; 128 >> 3] {
+        assert!(level < 8);
         assert!(input.len() < 128);
         let mut step_mem: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         let mut next_step_mem: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -71,7 +72,7 @@ impl PrimalMachine {
                     }
                     step_index += sc_input_len;
 
-                    let sc_output = self.run_circuit(Some(sc), &sc_input);
+                    let sc_output = self.run_circuit(Some(sc), &sc_input, level + 1);
 
                     for i in 0..sc_output_len {
                         let v = sc_output[i >> 3] >> (i & 7) != 0;
@@ -93,7 +94,7 @@ impl PrimalMachine {
     }
 
     pub fn run(&self, input: &[u8]) -> [u8; 128 >> 3] {
-        self.run_circuit(None, input)
+        self.run_circuit(None, input, 0)
     }
 }
 
