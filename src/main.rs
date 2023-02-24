@@ -77,7 +77,7 @@ impl PrimalMachine {
                         let v = sc_output[i >> 3] >> (i & 7) != 0;
                         next_step_mem[(oi + i) >> 3] |= u8::from(v) << ((oi + i) & 7);
                     }
-                    
+
                     oi += sc_output_len;
                 } else {
                     step_index += 1;
