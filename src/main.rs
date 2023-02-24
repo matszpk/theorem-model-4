@@ -50,7 +50,6 @@ impl PrimalMachine {
                         nand_arg1 = Some(v);
                     }
                     step_index += 1;
-                    oi += 1;
                 } else if lv < 255 {
                     if let Some(v1) = nand_arg1 {
                         // if next argument not found then flush with 1
