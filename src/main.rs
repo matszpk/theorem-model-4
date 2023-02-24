@@ -86,6 +86,11 @@ impl PrimalMachine {
                     break;
                 }
             }
+            // copy previous to next step
+            for i in 0..128 - oi {
+                let v = step_mem[i >> 3] >> (i & 7) != 0;
+                next_step_mem[(oi + i) >> 3] |= u8::from(v) << ((oi + i) & 7);
+            }
 
             step_mem = next_step_mem;
         }
