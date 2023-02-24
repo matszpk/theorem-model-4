@@ -50,6 +50,7 @@ impl PrimalMachine {
                         nand_arg1 = Some(v);
                     }
                     step_index += 1;
+                    oi += 1;
                 } else if lv < 255 {
                     if let Some(v1) = nand_arg1 {
                         // if next argument not found then flush with 1
@@ -77,6 +78,8 @@ impl PrimalMachine {
                         let v = sc_output[i >> 3] >> (i & 7) != 0;
                         next_step_mem[(oi + i) >> 3] |= u8::from(v) << ((oi + i) & 7);
                     }
+                    
+                    oi += sc_output_len;
                 } else {
                     step_index += 1;
                     // 255: end of list
