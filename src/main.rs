@@ -120,9 +120,13 @@ impl Circuit {
         (step_mem, oi)
     }
 
-    pub fn run(&self, input: &[u8]) -> [u8; 128 >> 3] {
+    pub fn run(&self, prim_input: &[u8]) -> [u8; 128 >> 3] {
+        let mut input: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for i in 0..(self.input_len as usize) {
+            set_bit(&mut input[..], i, get_bit(&prim_input[..], i));
+        }
         let mut output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        let (temp, shift) = self.run_circuit(None, input, self.input_len as usize, 0);
+        let (temp, shift) = self.run_circuit(None, &input[..], self.input_len as usize, 0);
         let shift = (128 + shift - (self.output_len as usize)) & 127;
         for i in 0..(self.output_len as usize) {
             set_bit(&mut output[..], i, get_bit(&temp[..], (i + shift) & 127));
