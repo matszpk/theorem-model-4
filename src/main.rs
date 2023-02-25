@@ -178,7 +178,7 @@ impl PrimalMachine {
     }
 
     // input: [state, mem_value]
-    // output: [state, mem_value, mem_rw:1bit, mem_address, stop:1bit, create:1bit]
+    // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
 }
 
 fn main() {
