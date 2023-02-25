@@ -30,7 +30,7 @@ impl PrimalMachine {
         // circuit end
         let circuit_end = circuit
             .map(|x| {
-                if x < self.subcircuits.len() {
+                if x + 1 < self.subcircuits.len() {
                     self.subcircuits[x + 1].0
                 } else {
                     self.circuit.len()
@@ -71,6 +71,8 @@ impl PrimalMachine {
                     }
                     // subcircuit call
                     let sc = (lv - 128) as usize;
+                    println!("Call: {} {}: {}", step_index, oi, sc);
+                    step_index += 1;
                     let mut sc_input: [u8; 128 >> 3] =
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -79,6 +81,7 @@ impl PrimalMachine {
                     for i in 0..sc_input_len {
                         let ii = self.circuit[step_index + i] as usize;
                         let v = (step_mem[ii >> 3] >> (ii & 7)) & 1 != 0;
+                        println!("Call input: {} {}: {} {}", step_index, oi, i, v);
                         sc_input[i >> 3] |= u8::from(v) << (i & 7);
                     }
                     step_index += sc_input_len;
@@ -89,6 +92,7 @@ impl PrimalMachine {
 
                     for _ in 0..sc_output_len {
                         let v = (sc_output[sc_oi >> 3] >> (sc_oi & 7)) & 1 != 0;
+                        println!("Call input: {} {} {}: {}", step_index, oi, sc_oi, v);
                         step_mem[oi >> 3] |= u8::from(v) << (oi & 7);
                         oi = (oi + 1) & 127;
                         sc_oi = (sc_oi + 1) & 127;
@@ -107,6 +111,14 @@ impl PrimalMachine {
 
 fn main() {
     let mut pm = PrimalMachine::new();
+    pm.circuit.extend([
+        // FullAdder(1,5,0),
+        128, 1, 5, 0, // FullAdder(2,6,9+1),
+        128, 2, 6, 10, // FullAdder(3,7,11+1),
+        128, 3, 7, 12, // FullAdder(3,7,13+1),
+        128, 4, 8, 14,
+    ]);
+    pm.subcircuits.push((pm.circuit.len(), 3, 2));
     pm.circuit.extend([
         // a0 [0], a1 [1], a2 [2]
         // machine.put_nand(t0 [3], a2 [2], a1 [1]);
@@ -136,14 +148,23 @@ fn main() {
         // machine.put_nand(t8 [14], t2 [5], t6 [9]);
         11, 12, 5, 9,
     ]);
-    for i in 0..8 {
+    for i in 0..512 {
         println!("-------------");
-        let output = pm.run(&[i], 3).0;
+        let input = [(i & 255) as u8, (i >> 8) as u8];
+        let output = pm.run(&input, 9).0;
+        let mut sum = 0;
+        for i in 0..4 {
+            let b = 9 + 2 * i;
+            sum |= ((output[b >> 3] >> (b & 7)) & 1) << i;
+        }
+        let b = 9 + 2 * 3 + 1;
+        sum |= ((output[b >> 3] >> (b & 7)) & 1) << 4;
         println!(
-            "Output: {:03b}: {:08b} {:08b}",
-            i,
-            output[0].reverse_bits(),
-            output[1].reverse_bits(),
+            "Output: {:04b}+{:04b}+{:04b} : {:04b}",
+            (i >> 1) & 15,
+            (i >> 5) & 15,
+            i & 1,
+            sum
         );
     }
 }
