@@ -176,6 +176,9 @@ impl PrimalMachine {
             memory: vec![0; mem_len],
         }
     }
+
+    // input: [state, mem_value]
+    // output: [state, mem_value, mem_rw:1bit, mem_address, stop:1bit, create:1bit]
 }
 
 fn main() {
