@@ -154,6 +154,30 @@ impl Circuit {
     }
 }
 
+pub struct PrimalMachine {
+    circuit: Circuit,
+    cell_len_bits: u32, // in bits
+    address_len: u32,   // in bits
+    pub memory: Vec<u8>,
+}
+
+impl PrimalMachine {
+    pub fn new(circuit: Circuit, cell_len_bits: u32, address_len: u32) -> Self {
+        assert!(cell_len_bits + address_len < usize::BITS + 3);
+        let mem_len = if cell_len_bits + address_len >= 3 {
+            1 << (cell_len_bits + address_len)
+        } else {
+            1
+        };
+        Self {
+            circuit,
+            cell_len_bits,
+            address_len,
+            memory: vec![0; mem_len],
+        }
+    }
+}
+
 fn main() {
     let mut circuit = Circuit::new();
     circuit.push_main(
