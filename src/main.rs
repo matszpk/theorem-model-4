@@ -115,7 +115,7 @@ fn main() {
         128, 1, 5, 0, // FullAdder(1,5,0),
         128, 2, 6, 10, // FullAdder(2,6,9+1),
         128, 3, 7, 12, // FullAdder(3,7,11+1),
-        128, 4, 8, 14, // FullAdder(3,7,13+1),
+        128, 4, 8, 14, // FullAdder(4,8,13+1),
     ]);
     pm.subcircuits.push((pm.circuit.len(), 3, 2));
     pm.circuit.extend([
