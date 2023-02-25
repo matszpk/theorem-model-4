@@ -112,11 +112,14 @@ impl PrimalMachine {
 fn main() {
     let mut pm = PrimalMachine::new();
     pm.circuit.extend([
-        128, 1, 5, 0, // FullAdder(1,5,0),
-        128, 2, 6, 10, // FullAdder(2,6,9+1),
-        128, 3, 7, 12, // FullAdder(3,7,11+1),
-        128, 4, 8, 14, // FullAdder(4,8,13+1),
+        129, 1, 5, 0, // FullAdder(1,5,0) -> (s=9,c=10)
+        129, 2, 6, 10, // FullAdder(2,6,9+1) -> (s=11,c=12)
+        129, 3, 7, 12, // FullAdder(3,7,11+1) -> (s=13,c=14)
+        129, 4, 8, 14, // FullAdder(4,8,13+1) -> (s=15,c=16)
+        128, 9, 128, 11, 128, 13, 128, 15, 128, 16,
     ]);
+    pm.subcircuits.push((pm.circuit.len(), 1, 1));
+    pm.circuit.extend([0, 0, 1, 1]);
     pm.subcircuits.push((pm.circuit.len(), 3, 2));
     pm.circuit.extend([
         // a0 [0], a1 [1], a2 [2]
@@ -152,14 +155,12 @@ fn main() {
         let input = [(i & 255) as u8, (i >> 8) as u8];
         let output = pm.run(&input, 9).0;
         let mut sum = 0;
-        for i in 0..4 {
-            let b = 9 + 2 * i;
+        for i in 0..5 {
+            let b = 17 + i;
             sum |= ((output[b >> 3] >> (b & 7)) & 1) << i;
         }
-        let b = 9 + 2 * 3 + 1;
-        sum |= ((output[b >> 3] >> (b & 7)) & 1) << 4;
         println!(
-            "Output: {:04b}+{:04b}+{:04b} : {:04b}",
+            "Output: {:04b}+{:04b}+{:04b} : {:05b}",
             (i >> 1) & 15,
             (i >> 5) & 15,
             i & 1,
