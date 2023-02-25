@@ -1,4 +1,4 @@
-pub struct PrimalMachine {
+pub struct Circuit {
     pub circuit: Vec<u8>,
     // tuple: start, input len, output len
     pub subcircuits: Vec<(usize, u8, u8)>,
@@ -13,7 +13,7 @@ fn set_bit(slice: &mut [u8], i: usize, v: bool) {
     slice[i >> 3] = (slice[i >> 3] & !mask) | (if v { mask } else { 0 });
 }
 
-impl PrimalMachine {
+impl Circuit {
     pub fn new() -> Self {
         Self {
             circuit: vec![],
@@ -117,53 +117,72 @@ impl PrimalMachine {
     pub fn run(&self, input: &[u8], input_len: usize) -> ([u8; 128 >> 3], usize) {
         self.run_circuit(None, input, input_len, 0)
     }
+
+    pub fn push_main(&mut self, i: impl IntoIterator<Item = u8>) {
+        assert!(self.circuit.is_empty());
+        self.circuit.extend(i);
+    }
+
+    pub fn push_subcircuit(
+        &mut self,
+        i: impl IntoIterator<Item = u8>,
+        input_len: u8,
+        output_len: u8,
+    ) {
+        assert!(!self.circuit.is_empty());
+        let start = self.circuit.len();
+        self.circuit.extend(i);
+        self.subcircuits.push((start, input_len, output_len));
+    }
 }
 
 fn main() {
-    let mut pm = PrimalMachine::new();
-    pm.circuit.extend([
+    let mut circuit = Circuit::new();
+    circuit.push_main([
         129, 1, 5, 0, // FullAdder(1,5,0) -> (s=9,c=10)
         129, 2, 6, 10, // FullAdder(2,6,9+1) -> (s=11,c=12)
         129, 3, 7, 12, // FullAdder(3,7,11+1) -> (s=13,c=14)
         129, 4, 8, 14, // FullAdder(4,8,13+1) -> (s=15,c=16)
         128, 9, 128, 11, 128, 13, 128, 15, 128, 16,
     ]);
-    pm.subcircuits.push((pm.circuit.len(), 1, 1));
-    pm.circuit.extend([0, 0, 1, 1]);
-    pm.subcircuits.push((pm.circuit.len(), 3, 2));
-    pm.circuit.extend([
-        // a0 [0], a1 [1], a2 [2]
-        // machine.put_nand(t0 [3], a2 [2], a1 [1]);
-        // machine.put_nand(t1 [4], a1 [1], a0 [0]);
-        // machine.put_nand(t2 [5], a0 [0], a2 [2]);
-        2, 1, 1, 0, 0, 2,
-        // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5]
-        // machine.put_nand(t3 [6], t0 [3], t1 [4]);
-        // machine.put_nand(t4 [7], t1 [4], a0 [0]);
-        // machine.put_nand(t5 [8], t0 [3], a2 [2]);
-        3, 4, 4, 0, 3, 2,
-        // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8]
-        // machine.put_nand(t6 [9], t2 [5], t3 [6]);
-        // machine.put_nand(t7 [10], t5 [8], t4 [7]);
-        5, 6, 8, 7,
-        // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
-        // t6 [9], t7 [10]
-        // machine.put_nand(t9 [11], a1 [1], t6 [9]);
-        1, 9,
-        // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
-        // t6 [9], t7 [10], t9 [11]
-        // machine.put_nand(t10 [12], t2 [5], t7 [10]);
-        5, 10,
-        // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
-        // t6 [9], t7 [10], t9 [11], t10 [12]
-        // machine.put_nand(r0 [13], t9 [11], t10 [12]);
-        // machine.put_nand(t8 [14], t2 [5], t6 [9]);
-        11, 12, 5, 9,
-    ]);
+    circuit.push_subcircuit([0, 0, 1, 1], 1, 1);
+    circuit.push_subcircuit(
+        [
+            // a0 [0], a1 [1], a2 [2]
+            // machine.put_nand(t0 [3], a2 [2], a1 [1]);
+            // machine.put_nand(t1 [4], a1 [1], a0 [0]);
+            // machine.put_nand(t2 [5], a0 [0], a2 [2]);
+            2, 1, 1, 0, 0, 2,
+            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5]
+            // machine.put_nand(t3 [6], t0 [3], t1 [4]);
+            // machine.put_nand(t4 [7], t1 [4], a0 [0]);
+            // machine.put_nand(t5 [8], t0 [3], a2 [2]);
+            3, 4, 4, 0, 3, 2,
+            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8]
+            // machine.put_nand(t6 [9], t2 [5], t3 [6]);
+            // machine.put_nand(t7 [10], t5 [8], t4 [7]);
+            5, 6, 8, 7,
+            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
+            // t6 [9], t7 [10]
+            // machine.put_nand(t9 [11], a1 [1], t6 [9]);
+            1, 9,
+            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
+            // t6 [9], t7 [10], t9 [11]
+            // machine.put_nand(t10 [12], t2 [5], t7 [10]);
+            5, 10,
+            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
+            // t6 [9], t7 [10], t9 [11], t10 [12]
+            // machine.put_nand(r0 [13], t9 [11], t10 [12]);
+            // machine.put_nand(t8 [14], t2 [5], t6 [9]);
+            11, 12, 5, 9,
+        ],
+        3,
+        2,
+    );
     for i in 0..512 {
         println!("-------------");
         let input = [(i & 255) as u8, (i >> 8) as u8];
-        let output = pm.run(&input, 9).0;
+        let output = circuit.run(&input, 9).0;
         let mut sum = 0;
         for i in 0..5 {
             let b = 17 + i;
