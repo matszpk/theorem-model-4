@@ -1,7 +1,9 @@
 pub struct Circuit {
-    pub circuit: Vec<u8>,
+    circuit: Vec<u8>,
     // tuple: start, input len, output len
-    pub subcircuits: Vec<(usize, u8, u8)>,
+    subcircuits: Vec<(usize, u8, u8)>,
+    input_len: u8,
+    output_len: u8,
 }
 
 fn get_bit(slice: &[u8], i: usize) -> bool {
@@ -18,6 +20,8 @@ impl Circuit {
         Self {
             circuit: vec![],
             subcircuits: vec![],
+            input_len: 0,
+            output_len: 0,
         }
     }
 
@@ -33,7 +37,9 @@ impl Circuit {
         let mut step_mem: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         // initialize input
-        step_mem[0..input.len()].copy_from_slice(input);
+        for i in 0..input_len {
+            set_bit(&mut step_mem, i, get_bit(input, i));
+        }
 
         let mut step_index = circuit.map(|x| self.subcircuits[x].0).unwrap_or_default();
         // circuit end: if given - then end at start subcircuit sc+1 or end of whole circuit.
@@ -114,13 +120,21 @@ impl Circuit {
         (step_mem, oi)
     }
 
-    pub fn run(&self, input: &[u8], input_len: usize) -> ([u8; 128 >> 3], usize) {
-        self.run_circuit(None, input, input_len, 0)
+    pub fn run(&self, input: &[u8]) -> [u8; 128 >> 3] {
+        let mut output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let (temp, shift) = self.run_circuit(None, input, self.input_len as usize, 0);
+        let shift = (128 + shift - (self.output_len as usize)) & 127;
+        for i in 0..(self.output_len as usize) {
+            set_bit(&mut output[..], i, get_bit(&temp[..], (i + shift) & 127));
+        }
+        output
     }
 
-    pub fn push_main(&mut self, i: impl IntoIterator<Item = u8>) {
+    pub fn push_main(&mut self, i: impl IntoIterator<Item = u8>, input_len: u8, output_len: u8) {
         assert!(self.circuit.is_empty());
         self.circuit.extend(i);
+        self.input_len = input_len.try_into().unwrap();
+        self.output_len = output_len.try_into().unwrap();
     }
 
     pub fn push_subcircuit(
@@ -138,13 +152,17 @@ impl Circuit {
 
 fn main() {
     let mut circuit = Circuit::new();
-    circuit.push_main([
-        129, 1, 5, 0, // FullAdder(1,5,0) -> (s=9,c=10)
-        129, 2, 6, 10, // FullAdder(2,6,9+1) -> (s=11,c=12)
-        129, 3, 7, 12, // FullAdder(3,7,11+1) -> (s=13,c=14)
-        129, 4, 8, 14, // FullAdder(4,8,13+1) -> (s=15,c=16)
-        128, 9, 128, 11, 128, 13, 128, 15, 128, 16,
-    ]);
+    circuit.push_main(
+        [
+            129, 1, 5, 0, // FullAdder(1,5,0) -> (s=9,c=10)
+            129, 2, 6, 10, // FullAdder(2,6,9+1) -> (s=11,c=12)
+            129, 3, 7, 12, // FullAdder(3,7,11+1) -> (s=13,c=14)
+            129, 4, 8, 14, // FullAdder(4,8,13+1) -> (s=15,c=16)
+            128, 9, 128, 11, 128, 13, 128, 15, 128, 16,
+        ],
+        9,
+        5,
+    );
     circuit.push_subcircuit([0, 0, 1, 1], 1, 1);
     circuit.push_subcircuit(
         [
@@ -182,12 +200,8 @@ fn main() {
     for i in 0..512 {
         println!("-------------");
         let input = [(i & 255) as u8, (i >> 8) as u8];
-        let output = circuit.run(&input, 9).0;
-        let mut sum = 0;
-        for i in 0..5 {
-            let b = 17 + i;
-            sum |= ((output[b >> 3] >> (b & 7)) & 1) << i;
-        }
+        let output = circuit.run(&input);
+        let sum = output[0];
         let (a, b, c) = ((i >> 1) & 15, (i >> 5) & 15, i & 1);
         assert_eq!((a + b + c) as u8, sum);
         println!("Output: {:04b}+{:04b}+{:04b} : {:05b}", a, b, c, sum);
