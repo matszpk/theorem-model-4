@@ -36,7 +36,8 @@ impl PrimalMachine {
         step_mem[0..input.len()].copy_from_slice(input);
 
         let mut step_index = circuit.map(|x| self.subcircuits[x].0).unwrap_or_default();
-        // circuit end
+        // circuit end: if given - then end at start subcircuit sc+1 or end of whole circuit.
+        // if not given: then end starts at start of first subcircuit or  end of whole circuit.
         let circuit_end = circuit
             .map(|x| {
                 if x + 1 < self.subcircuits.len() {
