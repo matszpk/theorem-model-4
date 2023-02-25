@@ -4,6 +4,15 @@ pub struct PrimalMachine {
     pub subcircuits: Vec<(usize, u8, u8)>,
 }
 
+fn get_bit(slice: &[u8], i: usize) -> bool {
+    (slice[i >> 3] >> (i & 7)) & 1 != 0
+}
+
+fn set_bit(slice: &mut [u8], i: usize, v: bool) {
+    let mask = 1 << (i & 7);
+    slice[i >> 3] = (slice[i >> 3] & !mask) | (if v { mask } else { 0 });
+}
+
 impl PrimalMachine {
     pub fn new() -> Self {
         Self {
@@ -51,10 +60,10 @@ impl PrimalMachine {
                 if lv < 128 {
                     // input value
                     let ii = lv as usize;
-                    let v = (step_mem[ii >> 3] >> (ii & 7)) & 1 != 0;
+                    let v = get_bit(&step_mem[..], ii);
                     if let Some(v1) = nand_arg1 {
                         println!("Step: {} {}: {} {} {}", step_index, oi, v1, v, !(v1 & v));
-                        step_mem[oi >> 3] |= u8::from(!(v1 & v)) << (oi & 7);
+                        set_bit(&mut step_mem[..], oi, !(v1 & v));
                         nand_arg1 = None;
                         oi = (oi + 1) & 127;
                     } else {
@@ -65,7 +74,7 @@ impl PrimalMachine {
                     if let Some(v1) = nand_arg1 {
                         // if next argument not found then flush with 1
                         println!("Step: {} {}: {} {} {}", step_index, oi, v1, true, !v1);
-                        step_mem[oi >> 3] |= u8::from(!(v1 & true)) << (oi & 7);
+                        set_bit(&mut step_mem[..], oi, !v1);
                         nand_arg1 = None;
                         oi = (oi + 1) & 127;
                     }
@@ -80,9 +89,9 @@ impl PrimalMachine {
                     let sc_output_len = self.subcircuits[sc].2 as usize;
                     for i in 0..sc_input_len {
                         let ii = self.circuit[step_index + i] as usize;
-                        let v = (step_mem[ii >> 3] >> (ii & 7)) & 1 != 0;
+                        let v = get_bit(&step_mem[..], ii);
                         println!("Call input: {} {}: {} {}", step_index, oi, i, v);
-                        sc_input[i >> 3] |= u8::from(v) << (i & 7);
+                        set_bit(&mut sc_input[..], i, v);
                     }
                     step_index += sc_input_len;
 
@@ -91,9 +100,9 @@ impl PrimalMachine {
                     let mut sc_oi = (128 + sc_oi - sc_output_len) & 127;
 
                     for _ in 0..sc_output_len {
-                        let v = (sc_output[sc_oi >> 3] >> (sc_oi & 7)) & 1 != 0;
+                        let v = get_bit(&sc_output[..], sc_oi);
                         println!("Call input: {} {} {}: {}", step_index, oi, sc_oi, v);
-                        step_mem[oi >> 3] |= u8::from(v) << (oi & 7);
+                        set_bit(&mut step_mem[..], oi, v);
                         oi = (oi + 1) & 127;
                         sc_oi = (sc_oi + 1) & 127;
                     }
