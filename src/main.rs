@@ -168,12 +168,8 @@ fn main() {
             let b = 17 + i;
             sum |= ((output[b >> 3] >> (b & 7)) & 1) << i;
         }
-        println!(
-            "Output: {:04b}+{:04b}+{:04b} : {:05b}",
-            (i >> 1) & 15,
-            (i >> 5) & 15,
-            i & 1,
-            sum
-        );
+        let (a, b, c) = ((i >> 1) & 15, (i >> 5) & 15, i & 1);
+        assert_eq!((a + b + c) as u8, sum);
+        println!("Output: {:04b}+{:04b}+{:04b} : {:05b}", a, b, c, sum);
     }
 }
