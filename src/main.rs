@@ -1,3 +1,83 @@
+use nom::{
+    branch::*, bytes::complete as bc, character::complete as cc, combinator::*, error::*, multi::*,
+    sequence::*, IResult,
+};
+
+// parser
+
+pub struct Statement {
+    output: Vec<String>, // output: output in subcircuit should have name 'oXXX'
+    subcircuit: String,  // subcircuit: can be 'nand' or other subcircuit
+    input: Vec<String>,  // input of subcircuit should have name 'iXXX
+}
+
+pub struct ParsedSubcircuit {
+    name: String, // name of subcircuit: if name is main then main circuit
+    statements: Vec<Statement>,
+}
+
+type VIResult<'a> = IResult<&'a str, &'a str, VerboseError<&'a str>>;
+type VOIResult<'a, T> = IResult<&'a str, T, VerboseError<&'a str>>;
+
+fn identifier(input: &str) -> VIResult {
+    context(
+        "identifier",
+        recognize(pair(
+            alt((cc::alpha1, bc::tag("_"))),
+            many0_count(alt((cc::alphanumeric1, bc::tag("_")))),
+        )),
+    )(input)
+}
+
+pub fn parse_names(input: &str) -> VOIResult<Vec<String>> {
+    many0(preceded(
+        cc::multispace0,
+        map(identifier, |x| x.to_string()),
+    ))(input)
+}
+
+pub fn parse_statement(input: &str) -> VOIResult<Statement> {
+    context(
+        "statement",
+        map(
+            terminated(
+                tuple((parse_names, cc::char('='), identifier, parse_names)),
+                cut(pair(cc::multispace0, cc::char('\n'))),
+            ),
+            |(output, _, subcircuit, input)| Statement {
+                output,
+                subcircuit: subcircuit.to_string(),
+                input,
+            },
+        ),
+    )(input)
+}
+
+pub fn parse_subcircuit(input: &str) -> VOIResult<ParsedSubcircuit> {
+    context(
+        "subcircuit",
+        map(
+            pair(
+                delimited(
+                    cc::multispace0,
+                    identifier,
+                    cut(pair(cc::multispace0, cc::char('\n'))),
+                ),
+                many0(parse_statement),
+            ),
+            |(name, statements)| ParsedSubcircuit {
+                name: name.to_string(),
+                statements,
+            },
+        ),
+    )(input)
+}
+pub fn parse_circuit(input: &str) -> VOIResult<Vec<ParsedSubcircuit>> {
+    many0(parse_subcircuit)(input)
+}
+
+// runtime environment
+
 pub struct Circuit {
     circuit: Vec<u8>,
     // tuple: start, input len, output len
