@@ -55,7 +55,7 @@ pub fn parse_statement(input: &str) -> VOIResult<Statement> {
                 tuple((
                     parse_names,
                     preceded(tuple((cc::space0, cc::char('='), cc::space0)), identifier),
-                    parse_names,
+                    cut(parse_names),
                 )),
                 cut(pair(cc::space0, cc::char('\n'))),
             ),
@@ -75,10 +75,10 @@ pub fn parse_subcircuit(input: &str) -> VOIResult<ParsedSubcircuit> {
             pair(
                 delimited(
                     cc::space0,
-                    terminated(identifier, pair(cc::space0, cc::char(':'))),
+                    terminated(identifier, cut(pair(cc::space0, cc::char(':')))),
                     pair(cc::space0, cc::char('\n')),
                 ),
-                cut(many0(parse_statement)),
+                many0(parse_statement),
             ),
             |(name, statements)| ParsedSubcircuit {
                 name: name.to_string(),
@@ -338,7 +338,10 @@ fn main() -> ExitCode {
     let input = concat!(
         "simple  :   \n",
         "  o1 o2 o3 = nand i1 i2 i3  \n",
-        "  ox oy oz = nand ix iy iz  \n"
+        "  ox oy oz = nand ix iy iz  \n",
+        "simple2 :   \n",
+        "  zo1 zo2 zo3 = nand zi1 zi2 zi3  \n",
+        "  zox zoy zoz = nand zix ziy ziz  \n"
     );
     match parse_circuit(input) {
         Ok((_, stmt)) => {
