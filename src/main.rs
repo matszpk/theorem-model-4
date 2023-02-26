@@ -2,15 +2,19 @@ use nom::{
     branch::*, bytes::complete as bc, character::complete as cc, combinator::*, error::*, multi::*,
     sequence::*, IResult,
 };
+use std::fs::read_to_string;
+use std::process::ExitCode;
 
 // parser
 
+#[derive(Clone, Debug)]
 pub struct Statement {
     output: Vec<String>, // output: output in subcircuit should have name 'oXXX'
     subcircuit: String,  // subcircuit: can be 'nand' or other subcircuit
     input: Vec<String>,  // input of subcircuit should have name 'iXXX
 }
 
+#[derive(Clone, Debug)]
 pub struct ParsedSubcircuit {
     name: String, // name of subcircuit: if name is main then main circuit
     statements: Vec<Statement>,
@@ -32,8 +36,8 @@ fn identifier(input: &str) -> VIResult {
 pub fn parse_names(input: &str) -> VOIResult<Vec<String>> {
     map(
         pair(
-            preceded(cc::multispace0, identifier),
-            many0(preceded(cc::multispace1, identifier)),
+            preceded(cc::space0, identifier),
+            many0(preceded(cc::space1, identifier)),
         ),
         |(x, vec)| {
             let mut out = vec![x.to_string()];
@@ -50,13 +54,10 @@ pub fn parse_statement(input: &str) -> VOIResult<Statement> {
             terminated(
                 tuple((
                     parse_names,
-                    preceded(
-                        tuple((cc::multispace0, cc::char('='), cc::multispace0)),
-                        identifier,
-                    ),
+                    preceded(tuple((cc::space0, cc::char('='), cc::space0)), identifier),
                     parse_names,
                 )),
-                cut(pair(cc::multispace0, cc::char('\n'))),
+                cut(pair(cc::space0, cc::char('\n'))),
             ),
             |(output, subcircuit, input)| Statement {
                 output,
@@ -73,11 +74,11 @@ pub fn parse_subcircuit(input: &str) -> VOIResult<ParsedSubcircuit> {
         map(
             pair(
                 delimited(
-                    cc::multispace0,
-                    identifier,
-                    cut(pair(cc::multispace0, cc::char('\n'))),
+                    cc::space0,
+                    terminated(identifier, cc::char(':')),
+                    pair(cc::space0, cc::char('\n')),
                 ),
-                many0(parse_statement),
+                cut(many0(parse_statement)),
             ),
             |(name, statements)| ParsedSubcircuit {
                 name: name.to_string(),
@@ -275,7 +276,7 @@ impl PrimalMachine {
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
 }
 
-fn main() {
+fn simple_circuit() {
     let mut circuit = Circuit::new();
     circuit.push_main(
         [
@@ -330,5 +331,28 @@ fn main() {
         let (a, b, c) = ((i >> 1) & 15, (i >> 5) & 15, i & 1);
         assert_eq!((a + b + c) as u8, sum);
         println!("Output: {:04b}+{:04b}+{:04b} : {:05b}", a, b, c, sum);
+    }
+}
+
+fn main() -> ExitCode {
+    let input = concat!(
+        "simple:\n",
+        "  o1 o2 o3 = nand i1 i2 i3  \n",
+        "  ox oy oz = nand ix iy iz  \n"
+    );
+    match parse_circuit(input) {
+        Ok((_, stmt)) => {
+            println!("{stmt:?}");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            match e {
+                nom::Err::Error(e) | nom::Err::Failure(e) => {
+                    eprintln!("Error: {}", convert_error(input, e))
+                }
+                e => eprintln!("Error: {}", e),
+            }
+            ExitCode::FAILURE
+        }
     }
 }
