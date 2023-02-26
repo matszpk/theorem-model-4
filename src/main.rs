@@ -2,6 +2,7 @@ use nom::{
     branch::*, bytes::complete as bc, character::complete as cc, combinator::*, error::*, multi::*,
     sequence::*, IResult,
 };
+use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::process::ExitCode;
 
@@ -270,23 +271,73 @@ impl Circuit {
 #[derive(thiserror::Error, Debug)]
 pub enum ConvertError {
     #[error("No main circuit")]
-    NoMainCircuit(String),
+    NoMainCircuit,
     #[error("Subcircuit {0} duplicated")]
     DuplicatedSubcircuit(String),
     #[error("Subcircuit {0} is empty")]
     EmptySubcircuit(String),
     #[error("Subcircuit {0} doesn't have inputs")]
     NoInputsInSubcircuit(String),
-    #[error("Variable {0} is not available in subcircuit {0}")]
-    VariableUnvailableInSubcircuit(String, String),
+    #[error("Variable {0:?} is not available in subcircuit {1}")]
+    VariableUnvailableInSubcircuit(Statement, String),
+    #[error("Used subcircuit {0} is not available in subcircuit {1}")]
+    UnknownSubcircuitInSubcircuit(String, String),
 }
 
 impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
     type Error = ConvertError;
 
-    fn try_from(circuit: Vec<ParsedSubcircuit>) -> Result<Self, Self::Error> {
+    fn try_from(parsed: Vec<ParsedSubcircuit>) -> Result<Self, Self::Error> {
         // TODO: write it
-        Ok(Circuit::new())
+        let mut circuit = Circuit::new();
+
+        let main_number = {
+            let main_count = parsed.iter().filter(|subc| subc.name == "main").count();
+            if main_count == 0 {
+                return Err(ConvertError::NoMainCircuit);
+            } else if main_count != 1 {
+                return Err(ConvertError::DuplicatedSubcircuit("main".to_string()));
+            }
+            parsed
+                .iter()
+                .enumerate()
+                .filter(|(i, subc)| subc.name == "main")
+                .next()
+                .unwrap()
+                .0
+        };
+
+        for sc in &parsed {
+            if sc.statements.is_empty() {
+                return Err(ConvertError::EmptySubcircuit(sc.name.clone()));
+            }
+            if !sc.statements.iter().any(|stmt| {
+                stmt.input.iter().any(|input| {
+                    input.starts_with("i")
+                        && input.len() > 2
+                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                })
+            }) {
+                return Err(ConvertError::NoInputsInSubcircuit(sc.name.clone()));
+            }
+        }
+
+        // key - subcircuit name, value - (order in parsed, number in circuit)
+        let mut subcircuits = HashMap::<String, (usize, usize)>::new();
+        for (k, v) in parsed
+            .iter()
+            .enumerate()
+            .filter(|(_, subc)| subc.name != "main")
+            .enumerate()
+            .map(|(ci, (i, subc))| (subc.name.clone(), (i, ci)))
+        {
+            if subcircuits.contains_key(&k) {
+                return Err(ConvertError::DuplicatedSubcircuit(k.clone()));
+            }
+            subcircuits.insert(k, v);
+        }
+
+        Ok(circuit)
     }
 }
 
