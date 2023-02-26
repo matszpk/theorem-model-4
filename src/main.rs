@@ -431,7 +431,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                 return Err(ConvertError::WrongLastOutputInSubcircuit(sc.name.clone()));
             }
 
-            let mut body = vec![];
+            let mut body: Vec<u8> = vec![];
             let mut vars: Vec<(u8, String)> = (0..input_count)
                 .map(|i| (i, format!("i{i}")))
                 .chain((input_count..128).map(|i| (i, "".to_string())))
@@ -441,9 +441,40 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
 
             for stmt in &sc.statements {
                 if stmt.subcircuit.as_str() == "nand" {
-                    //if stmt.input.len() !=
+                    if stmt.input.len() != 2 {
+                        return Err(ConvertError::WrongInputNumberInSubcircuit(
+                            stmt.clone(),
+                            sc.name.clone(),
+                        ));
+                    }
+                    if stmt.input.len() != 1 {
+                        return Err(ConvertError::WrongOutputNumberInSubcircuit(
+                            stmt.clone(),
+                            sc.name.clone(),
+                        ));
+                    }
+                } else if let Some((sc_i, sc_ci)) = subcircuits.get(&stmt.subcircuit) {
+                    if stmt.input.len() != sc_inputs_outputs[*sc_ci].0.into() {
+                        return Err(ConvertError::WrongInputNumberInSubcircuit(
+                            stmt.clone(),
+                            sc.name.clone(),
+                        ));
+                    }
+                    if stmt.input.len() != sc_inputs_outputs[*sc_ci].1.into() {
+                        return Err(ConvertError::WrongOutputNumberInSubcircuit(
+                            stmt.clone(),
+                            sc.name.clone(),
+                        ));
+                    }
+                    body.push((128 + *sc_ci).try_into().unwrap());
                 } else {
+                    return Err(ConvertError::UnknownSubcircuitInSubcircuit(
+                        stmt.subcircuit.clone(),
+                        sc.name.clone(),
+                    ));
                 }
+                // put stmt inputs
+                // put stmt outputs
             }
 
             if let Some(ci) = ci_opt {
