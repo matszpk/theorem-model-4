@@ -337,6 +337,19 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             subcircuits.insert(k, v);
         }
 
+        let mut sorted_scs = vec![(main_number, None)];
+        sorted_scs.extend(subcircuits.values().map(|(i, ci)| (*i, Some(*ci))));
+        sorted_scs[1..].sort_by_key(|(i, ci)| *ci);
+
+        for (i, ci_opt) in sorted_scs {
+            let sc = &parsed[i];
+            // statements
+
+            // if Some(ci) = ci_opt {
+            //     circuit.push_subcircuit();
+            // }
+        }
+
         Ok(circuit)
     }
 }
