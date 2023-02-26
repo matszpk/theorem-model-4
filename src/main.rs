@@ -432,9 +432,10 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             }
 
             let mut body: Vec<u8> = vec![];
-            let mut vars: Vec<(u8, String)> = (0..input_count)
-                .map(|i| (i, format!("i{i}")))
-                .chain((input_count..128).map(|i| (i, "".to_string())))
+            let mut var_pos = input_count as usize;
+            let mut vars: Vec<String> = (0..input_count)
+                .map(|i| format!("i{i}"))
+                .chain((input_count..128).map(|_| "".to_string()))
                 .collect::<Vec<_>>();
             let mut var_map =
                 HashMap::<String, u8>::from_iter((0..input_count).map(|i| (format!("i{i}"), i)));
@@ -474,7 +475,26 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                     ));
                 }
                 // put stmt inputs
+                for input in &stmt.input {
+                    if let Some(var) = var_map.get(input.as_str()) {
+                        body.push(u8::try_from(*var).unwrap());
+                    } else {
+                        return Err(ConvertError::VariableUnvailableInSubcircuit(
+                            input.clone(),
+                            stmt.clone(),
+                            sc.name.clone(),
+                        ));
+                    }
+                }
                 // put stmt outputs
+                for output in &stmt.output {
+                    if !vars[var_pos].is_empty() {
+                        var_map.remove(&vars[var_pos]);
+                    }
+                    vars[var_pos] = output.clone();
+                    var_map.insert(output.clone(), var_pos.try_into().unwrap());
+                    var_pos = (var_pos + 1) & 127;
+                }
             }
 
             if let Some(ci) = ci_opt {
