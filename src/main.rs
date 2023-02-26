@@ -284,6 +284,12 @@ pub enum ConvertError {
     VariableUnvailableInSubcircuit(Statement, String),
     #[error("Used subcircuit {0} is not available in subcircuit {1}")]
     UnknownSubcircuitInSubcircuit(String, String),
+    #[error("Subcircuit {0} have wrong names of outputs")]
+    WrongLastOutputInSubcircuit(String),
+    #[error("Too many inputs in subcircuit {0}")]
+    TooManyInputsInSubcircuit(String),
+    #[error("Too many subcircuits")]
+    TooManySubcircuits,
 }
 
 impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
@@ -343,6 +349,9 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             .enumerate()
             .map(|(ci, (i, subc))| (subc.name.clone(), (i, ci)))
         {
+            if v.0 >= 128 {
+                return Err(ConvertError::TooManySubcircuits);
+            }
             if subcircuits.contains_key(&k) {
                 return Err(ConvertError::DuplicatedSubcircuit(k.clone()));
             }
@@ -356,7 +365,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
         for (i, ci_opt) in sorted_scs {
             let sc = &parsed[i];
             // statements
-            let input_max = sc
+            let input_count = sc
                 .statements
                 .iter()
                 .map(|stmt| {
@@ -370,27 +379,61 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                         .map(|input| input[1..].parse::<u8>().unwrap())
                 })
                 .flatten()
-                .max();
+                .max()
+                .unwrap()
+                + 1;
 
-            let output_max = sc
+            if input_count >= 128 {
+                return Err(ConvertError::TooManyInputsInSubcircuit(sc.name.clone()));
+            }
+
+            if !sc
                 .statements
                 .iter()
-                .map(|stmt| {
-                    stmt.output
-                        .iter()
-                        .filter(|output| {
-                            output.starts_with("o")
-                                && output.len() >= 2
-                                && output.chars().skip(1).all(|c| c.is_digit(10))
-                        })
-                        .map(|output| output[1..].parse::<u8>().unwrap())
-                })
+                .map(|stmt| stmt.output.iter())
                 .flatten()
-                .max();
+                .skip_while(|output| {
+                    !(output.starts_with("o")
+                        && output.len() >= 2
+                        && output.chars().skip(1).all(|c| c.is_digit(10)))
+                })
+                .enumerate()
+                .all(|(i, output)| *output == format!("o{i}"))
+            {
+                return Err(ConvertError::WrongLastOutputInSubcircuit(sc.name.clone()));
+            }
 
-            // if Some(ci) = ci_opt {
-            //     circuit.push_subcircuit();
-            // }
+            let output_count = sc
+                .statements
+                .last()
+                .unwrap()
+                .output
+                .last()
+                .unwrap()
+                .parse::<u8>()
+                .unwrap()
+                + 1;
+
+            let mut body = vec![];
+            let mut vars: Vec<(u8, String)> = (0..input_count)
+                .map(|i| (i, format!("i{i}")))
+                .chain((input_count..128).map(|i| (i, "".to_string())))
+                .collect::<Vec<_>>();
+            let mut var_map =
+                HashMap::<String, u8>::from_iter((0..input_count).map(|i| (format!("i{i}"), i)));
+
+            for stmt in &sc.statements {
+                if stmt.subcircuit.as_str() == "nand" {
+                    //if stmt.input.len() !=
+                } else {
+                }
+            }
+
+            if let Some(ci) = ci_opt {
+                circuit.push_subcircuit(body, input_count, output_count);
+            } else {
+                circuit.push_main(body, input_count, output_count);
+            }
         }
 
         Ok(circuit)
