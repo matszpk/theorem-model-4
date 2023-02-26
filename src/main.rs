@@ -33,6 +33,24 @@ fn identifier(input: &str) -> VIResult {
     )(input)
 }
 
+pub fn empty_or_comment(input: &str) -> VOIResult<()> {
+    value(
+        (),
+        many0_count(alt((
+            value(
+                (),
+                tuple((
+                    cc::space0,
+                    cc::char('#'),
+                    cc::not_line_ending,
+                    cc::line_ending,
+                )),
+            ),
+            value((), pair(cc::space0, cc::line_ending)),
+        ))),
+    )(input)
+}
+
 pub fn parse_names(input: &str) -> VOIResult<Vec<String>> {
     map(
         pair(
@@ -57,7 +75,7 @@ pub fn parse_statement(input: &str) -> VOIResult<Statement> {
                     preceded(tuple((cc::space0, cc::char('='), cc::space0)), identifier),
                     cut(parse_names),
                 )),
-                cut(pair(cc::space0, cc::char('\n'))),
+                cut(pair(cc::space0, cc::line_ending)),
             ),
             |(output, subcircuit, input)| Statement {
                 output,
@@ -76,9 +94,9 @@ pub fn parse_subcircuit(input: &str) -> VOIResult<ParsedSubcircuit> {
                 delimited(
                     cc::space0,
                     terminated(identifier, cut(pair(cc::space0, cc::char(':')))),
-                    pair(cc::space0, cc::char('\n')),
+                    pair(cc::space0, cc::line_ending),
                 ),
-                many0(preceded(cc::multispace0, parse_statement)),
+                many0(preceded(empty_or_comment, parse_statement)),
             ),
             |(name, statements)| ParsedSubcircuit {
                 name: name.to_string(),
@@ -88,7 +106,7 @@ pub fn parse_subcircuit(input: &str) -> VOIResult<ParsedSubcircuit> {
     )(input)
 }
 pub fn parse_circuit(input: &str) -> VOIResult<Vec<ParsedSubcircuit>> {
-    many0(preceded(cc::multispace0, parse_subcircuit))(input)
+    many0(preceded(empty_or_comment, parse_subcircuit))(input)
 }
 
 // runtime environment
@@ -336,13 +354,21 @@ fn simple_circuit() {
 
 fn main() -> ExitCode {
     let input = concat!(
+        "# test simple  \n",
         "simple  :   \n",
+        "  \n",
         "  o1 o2 o3 = nand i1 i2 i3  \n",
+        "  # ddd \n",
         "  ox oy oz = nand ix iy iz  \n",
         "simple2 :   \n",
+        "  \n",
         "  zo1 zo2 zo3 = nand zi1 zi2 zi3  \n",
         "  \n",
         "  zox zoy zoz = nand zix ziy ziz  \n",
+        "  simple3 :   \n",
+        "  ao1 ao2 ao3 = nand ai1 ai2 ai3  \n",
+        "  aox aoy aoz = nand aix aiy aiz  \n",
+        "# end comment\n",
     );
     match parse_circuit(input) {
         Ok((_, stmt)) => {
