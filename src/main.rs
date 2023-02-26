@@ -75,7 +75,7 @@ pub fn parse_subcircuit(input: &str) -> VOIResult<ParsedSubcircuit> {
             pair(
                 delimited(
                     cc::space0,
-                    terminated(identifier, cc::char(':')),
+                    terminated(identifier, pair(cc::space0, cc::char(':'))),
                     pair(cc::space0, cc::char('\n')),
                 ),
                 cut(many0(parse_statement)),
@@ -336,7 +336,7 @@ fn simple_circuit() {
 
 fn main() -> ExitCode {
     let input = concat!(
-        "simple:\n",
+        "simple  :   \n",
         "  o1 o2 o3 = nand i1 i2 i3  \n",
         "  ox oy oz = nand ix iy iz  \n"
     );
