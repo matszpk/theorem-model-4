@@ -280,16 +280,22 @@ pub enum ConvertError {
     NoInputsInSubcircuit(String),
     #[error("Subcircuit {0} doesn't have outputs")]
     NoOutputsInSubcircuit(String),
-    #[error("Variable {0:?} is not available in subcircuit {1}")]
-    VariableUnvailableInSubcircuit(Statement, String),
+    #[error("Variable {0} in {1:?} is not available in subcircuit {2}")]
+    VariableUnvailableInSubcircuit(String, Statement, String),
     #[error("Used subcircuit {0} is not available in subcircuit {1}")]
     UnknownSubcircuitInSubcircuit(String, String),
     #[error("Subcircuit {0} have wrong names of outputs")]
     WrongLastOutputInSubcircuit(String),
     #[error("Too many inputs in subcircuit {0}")]
     TooManyInputsInSubcircuit(String),
+    #[error("Too many outputs in subcircuit {0}")]
+    TooManyOutputsInSubcircuit(String),
     #[error("Too many subcircuits")]
     TooManySubcircuits,
+    #[error("Wrong input number {0:?} in subcircuit {1}")]
+    WrongInputNumberInSubcircuit(Statement, String),
+    #[error("Wrong output number {0:?} in subcircuit {1}")]
+    WrongOutputNumberInSubcircuit(Statement, String),
 }
 
 impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
@@ -362,29 +368,51 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
         sorted_scs.extend(subcircuits.values().map(|(i, ci)| (*i, Some(*ci))));
         sorted_scs[1..].sort_by_key(|(i, ci)| *ci);
 
+        let sc_inputs_outputs = parsed
+            .iter()
+            .map(|sc| {
+                let input_count = sc
+                    .statements
+                    .iter()
+                    .map(|stmt| {
+                        stmt.input
+                            .iter()
+                            .filter(|input| {
+                                input.starts_with("i")
+                                    && input.len() >= 2
+                                    && input.chars().skip(1).all(|c| c.is_digit(10))
+                            })
+                            .map(|input| input[1..].parse::<u8>().unwrap())
+                    })
+                    .flatten()
+                    .max()
+                    .unwrap()
+                    + 1;
+                let output_count = sc
+                    .statements
+                    .last()
+                    .unwrap()
+                    .output
+                    .last()
+                    .unwrap()
+                    .parse::<u8>()
+                    .unwrap()
+                    + 1;
+                (input_count, output_count)
+            })
+            .collect::<Vec<_>>();
+
         for (i, ci_opt) in sorted_scs {
             let sc = &parsed[i];
             // statements
-            let input_count = sc
-                .statements
-                .iter()
-                .map(|stmt| {
-                    stmt.input
-                        .iter()
-                        .filter(|input| {
-                            input.starts_with("i")
-                                && input.len() >= 2
-                                && input.chars().skip(1).all(|c| c.is_digit(10))
-                        })
-                        .map(|input| input[1..].parse::<u8>().unwrap())
-                })
-                .flatten()
-                .max()
-                .unwrap()
-                + 1;
+
+            let (input_count, output_count) = sc_inputs_outputs[i];
 
             if input_count >= 128 {
                 return Err(ConvertError::TooManyInputsInSubcircuit(sc.name.clone()));
+            }
+            if output_count >= 128 {
+                return Err(ConvertError::TooManyOutputsInSubcircuit(sc.name.clone()));
             }
 
             if !sc
