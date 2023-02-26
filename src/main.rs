@@ -30,10 +30,17 @@ fn identifier(input: &str) -> VIResult {
 }
 
 pub fn parse_names(input: &str) -> VOIResult<Vec<String>> {
-    many0(preceded(
-        cc::multispace0,
-        map(identifier, |x| x.to_string()),
-    ))(input)
+    map(
+        pair(
+            preceded(cc::multispace0, identifier),
+            many0(preceded(cc::multispace1, identifier)),
+        ),
+        |(x, vec)| {
+            let mut out = vec![x.to_string()];
+            out.extend(vec.into_iter().map(|x| x.to_string()));
+            out
+        },
+    )(input)
 }
 
 pub fn parse_statement(input: &str) -> VOIResult<Statement> {
@@ -41,10 +48,17 @@ pub fn parse_statement(input: &str) -> VOIResult<Statement> {
         "statement",
         map(
             terminated(
-                tuple((parse_names, cc::char('='), identifier, parse_names)),
+                tuple((
+                    parse_names,
+                    preceded(
+                        tuple((cc::multispace0, cc::char('='), cc::multispace0)),
+                        identifier,
+                    ),
+                    parse_names,
+                )),
                 cut(pair(cc::multispace0, cc::char('\n'))),
             ),
-            |(output, _, subcircuit, input)| Statement {
+            |(output, subcircuit, input)| Statement {
                 output,
                 subcircuit: subcircuit.to_string(),
                 input,
