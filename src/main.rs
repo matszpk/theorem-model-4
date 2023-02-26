@@ -305,7 +305,6 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
     type Error = ConvertError;
 
     fn try_from(parsed: Vec<ParsedSubcircuit>) -> Result<Self, Self::Error> {
-        // TODO: write it
         let mut circuit = Circuit::new();
 
         let main_number = {
