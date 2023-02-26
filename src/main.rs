@@ -431,17 +431,6 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                 return Err(ConvertError::WrongLastOutputInSubcircuit(sc.name.clone()));
             }
 
-            let output_count = sc
-                .statements
-                .last()
-                .unwrap()
-                .output
-                .last()
-                .unwrap()
-                .parse::<u8>()
-                .unwrap()
-                + 1;
-
             let mut body = vec![];
             let mut vars: Vec<(u8, String)> = (0..input_count)
                 .map(|i| (i, format!("i{i}")))
