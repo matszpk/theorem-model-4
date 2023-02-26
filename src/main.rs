@@ -278,6 +278,8 @@ pub enum ConvertError {
     EmptySubcircuit(String),
     #[error("Subcircuit {0} doesn't have inputs")]
     NoInputsInSubcircuit(String),
+    #[error("Subcircuit {0} doesn't have outputs")]
+    NoOutputsInSubcircuit(String),
     #[error("Variable {0:?} is not available in subcircuit {1}")]
     VariableUnvailableInSubcircuit(Statement, String),
     #[error("Used subcircuit {0} is not available in subcircuit {1}")]
@@ -314,11 +316,21 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             if !sc.statements.iter().any(|stmt| {
                 stmt.input.iter().any(|input| {
                     input.starts_with("i")
-                        && input.len() > 2
+                        && input.len() >= 2
                         && input.chars().skip(1).all(|c| c.is_digit(10))
                 })
             }) {
                 return Err(ConvertError::NoInputsInSubcircuit(sc.name.clone()));
+            }
+
+            if !sc.statements.iter().any(|stmt| {
+                stmt.output.iter().any(|output| {
+                    output.starts_with("o")
+                        && output.len() >= 2
+                        && output.chars().skip(1).all(|c| c.is_digit(10))
+                })
+            }) {
+                return Err(ConvertError::NoOutputsInSubcircuit(sc.name.clone()));
             }
         }
 
@@ -344,6 +356,37 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
         for (i, ci_opt) in sorted_scs {
             let sc = &parsed[i];
             // statements
+            let input_max = sc
+                .statements
+                .iter()
+                .map(|stmt| {
+                    stmt.input
+                        .iter()
+                        .filter(|input| {
+                            input.starts_with("i")
+                                && input.len() >= 2
+                                && input.chars().skip(1).all(|c| c.is_digit(10))
+                        })
+                        .map(|input| input[1..].parse::<u8>().unwrap())
+                })
+                .flatten()
+                .max();
+
+            let output_max = sc
+                .statements
+                .iter()
+                .map(|stmt| {
+                    stmt.output
+                        .iter()
+                        .filter(|output| {
+                            output.starts_with("o")
+                                && output.len() >= 2
+                                && output.chars().skip(1).all(|c| c.is_digit(10))
+                        })
+                        .map(|output| output[1..].parse::<u8>().unwrap())
+                })
+                .flatten()
+                .max();
 
             // if Some(ci) = ci_opt {
             //     circuit.push_subcircuit();
