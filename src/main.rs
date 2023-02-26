@@ -112,6 +112,7 @@ pub fn parse_circuit(input: &str) -> VOIResult<Vec<ParsedSubcircuit>> {
 
 // runtime environment
 
+#[derive(Clone, Debug)]
 pub struct Circuit {
     circuit: Vec<u8>,
     // tuple: start, input len, output len
@@ -436,13 +437,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                     .max()
                     .unwrap()
                     + 1;
-                let output_count = sc
-                    .statements
-                    .last()
-                    .unwrap()
-                    .output
-                    .last()
-                    .unwrap()
+                let output_count = sc.statements.last().unwrap().output.last().unwrap()[1..]
                     .parse::<u8>()
                     .unwrap()
                     + 1;
@@ -496,20 +491,20 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                             sc.name.clone(),
                         ));
                     }
-                    if stmt.input.len() != 1 {
+                    if stmt.output.len() != 1 {
                         return Err(ConvertError::WrongOutputNumberInSubcircuit(
                             stmt.clone(),
                             sc.name.clone(),
                         ));
                     }
                 } else if let Some((sc_i, sc_ci)) = subcircuits.get(&stmt.subcircuit) {
-                    if stmt.input.len() != sc_inputs_outputs[*sc_ci].0.into() {
+                    if stmt.input.len() != sc_inputs_outputs[*sc_i].0.into() {
                         return Err(ConvertError::WrongInputNumberInSubcircuit(
                             stmt.clone(),
                             sc.name.clone(),
                         ));
                     }
-                    if stmt.input.len() != sc_inputs_outputs[*sc_ci].1.into() {
+                    if stmt.output.len() != sc_inputs_outputs[*sc_i].1.into() {
                         return Err(ConvertError::WrongOutputNumberInSubcircuit(
                             stmt.clone(),
                             sc.name.clone(),
@@ -643,26 +638,61 @@ fn simple_circuit() {
 
 fn main() -> ExitCode {
     let input = concat!(
-        "# test simple  \n",
-        "simple  :   \n",
-        "  \n",
-        "  o1 o2 o3 = nand i1 i2 i3  \n",
-        "  # ddd \n",
-        "  ox oy oz = nand ix iy iz  \n",
-        "simple2 :   \n",
-        "  \n",
-        "  zo1 zo2 zo3 = nand zi1 zi2 zi3  \n",
-        "  \n",
-        "  zox zoy zoz = nand zix ziy ziz  \n",
-        "  simple3 :   \n",
-        "  ao1 ao2 ao3 = nand ai1 ai2 ai3  \n",
-        "  aox aoy aoz = nand aix aiy aiz  \n",
-        "# end comment\n",
+        "main:\n",
+        "  s0 c0 = full_adder i1 i5 i0\n",
+        "  s1 c1 = full_adder i2 i6 c0\n",
+        "  s2 c2 = full_adder i3 i7 c1\n",
+        "  s3 c3 = full_adder i4 i8 c2\n",
+        "  o0 = copy s0\n",
+        "  o1 = copy s1\n",
+        "  o2 = copy s2\n",
+        "  o3 = copy s3\n",
+        "  o4 = copy c3\n",
+        "copy:\n",
+        "  t = nand i0 i0\n",
+        "  o0 = nand t t\n",
+        "full_adder:\n",
+        "  t0 = nand i2 i1\n",
+        "  t1 = nand i1 i0\n",
+        "  t2 = nand i0 i2\n",
+        "  t3 = nand t0 t1\n",
+        "  t4 = nand t1 i0\n",
+        "  t5 = nand t0 i2\n",
+        "  t6 = nand t2 t3\n",
+        "  t7 = nand t5 t4\n",
+        "  t8 = nand i1 t6\n",
+        "  t9 = nand t2 t7\n",
+        "  o0 = nand t8 t9\n",
+        "  o1 = nand t2 t6\n",
+        // "# test simple  \n",
+        // "simple  :   \n",
+        // "  \n",
+        // "  o1 o2 o3 = nand i1 i2 i3  \n",
+        // "  # ddd \n",
+        // "  ox oy oz = nand ix iy iz  \n",
+        // "simple2 :   \n",
+        // "  \n",
+        // "  zo1 zo2 zo3 = nand zi1 zi2 zi3  \n",
+        // "  \n",
+        // "  zox zoy zoz = nand zix ziy ziz  \n",
+        // "  simple3 :   \n",
+        // "  ao1 ao2 ao3 = nand ai1 ai2 ai3  \n",
+        // "  aox aoy aoz = nand aix aiy aiz  \n",
+        // "# end comment\n",
     );
     match parse_circuit(input) {
-        Ok((_, stmt)) => {
-            println!("{stmt:?}");
-            ExitCode::SUCCESS
+        Ok((_, parsed)) => {
+            println!("{parsed:?}");
+            match Circuit::try_from(parsed) {
+                Ok(circuit) => {
+                    println!("Circuit: {:?}", circuit);
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("Convert Error: {}", e);
+                    ExitCode::FAILURE
+                }
+            }
         }
         Err(e) => {
             match e {
