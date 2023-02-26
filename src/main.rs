@@ -267,6 +267,29 @@ impl Circuit {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum ConvertError {
+    #[error("No main circuit")]
+    NoMainCircuit(String),
+    #[error("Subcircuit {0} duplicated")]
+    DuplicatedSubcircuit(String),
+    #[error("Subcircuit {0} is empty")]
+    EmptySubcircuit(String),
+    #[error("Subcircuit {0} doesn't have inputs")]
+    NoInputsInSubcircuit(String),
+    #[error("Variable {0} is not available in subcircuit {0}")]
+    VariableUnvailableInSubcircuit(String, String),
+}
+
+impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
+    type Error = ConvertError;
+
+    fn try_from(circuit: Vec<ParsedSubcircuit>) -> Result<Self, Self::Error> {
+        // TODO: write it
+        Ok(Circuit::new())
+    }
+}
+
 pub struct PrimalMachine {
     circuit: Circuit,
     cell_len_bits: u32, // in bits
