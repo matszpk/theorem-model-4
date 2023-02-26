@@ -78,7 +78,7 @@ pub fn parse_subcircuit(input: &str) -> VOIResult<ParsedSubcircuit> {
                     terminated(identifier, cut(pair(cc::space0, cc::char(':')))),
                     pair(cc::space0, cc::char('\n')),
                 ),
-                many0(parse_statement),
+                many0(preceded(cc::multispace0, parse_statement)),
             ),
             |(name, statements)| ParsedSubcircuit {
                 name: name.to_string(),
@@ -88,7 +88,7 @@ pub fn parse_subcircuit(input: &str) -> VOIResult<ParsedSubcircuit> {
     )(input)
 }
 pub fn parse_circuit(input: &str) -> VOIResult<Vec<ParsedSubcircuit>> {
-    many0(parse_subcircuit)(input)
+    many0(preceded(cc::multispace0, parse_subcircuit))(input)
 }
 
 // runtime environment
@@ -341,7 +341,8 @@ fn main() -> ExitCode {
         "  ox oy oz = nand ix iy iz  \n",
         "simple2 :   \n",
         "  zo1 zo2 zo3 = nand zi1 zi2 zi3  \n",
-        "  zox zoy zoz = nand zix ziy ziz  \n"
+        "  \n",
+        "  zox zoy zoz = nand zix ziy ziz  \n",
     );
     match parse_circuit(input) {
         Ok((_, stmt)) => {
