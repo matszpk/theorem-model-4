@@ -296,8 +296,8 @@ pub enum ConvertError {
     WrongInputNumberInSubcircuit(Statement, String),
     #[error("Wrong output number {0:?} in subcircuit {1}")]
     WrongOutputNumberInSubcircuit(Statement, String),
-    #[error("Parse error of input of subcircuit")]
-    SubcircuitInputParseError(#[from] std::num::ParseIntError),
+    #[error("Parse error of input/output of subcircuit")]
+    SubcircuitInputOutputParseError(#[from] std::num::ParseIntError),
 }
 
 impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
@@ -390,7 +390,30 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             .flatten()
             .collect::<Result<Vec<_>, _>>()
         {
-            return Err(ConvertError::SubcircuitInputParseError(e));
+            return Err(ConvertError::SubcircuitInputOutputParseError(e));
+        }
+
+        if let Err(e) = parsed
+            .iter()
+            .map(|sc| {
+                sc.statements
+                    .iter()
+                    .map(|stmt| {
+                        stmt.output
+                            .iter()
+                            .filter(|output| {
+                                output.starts_with("o")
+                                    && output.len() >= 2
+                                    && output.chars().skip(1).all(|c| c.is_digit(10))
+                            })
+                            .map(|output| output[1..].parse::<u8>())
+                    })
+                    .flatten()
+            })
+            .flatten()
+            .collect::<Result<Vec<_>, _>>()
+        {
+            return Err(ConvertError::SubcircuitInputOutputParseError(e));
         }
 
         let sc_inputs_outputs = parsed
