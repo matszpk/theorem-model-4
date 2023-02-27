@@ -347,6 +347,12 @@ impl Circuit {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct CircuitDebug {
+    circuit: Circuit,
+    subcircuits: HashMap<String, usize>,
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum ConvertError {
     #[error("No main circuit")]
@@ -381,7 +387,7 @@ pub enum ConvertError {
     UnknownVariableInAlias(String, String),
 }
 
-impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
+impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
     type Error = ConvertError;
 
     fn try_from(parsed: Vec<ParsedSubcircuit>) -> Result<Self, Self::Error> {
@@ -699,7 +705,10 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             }
         }
 
-        Ok(circuit)
+        Ok(CircuitDebug {
+            circuit,
+            subcircuits: HashMap::from_iter(subcircuits.into_iter().map(|(k, (_, ci))| (k, ci))),
+        })
     }
 }
 
@@ -736,15 +745,20 @@ impl PrimalMachine {
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
 }
 
-impl TryFrom<ParsedPrimalMachine> for PrimalMachine {
+pub struct PrimalMachineDebug {
+    machine: PrimalMachine,
+    subcircuits: HashMap<String, usize>,
+}
+
+impl TryFrom<ParsedPrimalMachine> for PrimalMachineDebug {
     type Error = ConvertError;
 
     fn try_from(parsed: ParsedPrimalMachine) -> Result<Self, Self::Error> {
-        Ok(PrimalMachine::new(
-            Circuit::try_from(parsed.circuit)?,
-            parsed.cell_len_bits,
-            parsed.address_len,
-        ))
+        let cd = CircuitDebug::try_from(parsed.circuit)?;
+        Ok(PrimalMachineDebug {
+            machine: PrimalMachine::new(cd.circuit, parsed.cell_len_bits, parsed.address_len),
+            subcircuits: cd.subcircuits,
+        })
     }
 }
 
@@ -756,9 +770,10 @@ fn main() -> ExitCode {
     match parse_circuit(&input) {
         Ok((_, parsed)) => {
             println!("{parsed:?}");
-            match Circuit::try_from(parsed) {
+            match CircuitDebug::try_from(parsed) {
                 Ok(circuit) => {
-                    println!("Circuit: {:?}", circuit);
+                    println!("Circuit: {:?}", circuit.circuit);
+                    println!("Subcircuit: {:?}", circuit.subcircuits);
                     ExitCode::SUCCESS
                 }
                 Err(e) => {
