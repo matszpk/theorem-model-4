@@ -1,0 +1,29 @@
+main:
+  s0 c0 = full_adder i1 i5 i0
+  s1 c1 = full_adder i2 i6 c0
+  s2 c2 = full_adder i3 i7 c1
+  s3 c3 = full_adder i4 i8 c2
+  o0 = copy s0
+  o1 = copy s1
+  o2 = copy s2
+  o3 = copy s3
+  o4 = copy c3
+copy:
+  t = nand i0 i0
+  o0 = nand t t
+full_adder:
+  alias a0 i0
+  alias a1 i1
+  alias a2 i2
+  t0 = nand a2 a1
+  t1 = nand a1 a0
+  t2 = nand a0 a2
+  t3 = nand t0 t1
+  t4 = nand t1 a0
+  t5 = nand t0 a2
+  t6 = nand t2 t3
+  t7 = nand t5 t4
+  t8 = nand a1 t6
+  t9 = nand t2 t7
+  o0 = nand t8 t9
+  o1 = nand t2 t6

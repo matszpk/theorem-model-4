@@ -3,6 +3,7 @@ use nom::{
     sequence::*, IResult,
 };
 use std::collections::HashMap;
+use std::env;
 use std::fs::read_to_string;
 use std::process::ExitCode;
 
@@ -747,112 +748,12 @@ impl TryFrom<ParsedPrimalMachine> for PrimalMachine {
     }
 }
 
-fn simple_circuit() {
-    let mut circuit = Circuit::new();
-    circuit.push_main(
-        [
-            129, 1, 5, 0, // FullAdder(1,5,0) -> (s=9,c=10)
-            129, 2, 6, 10, // FullAdder(2,6,9+1) -> (s=11,c=12)
-            129, 3, 7, 12, // FullAdder(3,7,11+1) -> (s=13,c=14)
-            129, 4, 8, 14, // FullAdder(4,8,13+1) -> (s=15,c=16)
-            128, 9, 128, 11, 128, 13, 128, 15, 128, 16,
-        ],
-        9,
-        5,
-    );
-    circuit.push_subcircuit([0, 0, 1, 1], 1, 1);
-    circuit.push_subcircuit(
-        [
-            // a0 [0], a1 [1], a2 [2]
-            // machine.put_nand(t0 [3], a2 [2], a1 [1]);
-            // machine.put_nand(t1 [4], a1 [1], a0 [0]);
-            // machine.put_nand(t2 [5], a0 [0], a2 [2]);
-            2, 1, 1, 0, 0, 2,
-            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5]
-            // machine.put_nand(t3 [6], t0 [3], t1 [4]);
-            // machine.put_nand(t4 [7], t1 [4], a0 [0]);
-            // machine.put_nand(t5 [8], t0 [3], a2 [2]);
-            3, 4, 4, 0, 3, 2,
-            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8]
-            // machine.put_nand(t6 [9], t2 [5], t3 [6]);
-            // machine.put_nand(t7 [10], t5 [8], t4 [7]);
-            5, 6, 8, 7,
-            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
-            // t6 [9], t7 [10]
-            // machine.put_nand(t9 [11], a1 [1], t6 [9]);
-            1, 9,
-            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
-            // t6 [9], t7 [10], t9 [11]
-            // machine.put_nand(t10 [12], t2 [5], t7 [10]);
-            5, 10,
-            // a0 [0], a1 [1], a2 [2], t0 [3], t1 [4], t2 [5], t3 [6], t4 [7], t5 [8],
-            // t6 [9], t7 [10], t9 [11], t10 [12]
-            // machine.put_nand(r0 [13], t9 [11], t10 [12]);
-            // machine.put_nand(t8 [14], t2 [5], t6 [9]);
-            11, 12, 5, 9,
-        ],
-        3,
-        2,
-    );
-    for i in 0..512 {
-        println!("-------------");
-        let input = [(i & 255) as u8, (i >> 8) as u8];
-        let output = circuit.run(&input);
-        let sum = output[0];
-        let (a, b, c) = ((i >> 1) & 15, (i >> 5) & 15, i & 1);
-        assert_eq!((a + b + c) as u8, sum);
-        println!("Output: {:04b}+{:04b}+{:04b} : {:05b}", a, b, c, sum);
-    }
-}
-
 fn main() -> ExitCode {
-    let input = concat!(
-        "main:\n",
-        "  s0 c0 = full_adder i1 i5 i0\n",
-        "  s1 c1 = full_adder i2 i6 c0\n",
-        "  s2 c2 = full_adder i3 i7 c1\n",
-        "  s3 c3 = full_adder i4 i8 c2\n",
-        "  o0 = copy s0\n",
-        "  o1 = copy s1\n",
-        "  o2 = copy s2\n",
-        "  o3 = copy s3\n",
-        "  o4 = copy c3\n",
-        "copy:\n",
-        "  t = nand i0 i0\n",
-        "  o0 = nand t t\n",
-        "full_adder:\n",
-        "  alias a0 i0\n",
-        "  alias a1 i1\n",
-        "  alias a2 i2\n",
-        "  t0 = nand a2 a1\n",
-        "  t1 = nand a1 a0\n",
-        "  t2 = nand a0 a2\n",
-        "  t3 = nand t0 t1\n",
-        "  t4 = nand t1 a0\n",
-        "  t5 = nand t0 a2\n",
-        "  t6 = nand t2 t3\n",
-        "  t7 = nand t5 t4\n",
-        "  t8 = nand a1 t6\n",
-        "  t9 = nand t2 t7\n",
-        "  o0 = nand t8 t9\n",
-        "  o1 = nand t2 t6\n",
-        // "# test simple  \n",
-        // "simple  :   \n",
-        // "  \n",
-        // "  o1 o2 o3 = nand i1 i2 i3  \n",
-        // "  # ddd \n",
-        // "  ox oy oz = nand ix iy iz  \n",
-        // "simple2 :   \n",
-        // "  \n",
-        // "  zo1 zo2 zo3 = nand zi1 zi2 zi3  \n",
-        // "  \n",
-        // "  zox zoy zoz = nand zix ziy ziz  \n",
-        // "  simple3 :   \n",
-        // "  ao1 ao2 ao3 = nand ai1 ai2 ai3  \n",
-        // "  aox aoy aoz = nand aix aiy aiz  \n",
-        // "# end comment\n",
-    );
-    match parse_circuit(input) {
+    let mut args = env::args();
+    args.next().unwrap();
+    let input = read_to_string(&args.next().unwrap()).unwrap();
+
+    match parse_circuit(&input) {
         Ok((_, parsed)) => {
             println!("{parsed:?}");
             match Circuit::try_from(parsed) {
@@ -869,7 +770,7 @@ fn main() -> ExitCode {
         Err(e) => {
             match e {
                 nom::Err::Error(e) | nom::Err::Failure(e) => {
-                    eprintln!("Error: {}", convert_error(input, e))
+                    eprintln!("Error: {}", convert_error(input.as_str(), e))
                 }
                 e => eprintln!("Error: {}", e),
             }
