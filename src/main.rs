@@ -584,7 +584,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             }
 
             if let Some(ci) = ci_opt {
-                assert!(ci==circuit.subcircuits.len());
+                assert_eq!(ci, circuit.subcircuits.len());
                 circuit.push_subcircuit(body, input_count, output_count);
             } else {
                 circuit.push_main(body, input_count, output_count);
@@ -605,6 +605,12 @@ pub struct PrimalMachine {
 impl PrimalMachine {
     pub fn new(circuit: Circuit, cell_len_bits: u32, address_len: u32) -> Self {
         assert!(cell_len_bits + address_len < usize::BITS + 3);
+        assert!((1 << cell_len_bits) <= circuit.input_len);
+        assert_eq!(
+            circuit.output_len as u32,
+            // state len in bits, rest is address_len and special bits
+            (circuit.input_len - (1 << cell_len_bits)) as u32 + address_len + 3
+        );
         let mem_len = if cell_len_bits + address_len >= 3 {
             1 << (cell_len_bits + address_len)
         } else {
