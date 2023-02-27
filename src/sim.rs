@@ -18,11 +18,11 @@ pub struct Circuit {
     pub output_len: u8,
 }
 
-fn get_bit(slice: &[u8], i: usize) -> bool {
+pub fn get_bit(slice: &[u8], i: usize) -> bool {
     (slice[i >> 3] >> (i & 7)) & 1 != 0
 }
 
-fn set_bit(slice: &mut [u8], i: usize, v: bool) {
+pub fn set_bit(slice: &mut [u8], i: usize, v: bool) {
     let mask = 1 << (i & 7);
     slice[i >> 3] = (slice[i >> 3] & !mask) | (if v { mask } else { 0 });
 }
