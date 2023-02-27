@@ -621,6 +621,18 @@ impl PrimalMachine {
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
 }
 
+impl TryFrom<ParsedPrimalMachine> for PrimalMachine {
+    type Error = ConvertError;
+
+    fn try_from(parsed: ParsedPrimalMachine) -> Result<Self, Self::Error> {
+        Ok(PrimalMachine::new(
+            Circuit::try_from(parsed.circuit)?,
+            parsed.cell_len_bits,
+            parsed.address_len,
+        ))
+    }
+}
+
 fn simple_circuit() {
     let mut circuit = Circuit::new();
     circuit.push_main(
