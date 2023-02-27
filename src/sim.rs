@@ -161,6 +161,44 @@ impl Circuit {
         (step_mem, oi)
     }
 
+    pub fn run_subcircuit(
+        &self,
+        subcircuit: u8,
+        prim_input: &[u8],
+        level: u8,
+        trace: bool,
+    ) -> [u8; 128 >> 3] {
+        let mut input: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let sc_info = self.subcircuits[subcircuit as usize];
+
+        for i in 0..(sc_info.input_len as usize) {
+            set_bit(&mut input[..], i, get_bit(&prim_input[..], i));
+        }
+        let mut output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+        let (temp, shift) = self.run_circuit(
+            Some(subcircuit as usize),
+            &input[..],
+            sc_info.input_len as usize,
+            0,
+            trace,
+        );
+
+        let shift = (128 + shift - (sc_info.output_len as usize)) & 127;
+        for i in 0..(sc_info.output_len as usize) {
+            set_bit(&mut output[..], i, get_bit(&temp[..], (i + shift) & 127));
+        }
+        if trace {
+            println!(
+                "Output {}",
+                (0..sc_info.output_len as usize)
+                    .map(|i| if get_bit(&output[..], i) { "1" } else { "0" })
+                    .collect::<String>()
+            );
+        }
+        output
+    }
+
     pub fn run(&self, prim_input: &[u8], trace: bool) -> [u8; 128 >> 3] {
         let mut input: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for i in 0..(self.input_len as usize) {
