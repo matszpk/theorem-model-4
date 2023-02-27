@@ -6,7 +6,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug)]
 pub struct CircuitDebug {
     pub circuit: Circuit,
-    pub subcircuits: HashMap<String, usize>,
+    pub subcircuits: HashMap<String, u8>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -371,14 +371,18 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
 
         Ok(CircuitDebug {
             circuit,
-            subcircuits: HashMap::from_iter(subcircuits.into_iter().map(|(k, (_, ci))| (k, ci))),
+            subcircuits: HashMap::from_iter(
+                subcircuits
+                    .into_iter()
+                    .map(|(k, (_, ci))| (k, ci.try_into().unwrap())),
+            ),
         })
     }
 }
 
 pub struct PrimalMachineDebug {
     pub machine: PrimalMachine,
-    pub subcircuits: HashMap<String, usize>,
+    pub subcircuits: HashMap<String, u8>,
 }
 
 impl TryFrom<ParsedPrimalMachine> for PrimalMachineDebug {

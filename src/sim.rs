@@ -1,3 +1,6 @@
+use crate::convert::*;
+use crate::parser::*;
+
 // runtime environment
 #[derive(Clone, Copy, Debug)]
 pub struct SubcircuitInfo {
@@ -268,4 +271,52 @@ impl PrimalMachine {
 
     // input: [state, mem_value]
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
+}
+
+pub fn run_testsuite(
+    circuit: &mut CircuitDebug,
+    testsuite: impl IntoIterator<Item = TestCase>,
+    trace: bool,
+) {
+    for (i, tc) in testsuite.into_iter().enumerate() {
+        println!("Testcase {}: {}", i, tc.name);
+
+        let mut input: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let mut exp_output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (i, v) in tc.input.iter().enumerate() {
+            set_bit(&mut input[..], i, *v);
+        }
+        for (i, v) in tc.exp_output.iter().enumerate() {
+            set_bit(&mut exp_output[..], i, *v);
+        }
+
+        let sc = circuit.subcircuits[&tc.subcircuit] as usize;
+        let output = if tc.subcircuit != "main" {
+            circuit
+                .circuit
+                .run_subcircuit(sc.try_into().unwrap(), &input[..], trace)
+        } else {
+            circuit.circuit.run(&input[..], trace)
+        };
+
+        if exp_output != output {
+            let output_len = circuit.circuit.subcircuits[sc].output_len as usize;
+            println!("Testcase {}: {} FAILURE!", i, tc.name);
+            println!(
+                "  Difference: {}!={}",
+                (0..output_len)
+                    .map(|i| if get_bit(&exp_output[..], i) {
+                        '1'
+                    } else {
+                        '0'
+                    })
+                    .collect::<String>(),
+                (0..output_len)
+                    .map(|i| if get_bit(&output[..], i) { '1' } else { '0' })
+                    .collect::<String>()
+            );
+        } else {
+            println!("Testcase {}: {} PASSED", i, tc.name);
+        }
+    }
 }
