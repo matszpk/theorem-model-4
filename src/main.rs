@@ -413,6 +413,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
             if sc.statements.is_empty() {
                 return Err(ConvertError::EmptySubcircuit(sc.name.clone()));
             }
+            // check whether all subcircuits have any inputs
             if !sc.statements.iter().any(|stmt| match stmt {
                 Statement::Statement { input: inputs, .. } => inputs.iter().any(|input| {
                     input.starts_with("i")
@@ -428,6 +429,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                 return Err(ConvertError::NoInputsInSubcircuit(sc.name.clone()));
             }
 
+            // check whether all subcircuits have any outputs
             if !sc.statements.iter().any(|stmt| match stmt {
                 Statement::Statement {
                     output: outputs, ..
@@ -464,6 +466,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
         sorted_scs.extend(subcircuits.values().map(|(i, ci)| (*i, Some(*ci))));
         sorted_scs[1..].sort_by_key(|(_, ci)| *ci);
 
+        // check whether all subcircuits have parseable inputs (in form: 'iXXX')
         if let Err(e) = parsed
             .iter()
             .map(|sc| {
@@ -498,6 +501,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
             return Err(ConvertError::SubcircuitInputOutputParseError(e));
         }
 
+        // check whether all subcircuits have parseable outputs (in form: 'oXXX')
         if let Err(e) = parsed
             .iter()
             .map(|sc| {
@@ -525,9 +529,11 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
             return Err(ConvertError::SubcircuitInputOutputParseError(e));
         }
 
+        // collect number of inputs and number of outputs for all subcircuits (including main).
         let sc_inputs_outputs = parsed
             .iter()
             .map(|sc| {
+                // get number of inputs through parsing number from inputs in form 'iXX'
                 let input_count = sc
                     .statements
                     .iter()
@@ -556,6 +562,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                     .max()
                     .unwrap()
                     + 1;
+                // get number of outputs by getting last output name in last statement.
                 let output_count = sc
                     .statements
                     .iter()
@@ -588,6 +595,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
             }
 
             let tmp = vec![];
+            // check whether all outputs is in correct order.
             if !sc
                 .statements
                 .iter()
