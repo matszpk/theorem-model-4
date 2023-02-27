@@ -273,8 +273,8 @@ impl PrimalMachine {
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
 }
 
-pub fn run_testsuite(
-    circuit: &mut CircuitDebug,
+pub fn run_test_suite(
+    circuit: &CircuitDebug,
     testsuite: impl IntoIterator<Item = TestCase>,
     trace: bool,
 ) {

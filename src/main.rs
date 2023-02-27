@@ -9,7 +9,6 @@ use clap::{Parser, Subcommand};
 
 use nom::error::convert_error;
 
-use std::env;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -117,7 +116,23 @@ fn main() -> ExitCode {
                     .collect::<String>()
             );
         }
-        Commands::Test(r) => {}
+        Commands::Test(r) => {
+            let input = read_to_string(r.testsuite).unwrap();
+            match parse_test_suite(&input) {
+                Ok((_, test_suite)) => {
+                    run_test_suite(&circuit, test_suite, r.trace);
+                }
+                Err(e) => {
+                    match e {
+                        nom::Err::Error(e) | nom::Err::Failure(e) => {
+                            eprintln!("Error: {}", convert_error(input.as_str(), e))
+                        }
+                        e => eprintln!("Error: {}", e),
+                    }
+                    return ExitCode::FAILURE;
+                }
+            }
+        }
     };
 
     ExitCode::SUCCESS
