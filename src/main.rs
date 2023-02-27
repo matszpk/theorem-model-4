@@ -9,10 +9,16 @@ use std::process::ExitCode;
 // parser
 
 #[derive(Clone, Debug)]
-pub struct Statement {
-    output: Vec<String>, // output: output in subcircuit should have name 'oXXX'
-    subcircuit: String,  // subcircuit: can be 'nand' or other subcircuit
-    input: Vec<String>,  // input of subcircuit should have name 'iXXX
+pub enum Statement {
+    Statement {
+        output: Vec<String>, // output: output in subcircuit should have name 'oXXX'
+        subcircuit: String,  // subcircuit: can be 'nand' or other subcircuit
+        input: Vec<String>,  // input of subcircuit should have name 'iXXX
+    },
+    Alias {
+        new_name: String,
+        name: String,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -76,20 +82,35 @@ pub fn parse_names(input: &str) -> VOIResult<Vec<String>> {
 pub fn parse_statement(input: &str) -> VOIResult<Statement> {
     context(
         "statement",
-        map(
-            terminated(
-                tuple((
-                    parse_names,
-                    preceded(tuple((cc::space0, cc::char('='), cc::space0)), identifier),
-                    cut(parse_names),
-                )),
-                cut(pair(cc::space0, cc::line_ending)),
-            ),
-            |(output, subcircuit, input)| Statement {
-                output,
-                subcircuit: subcircuit.to_string(),
-                input,
-            },
+        terminated(
+            alt((
+                map(
+                    tuple((
+                        preceded(
+                            tuple((cc::space0, bc::tag("alias"), cc::space0)),
+                            identifier,
+                        ),
+                        preceded(cc::space0, identifier),
+                    )),
+                    |(new_name, name)| Statement::Alias {
+                        new_name: new_name.to_string(),
+                        name: name.to_string(),
+                    },
+                ),
+                map(
+                    tuple((
+                        parse_names,
+                        preceded(tuple((cc::space0, cc::char('='), cc::space0)), identifier),
+                        cut(parse_names),
+                    )),
+                    |(output, subcircuit, input)| Statement::Statement {
+                        output,
+                        subcircuit: subcircuit.to_string(),
+                        input,
+                    },
+                ),
+            )),
+            cut(pair(cc::space0, cc::line_ending)),
         ),
     )(input)
 }
@@ -383,22 +404,30 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             if sc.statements.is_empty() {
                 return Err(ConvertError::EmptySubcircuit(sc.name.clone()));
             }
-            if !sc.statements.iter().any(|stmt| {
-                stmt.input.iter().any(|input| {
+            if !sc.statements.iter().any(|stmt| match stmt {
+                Statement::Statement { input: inputs, .. } => inputs.iter().any(|input| {
                     input.starts_with("i")
                         && input.len() >= 2
                         && input.chars().skip(1).all(|c| c.is_digit(10))
-                })
+                }),
+                Statement::Alias { name: input, .. } => {
+                    input.starts_with("i")
+                        && input.len() >= 2
+                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                }
             }) {
                 return Err(ConvertError::NoInputsInSubcircuit(sc.name.clone()));
             }
 
-            if !sc.statements.iter().any(|stmt| {
-                stmt.output.iter().any(|output| {
+            if !sc.statements.iter().any(|stmt| match stmt {
+                Statement::Statement {
+                    output: outputs, ..
+                } => outputs.iter().any(|output| {
                     output.starts_with("o")
                         && output.len() >= 2
                         && output.chars().skip(1).all(|c| c.is_digit(10))
-                })
+                }),
+                _ => false,
             }) {
                 return Err(ConvertError::NoOutputsInSubcircuit(sc.name.clone()));
             }
@@ -431,8 +460,8 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             .map(|sc| {
                 sc.statements
                     .iter()
-                    .map(|stmt| {
-                        stmt.input
+                    .map(|stmt| match stmt {
+                        Statement::Statement { input: inputs, .. } => inputs
                             .iter()
                             .filter(|input| {
                                 input.starts_with("i")
@@ -440,6 +469,17 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                                     && input.chars().skip(1).all(|c| c.is_digit(10))
                             })
                             .map(|input| input[1..].parse::<u8>())
+                            .collect::<Vec<_>>(),
+                        Statement::Alias { name: input, .. } => {
+                            if input.starts_with("i")
+                                && input.len() >= 2
+                                && input.chars().skip(1).all(|c| c.is_digit(10))
+                            {
+                                vec![input[1..].parse::<u8>()]
+                            } else {
+                                vec![]
+                            }
+                        }
                     })
                     .flatten()
             })
@@ -454,8 +494,10 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             .map(|sc| {
                 sc.statements
                     .iter()
-                    .map(|stmt| {
-                        stmt.output
+                    .map(|stmt| match stmt {
+                        Statement::Statement {
+                            output: outputs, ..
+                        } => outputs
                             .iter()
                             .filter(|output| {
                                 output.starts_with("o")
@@ -463,6 +505,8 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                                     && output.chars().skip(1).all(|c| c.is_digit(10))
                             })
                             .map(|output| output[1..].parse::<u8>())
+                            .collect::<Vec<_>>(),
+                        _ => vec![],
                     })
                     .flatten()
             })
@@ -478,8 +522,8 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                 let input_count = sc
                     .statements
                     .iter()
-                    .map(|stmt| {
-                        stmt.input
+                    .map(|stmt| match stmt {
+                        Statement::Statement { input: inputs, .. } => inputs
                             .iter()
                             .filter(|input| {
                                 input.starts_with("i")
@@ -487,12 +531,33 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                                     && input.chars().skip(1).all(|c| c.is_digit(10))
                             })
                             .map(|input| input[1..].parse::<u8>().unwrap())
+                            .collect::<Vec<_>>(),
+                        Statement::Alias { name: input, .. } => {
+                            if input.starts_with("i")
+                                && input.len() >= 2
+                                && input.chars().skip(1).all(|c| c.is_digit(10))
+                            {
+                                vec![input[1..].parse::<u8>().unwrap()]
+                            } else {
+                                vec![]
+                            }
+                        }
                     })
                     .flatten()
                     .max()
                     .unwrap()
                     + 1;
-                let output_count = sc.statements.last().unwrap().output.last().unwrap()[1..]
+                let output_count = sc
+                    .statements
+                    .iter()
+                    .rev()
+                    .find_map(|stmt| match stmt {
+                        Statement::Statement { output, .. } => Some(output),
+                        _ => None,
+                    })
+                    .unwrap()
+                    .last()
+                    .unwrap()[1..]
                     .parse::<u8>()
                     .unwrap()
                     + 1;
@@ -513,10 +578,16 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                 return Err(ConvertError::TooManyOutputsInSubcircuit(sc.name.clone()));
             }
 
+            let tmp = vec![];
             if !sc
                 .statements
                 .iter()
-                .map(|stmt| stmt.output.iter())
+                .map(|stmt| match stmt {
+                    Statement::Statement {
+                        output: outputs, ..
+                    } => outputs.iter(),
+                    _ => tmp.iter(),
+                })
                 .flatten()
                 .skip_while(|output| {
                     !(output.starts_with("o")
@@ -531,67 +602,84 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
 
             let mut body: Vec<u8> = vec![];
             let mut var_pos = input_count as usize;
-            let mut vars: Vec<String> = (0..input_count)
-                .map(|i| format!("i{i}"))
-                .chain((input_count..128).map(|_| "".to_string()))
+            let mut vars: Vec<Vec<String>> = (0..input_count)
+                .map(|i| vec![format!("i{i}")])
+                .chain((input_count..128).map(|_| vec!["".to_string()]))
                 .collect::<Vec<_>>();
             let mut var_map =
                 HashMap::<String, u8>::from_iter((0..input_count).map(|i| (format!("i{i}"), i)));
 
             for stmt in &sc.statements {
-                if stmt.subcircuit.as_str() == "nand" {
-                    if stmt.input.len() != 2 {
-                        return Err(ConvertError::WrongInputNumberInSubcircuit(
-                            stmt.clone(),
-                            sc.name.clone(),
-                        ));
+                match stmt {
+                    Statement::Statement {
+                        input: inputs,
+                        output: outputs,
+                        subcircuit,
+                    } => {
+                        if subcircuit.as_str() == "nand" {
+                            if inputs.len() != 2 {
+                                return Err(ConvertError::WrongInputNumberInSubcircuit(
+                                    stmt.clone(),
+                                    sc.name.clone(),
+                                ));
+                            }
+                            if outputs.len() != 1 {
+                                return Err(ConvertError::WrongOutputNumberInSubcircuit(
+                                    stmt.clone(),
+                                    sc.name.clone(),
+                                ));
+                            }
+                        } else if let Some((sc_i, sc_ci)) = subcircuits.get(subcircuit) {
+                            if inputs.len() != sc_inputs_outputs[*sc_i].0.into() {
+                                return Err(ConvertError::WrongInputNumberInSubcircuit(
+                                    stmt.clone(),
+                                    sc.name.clone(),
+                                ));
+                            }
+                            if outputs.len() != sc_inputs_outputs[*sc_i].1.into() {
+                                return Err(ConvertError::WrongOutputNumberInSubcircuit(
+                                    stmt.clone(),
+                                    sc.name.clone(),
+                                ));
+                            }
+                            body.push((128 + *sc_ci).try_into().unwrap());
+                        } else {
+                            return Err(ConvertError::UnknownSubcircuitInSubcircuit(
+                                subcircuit.clone(),
+                                sc.name.clone(),
+                            ));
+                        }
+                        // put stmt inputs
+                        for input in inputs {
+                            if let Some(var) = var_map.get(input.as_str()) {
+                                body.push(u8::try_from(*var).unwrap());
+                            } else {
+                                return Err(ConvertError::VariableUnvailableInSubcircuit(
+                                    input.clone(),
+                                    stmt.clone(),
+                                    sc.name.clone(),
+                                ));
+                            }
+                        }
+                        // put stmt outputs
+                        for output in outputs {
+                            if !vars[var_pos].is_empty() {
+                                for var_name in &vars[var_pos] {
+                                    var_map.remove(var_name);
+                                }
+                            }
+                            vars[var_pos].push(output.clone());
+                            var_map.insert(output.clone(), var_pos.try_into().unwrap());
+                            var_pos = (var_pos + 1) & 127;
+                        }
                     }
-                    if stmt.output.len() != 1 {
-                        return Err(ConvertError::WrongOutputNumberInSubcircuit(
-                            stmt.clone(),
-                            sc.name.clone(),
-                        ));
+                    Statement::Alias { new_name, name } => {
+                        if let Some(var_pos) = var_map.get(name) {
+                            let var_pos = *var_pos as usize;
+                            vars[var_pos].push(new_name.clone());
+                            var_map.insert(new_name.clone(), var_pos.try_into().unwrap());
+                        }
                     }
-                } else if let Some((sc_i, sc_ci)) = subcircuits.get(&stmt.subcircuit) {
-                    if stmt.input.len() != sc_inputs_outputs[*sc_i].0.into() {
-                        return Err(ConvertError::WrongInputNumberInSubcircuit(
-                            stmt.clone(),
-                            sc.name.clone(),
-                        ));
-                    }
-                    if stmt.output.len() != sc_inputs_outputs[*sc_i].1.into() {
-                        return Err(ConvertError::WrongOutputNumberInSubcircuit(
-                            stmt.clone(),
-                            sc.name.clone(),
-                        ));
-                    }
-                    body.push((128 + *sc_ci).try_into().unwrap());
-                } else {
-                    return Err(ConvertError::UnknownSubcircuitInSubcircuit(
-                        stmt.subcircuit.clone(),
-                        sc.name.clone(),
-                    ));
-                }
-                // put stmt inputs
-                for input in &stmt.input {
-                    if let Some(var) = var_map.get(input.as_str()) {
-                        body.push(u8::try_from(*var).unwrap());
-                    } else {
-                        return Err(ConvertError::VariableUnvailableInSubcircuit(
-                            input.clone(),
-                            stmt.clone(),
-                            sc.name.clone(),
-                        ));
-                    }
-                }
-                // put stmt outputs
-                for output in &stmt.output {
-                    if !vars[var_pos].is_empty() {
-                        var_map.remove(&vars[var_pos]);
-                    }
-                    vars[var_pos] = output.clone();
-                    var_map.insert(output.clone(), var_pos.try_into().unwrap());
-                    var_pos = (var_pos + 1) & 127;
                 }
             }
 
@@ -726,15 +814,18 @@ fn main() -> ExitCode {
         "  t = nand i0 i0\n",
         "  o0 = nand t t\n",
         "full_adder:\n",
-        "  t0 = nand i2 i1\n",
-        "  t1 = nand i1 i0\n",
-        "  t2 = nand i0 i2\n",
+        "  alias a0 i0\n",
+        "  alias a1 i1\n",
+        "  alias a2 i2\n",
+        "  t0 = nand a2 a1\n",
+        "  t1 = nand a1 a0\n",
+        "  t2 = nand a0 a2\n",
         "  t3 = nand t0 t1\n",
-        "  t4 = nand t1 i0\n",
-        "  t5 = nand t0 i2\n",
+        "  t4 = nand t1 a0\n",
+        "  t5 = nand t0 a2\n",
         "  t6 = nand t2 t3\n",
         "  t7 = nand t5 t4\n",
-        "  t8 = nand i1 t6\n",
+        "  t8 = nand a1 t6\n",
         "  t9 = nand t2 t7\n",
         "  o0 = nand t8 t9\n",
         "  o1 = nand t2 t6\n",
