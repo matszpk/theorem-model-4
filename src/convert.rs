@@ -275,9 +275,16 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
 
             let mut body: Vec<u8> = vec![];
             let mut var_pos = input_count as usize;
-            let mut vars: Vec<Vec<String>> = (0..input_count)
-                .map(|i| vec![format!("i{i}")])
-                .chain((input_count..128).map(|_| vec!["".to_string()]))
+            let mut vars: Vec<Vec<String>> = (0..128)
+                .map(|i| {
+                    if i < input_count {
+                        vec![format!("i{i}")]
+                    } else if i == input_count {
+                        vec!["zero".to_string()]
+                    } else {
+                        vec![]
+                    }
+                })
                 .collect::<Vec<_>>();
             let mut var_map =
                 HashMap::<String, u8>::from_iter((0..input_count).map(|i| (format!("i{i}"), i)));
