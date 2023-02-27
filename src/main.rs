@@ -120,7 +120,9 @@ fn main() -> ExitCode {
             let input = read_to_string(r.testsuite).unwrap();
             match parse_test_suite(&input) {
                 Ok((_, test_suite)) => {
-                    run_test_suite(&circuit, test_suite, r.trace);
+                    if !run_test_suite(&circuit, test_suite, r.trace) {
+                        return ExitCode::FAILURE;
+                    }
                 }
                 Err(e) => {
                     match e {

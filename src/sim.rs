@@ -277,7 +277,8 @@ pub fn run_test_suite(
     circuit: &CircuitDebug,
     testsuite: impl IntoIterator<Item = TestCase>,
     trace: bool,
-) {
+) -> bool {
+    let mut passed = true;
     for (i, tc) in testsuite.into_iter().enumerate() {
         println!("Testcase {}: {}", i, tc.name);
 
@@ -315,8 +316,10 @@ pub fn run_test_suite(
                     .map(|i| if get_bit(&output[..], i) { '1' } else { '0' })
                     .collect::<String>()
             );
+            passed = false;
         } else {
             println!("Testcase {}: {} PASSED", i, tc.name);
         }
     }
+    passed
 }
