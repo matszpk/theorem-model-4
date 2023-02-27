@@ -156,7 +156,7 @@ pub fn parse_primal_machine(input: &str) -> VOIResult<ParsedPrimalMachine> {
 
 // runtime environment
 #[derive(Clone, Copy, Debug)]
-pub struct SubcircuitInfo {
+struct SubcircuitInfo {
     location: usize,
     input_len: u8,
     output_len: u8,
