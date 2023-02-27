@@ -291,17 +291,22 @@ pub fn run_test_suite(
             set_bit(&mut exp_output[..], i, *v);
         }
 
-        let sc = circuit.subcircuits[&tc.subcircuit] as usize;
-        let output = if tc.subcircuit != "main" {
-            circuit
-                .circuit
-                .run_subcircuit(sc.try_into().unwrap(), &input[..], trace)
+        let (output, output_len) = if tc.subcircuit != "main" {
+            let sc = circuit.subcircuits[&tc.subcircuit] as usize;
+            (
+                circuit
+                    .circuit
+                    .run_subcircuit(sc.try_into().unwrap(), &input[..], trace),
+                circuit.circuit.subcircuits[sc].output_len as usize,
+            )
         } else {
-            circuit.circuit.run(&input[..], trace)
+            (
+                circuit.circuit.run(&input[..], trace),
+                circuit.circuit.output_len as usize,
+            )
         };
 
         if exp_output != output {
-            let output_len = circuit.circuit.subcircuits[sc].output_len as usize;
             println!("Testcase {}: {} FAILURE!", i, tc.name);
             println!(
                 "  Difference: {}!={}",
