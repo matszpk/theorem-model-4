@@ -126,7 +126,7 @@ pub fn parse_field_u32<'a>(name: &'a str) -> impl FnMut(&'a str) -> VOIResult<u3
         tuple((
             empty_or_comment,
             cc::space0,
-            bc::tag("cell_len_bits"),
+            bc::tag(name),
             cc::space0,
             cc::char(':'),
             cc::space0,
@@ -361,7 +361,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             parsed
                 .iter()
                 .enumerate()
-                .filter(|(i, subc)| subc.name == "main")
+                .filter(|(_, subc)| subc.name == "main")
                 .next()
                 .unwrap()
                 .0
@@ -412,7 +412,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
 
         let mut sorted_scs = vec![(main_number, None)];
         sorted_scs.extend(subcircuits.values().map(|(i, ci)| (*i, Some(*ci))));
-        sorted_scs[1..].sort_by_key(|(i, ci)| *ci);
+        sorted_scs[1..].sort_by_key(|(_, ci)| *ci);
 
         if let Err(e) = parsed
             .iter()
@@ -584,6 +584,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
             }
 
             if let Some(ci) = ci_opt {
+                assert!(ci==circuit.subcircuits.len());
                 circuit.push_subcircuit(body, input_count, output_count);
             } else {
                 circuit.push_main(body, input_count, output_count);
