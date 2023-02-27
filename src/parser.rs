@@ -175,3 +175,30 @@ pub fn parse_primal_machine(input: &str) -> VOIResult<ParsedPrimalMachine> {
 }
 
 // parser for testcases
+
+pub struct TestCase {
+    subcircuit: String,
+    input: Vec<bool>,
+    exp_output: Vec<bool>,
+}
+
+pub fn parse_test_case(input: &str) -> VOIResult<TestCase> {
+    context(
+        "testcase",
+        map(
+            terminated(
+                tuple((
+                    preceded(cc::space0, identifier),
+                    preceded(cc::space0, many0(cc::one_of("01"))),
+                    preceded(cc::space0, many0(cc::one_of("01"))),
+                )),
+                cc::line_ending,
+            ),
+            |(subcircuit, input, exp_output)| TestCase {
+                subcircuit: subcircuit.to_string(),
+                input: input.into_iter().map(|c| c == '1').collect(),
+                exp_output: exp_output.into_iter().map(|c| c == '1').collect(),
+            },
+        ),
+    )(input)
+}

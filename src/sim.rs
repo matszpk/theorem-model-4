@@ -161,13 +161,7 @@ impl Circuit {
         (step_mem, oi)
     }
 
-    pub fn run_subcircuit(
-        &self,
-        subcircuit: u8,
-        prim_input: &[u8],
-        level: u8,
-        trace: bool,
-    ) -> [u8; 128 >> 3] {
+    pub fn run_subcircuit(&self, subcircuit: u8, prim_input: &[u8], trace: bool) -> [u8; 128 >> 3] {
         let mut input: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         let sc_info = self.subcircuits[subcircuit as usize];
 
@@ -180,7 +174,7 @@ impl Circuit {
             Some(subcircuit as usize),
             &input[..],
             sc_info.input_len as usize,
-            0,
+            1,
             trace,
         );
 
