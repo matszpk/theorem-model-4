@@ -59,7 +59,7 @@ fn main() -> ExitCode {
     };
 
     let input = read_to_string(circuit_file_name).unwrap();
-    let circuit = match parse_circuit(&input) {
+    let circuit = match parse_circuit_all(&input) {
         Ok((_, parsed)) => {
             //println!("{parsed:?}");
             match CircuitDebug::try_from(parsed) {

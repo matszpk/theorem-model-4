@@ -139,6 +139,16 @@ pub fn parse_circuit(input: &str) -> VOIResult<Vec<ParsedSubcircuit>> {
     )(input)
 }
 
+pub fn parse_circuit_all(input: &str) -> VOIResult<Vec<ParsedSubcircuit>> {
+    context(
+        "circuit",
+        all_consuming(terminated(
+            many0(preceded(empty_or_comment, parse_subcircuit)),
+            cc::multispace0,
+        )),
+    )(input)
+}
+
 pub fn parse_field_u32<'a>(name: &'a str) -> impl FnMut(&'a str) -> VOIResult<u32> {
     delimited(
         tuple((
@@ -207,6 +217,9 @@ pub fn parse_test_case(input: &str) -> VOIResult<TestCase> {
 pub fn parse_test_suite(input: &str) -> VOIResult<Vec<TestCase>> {
     context(
         "testsuite",
-        many0(preceded(empty_or_comment, parse_test_case)),
+        all_consuming(terminated(
+            many0(preceded(empty_or_comment, parse_test_case)),
+            cc::multispace0,
+        )),
     )(input)
 }
