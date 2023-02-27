@@ -262,6 +262,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                     _ => tmp.iter(),
                 })
                 .flatten()
+                // skip to last outputs as o
                 .skip_while(|output| {
                     !(output.starts_with("o")
                         && output.len() >= 2
