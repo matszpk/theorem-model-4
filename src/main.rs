@@ -7,7 +7,6 @@ use convert::*;
 
 use nom::error::convert_error;
 
-use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
 use std::process::ExitCode;

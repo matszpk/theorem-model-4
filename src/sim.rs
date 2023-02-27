@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 // runtime environment
 #[derive(Clone, Copy, Debug)]
 pub struct SubcircuitInfo {

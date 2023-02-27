@@ -3,8 +3,6 @@ use nom::{
     sequence::*, IResult,
 };
 
-use std::collections::HashMap;
-
 // parser
 
 #[derive(Clone, Debug)]
@@ -192,7 +190,7 @@ pub fn parse_test_case(input: &str) -> VOIResult<TestCase> {
                     preceded(cc::space0, many0(cc::one_of("01"))),
                     preceded(cc::space0, many0(cc::one_of("01"))),
                 )),
-                cc::line_ending,
+                pair(cc::space0, cc::line_ending),
             ),
             |(subcircuit, input, exp_output)| TestCase {
                 subcircuit: subcircuit.to_string(),
