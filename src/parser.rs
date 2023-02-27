@@ -201,7 +201,7 @@ pub fn parse_test_case(input: &str) -> VOIResult<TestCase> {
     )(input)
 }
 
-pub fn parse_testsuite(input: &str) -> VOIResult<Vec<TestCase>> {
+pub fn parse_test_suite(input: &str) -> VOIResult<Vec<TestCase>> {
     context(
         "testsuite",
         many0(preceded(empty_or_comment, parse_test_case)),
