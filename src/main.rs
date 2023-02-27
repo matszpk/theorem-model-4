@@ -218,9 +218,18 @@ impl Circuit {
         input: &[u8],
         input_len: usize,
         level: u8,
+        trace: bool,
     ) -> ([u8; 128 >> 3], usize) {
         assert!(level < 8);
         assert!(input.len() < 128);
+        if trace {
+            println!(
+                "Input {}",
+                (0..input_len)
+                    .map(|i| if get_bit(input, i) { "1" } else { "0" })
+                    .collect::<String>()
+            );
+        }
         let mut step_mem: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         // initialize input
@@ -252,13 +261,17 @@ impl Circuit {
             let mut nand_arg1: Option<bool> = None;
             while step_index < circuit_end {
                 let lv = self.circuit[step_index];
-                println!("Step cell: {} {}: {}", step_index, oi, lv);
+                if trace {
+                    println!("Step cell: {} {}: {}", step_index, oi, lv);
+                }
                 if lv < 128 {
                     // input value
                     let ii = lv as usize;
                     let v = get_bit(&step_mem[..], ii);
                     if let Some(v1) = nand_arg1 {
-                        println!("Step: {} {}: {} {} {}", step_index, oi, v1, v, !(v1 & v));
+                        if trace {
+                            println!("Step: {} {}: {} {} {}", step_index, oi, v1, v, !(v1 & v));
+                        }
                         set_bit(&mut step_mem[..], oi, !(v1 & v));
                         nand_arg1 = None;
                         oi = (oi + 1) & 127;
@@ -269,14 +282,18 @@ impl Circuit {
                 } else {
                     if let Some(v1) = nand_arg1 {
                         // if next argument not found then flush with 1
-                        println!("Step: {} {}: {} {} {}", step_index, oi, v1, true, !v1);
+                        if trace {
+                            println!("Step: {} {}: {} {} {}", step_index, oi, v1, true, !v1);
+                        }
                         set_bit(&mut step_mem[..], oi, !v1);
                         nand_arg1 = None;
                         oi = (oi + 1) & 127;
                     }
                     // subcircuit call
                     let sc = (lv - 128) as usize;
-                    println!("Call: {} {}: {}", step_index, oi, sc);
+                    if trace {
+                        println!("Call: {} {}: {}", step_index, oi, sc);
+                    }
                     step_index += 1;
                     let mut sc_input: [u8; 128 >> 3] =
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -286,18 +303,29 @@ impl Circuit {
                     for i in 0..sc_input_len {
                         let ii = self.circuit[step_index + i] as usize;
                         let v = get_bit(&step_mem[..], ii);
-                        println!("Call input: {} {}: {} {}", step_index, oi, i, v);
                         set_bit(&mut sc_input[..], i, v);
                     }
                     step_index += sc_input_len;
 
                     let (sc_output, sc_oi) =
-                        self.run_circuit(Some(sc), &sc_input, sc_input_len, level + 1);
+                        self.run_circuit(Some(sc), &sc_input, sc_input_len, level + 1, trace);
                     let mut sc_oi = (128 + sc_oi - sc_output_len) & 127;
+
+                    if trace {
+                        println!(
+                            "Output {}",
+                            (0..sc_output_len)
+                                .map(|i| if get_bit(&sc_output[..], (sc_oi + i) & 127) {
+                                    "1"
+                                } else {
+                                    "0"
+                                })
+                                .collect::<String>()
+                        );
+                    }
 
                     for _ in 0..sc_output_len {
                         let v = get_bit(&sc_output[..], sc_oi);
-                        println!("Call input: {} {} {}: {}", step_index, oi, sc_oi, v);
                         set_bit(&mut step_mem[..], oi, v);
                         oi = (oi + 1) & 127;
                         sc_oi = (sc_oi + 1) & 127;
@@ -309,16 +337,24 @@ impl Circuit {
         (step_mem, oi)
     }
 
-    pub fn run(&self, prim_input: &[u8]) -> [u8; 128 >> 3] {
+    pub fn run(&self, prim_input: &[u8], trace: bool) -> [u8; 128 >> 3] {
         let mut input: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for i in 0..(self.input_len as usize) {
             set_bit(&mut input[..], i, get_bit(&prim_input[..], i));
         }
         let mut output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        let (temp, shift) = self.run_circuit(None, &input[..], self.input_len as usize, 0);
+        let (temp, shift) = self.run_circuit(None, &input[..], self.input_len as usize, 0, trace);
         let shift = (128 + shift - (self.output_len as usize)) & 127;
         for i in 0..(self.output_len as usize) {
             set_bit(&mut output[..], i, get_bit(&temp[..], (i + shift) & 127));
+        }
+        if trace {
+            println!(
+                "Output {}",
+                (0..self.output_len as usize)
+                    .map(|i| if get_bit(&output[..], i) { "1" } else { "0" })
+                    .collect::<String>()
+            );
         }
         output
     }
