@@ -155,12 +155,18 @@ pub fn parse_primal_machine(input: &str) -> VOIResult<ParsedPrimalMachine> {
 }
 
 // runtime environment
+#[derive(Clone, Copy, Debug)]
+pub struct SubcircuitInfo {
+    location: usize,
+    input_len: u8,
+    output_len: u8,
+}
 
 #[derive(Clone, Debug)]
 pub struct Circuit {
     circuit: Vec<u8>,
     // tuple: start, input len, output len
-    subcircuits: Vec<(usize, u8, u8)>,
+    subcircuits: Vec<SubcircuitInfo>,
     input_len: u8,
     output_len: u8,
 }
@@ -200,13 +206,15 @@ impl Circuit {
             set_bit(&mut step_mem, i, get_bit(input, i));
         }
 
-        let mut step_index = circuit.map(|x| self.subcircuits[x].0).unwrap_or_default();
+        let mut step_index = circuit
+            .map(|x| self.subcircuits[x].location)
+            .unwrap_or_default();
         // circuit end: if given - then end at start subcircuit sc+1 or end of whole circuit.
         // if not given: then end starts at start of first subcircuit or  end of whole circuit.
         let circuit_end = circuit
             .map(|x| {
                 if x + 1 < self.subcircuits.len() {
-                    self.subcircuits[x + 1].0
+                    self.subcircuits[x + 1].location
                 } else {
                     self.circuit.len()
                 }
@@ -214,7 +222,7 @@ impl Circuit {
             .unwrap_or(if self.subcircuits.is_empty() {
                 self.circuit.len()
             } else {
-                self.subcircuits[0].0
+                self.subcircuits[0].location
             });
 
         let mut oi = input_len; // output index
@@ -251,8 +259,8 @@ impl Circuit {
                     let mut sc_input: [u8; 128 >> 3] =
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-                    let sc_input_len = self.subcircuits[sc].1 as usize;
-                    let sc_output_len = self.subcircuits[sc].2 as usize;
+                    let sc_input_len = self.subcircuits[sc].input_len as usize;
+                    let sc_output_len = self.subcircuits[sc].output_len as usize;
                     for i in 0..sc_input_len {
                         let ii = self.circuit[step_index + i] as usize;
                         let v = get_bit(&step_mem[..], ii);
@@ -309,7 +317,11 @@ impl Circuit {
         assert!(!self.circuit.is_empty());
         let start = self.circuit.len();
         self.circuit.extend(i);
-        self.subcircuits.push((start, input_len, output_len));
+        self.subcircuits.push(SubcircuitInfo {
+            location: start,
+            input_len,
+            output_len,
+        });
     }
 }
 
