@@ -167,18 +167,21 @@ pub fn parse_field_u32<'a>(name: &'a str) -> impl FnMut(&'a str) -> VOIResult<u3
 pub fn parse_primal_machine(input: &str) -> VOIResult<ParsedPrimalMachine> {
     context(
         "primal_machine",
-        map(
-            tuple((
-                parse_field_u32("cell_len_bits"),
-                parse_field_u32("address_len"),
-                many0(preceded(empty_or_comment, parse_subcircuit)),
-            )),
-            |(cell_len_bits, address_len, circuit)| ParsedPrimalMachine {
-                cell_len_bits,
-                address_len,
-                circuit,
-            },
-        ),
+        all_consuming(terminated(
+            map(
+                tuple((
+                    parse_field_u32("cell_len_bits"),
+                    parse_field_u32("address_len"),
+                    many0(preceded(empty_or_comment, parse_subcircuit)),
+                )),
+                |(cell_len_bits, address_len, circuit)| ParsedPrimalMachine {
+                    cell_len_bits,
+                    address_len,
+                    circuit,
+                },
+            ),
+            cc::multispace0,
+        )),
     )(input)
 }
 
