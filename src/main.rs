@@ -376,6 +376,8 @@ pub enum ConvertError {
     WrongOutputNumberInSubcircuit(Statement, String),
     #[error("Parse error of input/output of subcircuit")]
     SubcircuitInputOutputParseError(#[from] std::num::ParseIntError),
+    #[error("Unknown variable {0} in alias in subcircuit {1}")]
+    UnknownVariableInAlias(String, String),
 }
 
 impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
@@ -678,6 +680,11 @@ impl TryFrom<Vec<ParsedSubcircuit>> for Circuit {
                             let var_pos = *var_pos as usize;
                             vars[var_pos].push(new_name.clone());
                             var_map.insert(new_name.clone(), var_pos.try_into().unwrap());
+                        } else {
+                            return Err(ConvertError::UnknownVariableInAlias(
+                                name.clone(),
+                                sc.name.clone(),
+                            ));
                         }
                     }
                 }
