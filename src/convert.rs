@@ -287,8 +287,16 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                     }
                 })
                 .collect::<Vec<_>>();
-            let mut var_map =
-                HashMap::<String, u8>::from_iter((0..input_count).map(|i| (format!("i{i}"), i)));
+            let mut var_map = HashMap::<String, u8>::from_iter(
+                vars.iter()
+                    .enumerate()
+                    .map(|(i, names)| {
+                        names
+                            .iter()
+                            .map(move |name| (name.clone(), i.try_into().unwrap()))
+                    })
+                    .flatten(),
+            );
 
             for stmt in &sc.statements {
                 match stmt {
