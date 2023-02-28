@@ -149,8 +149,8 @@ main:
     cpu_state_0_ph01 = ite cpu_state_0 cpu_state_0_ph1 cpu_state_0_ph0
     cpu_state_1_ph01 = ite cpu_state_0 cpu_state_1_ph1 cpu_state_1_ph0
     cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01 = ite_4bit cpu_state_0 \
-        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
-        cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1 cpu_instr_3_ph1
+        cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1 cpu_instr_3_ph1 \
+        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
     
     ########
     # phase 2 - fetch address nibble 1 
