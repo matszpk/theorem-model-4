@@ -226,3 +226,47 @@ pub fn parse_test_suite(input: &str) -> VOIResult<Vec<TestCase>> {
         )),
     )(input)
 }
+
+pub fn divide_lines(input: &str) -> String {
+    #[derive(Copy, Clone, PartialEq, Debug)]
+    enum Divisor {
+        Nothing,
+        Backslash,
+        LineFeed,
+    }
+    let mut div = Divisor::Nothing;
+    let mut out = String::new();
+    for c in input.chars() {
+        match c {
+            '\\' => {
+                div = Divisor::Backslash;
+            }
+            '\r' => {
+                if div == Divisor::Nothing {
+                    out.push(c);
+                } else if div == Divisor::Backslash {
+                    div = Divisor::LineFeed;
+                }
+            }
+            '\n' => {
+                if div == Divisor::Nothing {
+                    out.push(c);
+                } else if div == Divisor::Backslash || div == Divisor::LineFeed {
+                    div = Divisor::Nothing;
+                    // skip newline
+                }
+            }
+            _ => {
+                if div == Divisor::Backslash {
+                    out.push('\\');
+                } else if div == Divisor::LineFeed {
+                    out.push('\\');
+                    out.push('\r');
+                }
+                div = Divisor::Nothing;
+                out.push(c);
+            }
+        }
+    }
+    out
+}

@@ -58,7 +58,7 @@ fn main() -> ExitCode {
         Commands::Test(ref r) => r.circuit.clone(),
     };
 
-    let input = read_to_string(circuit_file_name).unwrap();
+    let input = divide_lines(&read_to_string(circuit_file_name).unwrap());
     let circuit = match parse_circuit_all(&input) {
         Ok((_, parsed)) => {
             //println!("{parsed:?}");
@@ -161,7 +161,7 @@ fn main() -> ExitCode {
             }
         }
         Commands::Test(r) => {
-            let input = read_to_string(r.testsuite).unwrap();
+            let input = divide_lines(&read_to_string(r.testsuite).unwrap());
             match parse_test_suite(&input) {
                 Ok((_, test_suite)) => {
                     if !run_test_suite(&circuit, test_suite, r.trace) {
