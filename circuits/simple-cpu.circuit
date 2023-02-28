@@ -113,20 +113,18 @@ main:
     
     alias mem_rw_ph0 zero
     
-    # clc_rol_ror - instr==7 || instr==8 || instr==9 ->
-    #      (instr3 & !instr2 & !instr1) | (!instr3 & instr2 & instr1 & instr0)
-    #      nand(!(instr3 & !instr2 & !instr1), !(!instr3 & instr2 & instr1 & instr0))
-    #      nand(nand3(instr3, !instr2, !instr1), nand4(!instr3, instr2, instr1, instr0)) 
-    tmp0 = nand cpu_instr_3_ph1 cpu_instr_1_ph1
-    tmp1 = nand cpu_instr_0_ph1 cpu_instr_1_ph1
-    tmp2 = nand cpu_instr_3_ph1 tmp0
-    tmp3 = nand tmp0 cpu_instr_2_ph1
-    tmp4 = nand tmp2 tmp3
-    tmp5 = nand cpu_instr_2_ph1 tmp1
-    tmp6 = nand tmp5 tmp4
+    # clc_rol_ror_psh_pull
+    tmp0 = nand cpu_instr_2_ph1 cpu_instr_3_ph1
+    tmp1 = nand cpu_instr_2_ph1 cpu_instr_0_ph1
+    tmp2 = nand cpu_instr_1_ph1 cpu_instr_1_ph1
+    tmp3 = nand cpu_instr_3_ph1 tmp0
+    tmp4 = nand tmp0 tmp1
+    tmp5 = nand tmp2 cpu_instr_1_ph1
+    tmp6 = nand tmp4 cpu_instr_0_ph1
+    tmp7 = nand tmp6 tmp2
     
     # next cpu state
-    if_clc_rol_ror = nand tmp6 tmp6
+    if_clc_rol_ror = nand tmp5 tmp7
     alias cpu_state_0_ph1 if_clc_rol_ror
     alias cpu_state_1_ph1 one
     
