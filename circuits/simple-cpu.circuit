@@ -1,0 +1,117 @@
+# Simple 4-bit CPU
+# cell_len_bits: 4, address_len: 8
+# State (bits):
+#   0-2 - CPU states:
+#     0 - fetch instruction
+#     1 - fetch first nibble of address
+#     2 - fetch second nibble of address
+#     3 - fetch memory nibble to temp register
+#     4 - execute instruction or store nibble to memory
+#     5 - push to stack, pull from stack
+#     6 - store pulled nibble to accumulator
+#   3-6 - fetched instruction
+#   7-14 - program counter
+#   15-18 - accumulator
+#   19-21 - flags
+#   22-25 - temporary register
+#   26-29 - stack pointer
+# Registers:
+#  A - accumlator (4-bit)
+#  S - stack pointer (4-bit)
+#  F - flags (3 - N, 1 - Z 0 - C)
+#  PC - program counter (8-bit)
+# Instruction set:
+# 0 - LDA
+# 1 - STA
+# 2 - ADC
+# 3 - SBC
+# 4 - AND
+# 5 - OR
+# 6 - XOR
+# 7 - ROL
+# 8 - ROR
+# 9 - BCC
+# A - BNE
+# B - BPL
+# C - JMP
+# D - PSH - push
+# E - PUL - pull
+# F - CLC
+main:
+copy:
+    t = nand i0 i0
+    o0 = nand t t
+xor:
+    n0 = nand i0 i0
+    n1 = nand i1 i1
+    t0 = nand i0 n1
+    t1 = nand n0 i1
+    o0 = nand t0 t1
+# if i0 then i1 else i2
+ite:
+    n0 = nand i0 i0
+    t0 = nand i0 i1
+    t1 = nand n0 i2
+    o0 = nand t0 t1
+xor_4bit:
+    o0 = xor i0 i4
+    o1 = xor i1 i5
+    o2 = xor i2 i6
+    o3 = xor i3 i7
+ite_4bit:
+    o0 = ite i0 i1 i5
+    o1 = ite i0 i2 i6
+    o2 = ite i0 i3 i7
+    o3 = ite i0 i4 i8
+copy_4bit:
+    o0 = copy i0
+    o1 = copy i1
+    o2 = copy i2
+    o3 = copy i3
+not_4bit:
+    o0 = nand i0 i0
+    o1 = nand i1 i1
+    o2 = nand i2 i2
+    o3 = nand i3 i3
+full_adder:
+    alias a0 i0
+    alias a1 i1
+    alias a2 i2
+    t0 = nand a2 a1
+    t1 = nand a1 a0
+    t2 = nand a0 a2
+    t3 = nand t0 t1
+    t4 = nand t1 a0
+    t5 = nand t0 a2
+    t6 = nand t2 t3
+    t7 = nand t5 t4
+    t8 = nand a1 t6
+    t9 = nand t2 t7
+    o0 = nand t8 t9
+    o1 = nand t2 t6
+half_adder:
+    o0 o1 = full_adder i0 i1 zero
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_adder_4bit:
+    s0 c0 = full_adder i1 i5 i0
+    s1 c1 = full_adder i2 i6 c0
+    s2 c2 = full_adder i3 i7 c1
+    s3 c3 = full_adder i4 i8 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+# 4-bit subtractor with carry
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_suber_4bit:
+    n0 n1 n2 n3 = not_4bit i5 i6 i7 i8
+    s0 c0 = full_adder i1 n0 i0
+    s1 c1 = full_adder i2 n1 c0
+    s2 c2 = full_adder i3 n2 c1
+    s3 c3 = full_adder i4 n3 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+# i0-i7 - 4-bit A, i8-i9 - 2-bit B
+adder_8bit_2bit:
+    t0 t1 t2 t3 t4 c0 = carry_adder_4bit zero i0 i1 i2 i3 i8 i9 zero zero
+    t4 t5 t6 t7 t8 ign = carry_adder_4bit c0 i4 i5 i6 i7 zero zero zero zero
+    o0 o1 o2 o3 = copy_4bit t0 t1 t2 t3
+    o4 o5 o6 o7 = copy_4bit t4 t5 t6 t7
