@@ -3,6 +3,30 @@ main:
     t0 = nand i0 i1
     t1 = nand n0 i2
     o0 = nand t0 t1
+ite:
+    n0 = nand i0 i0
+    t0 = nand i0 i1
+    t1 = nand n0 i2
+    o0 = nand t0 t1
+# ite4c: if a==0 then b else if a==1 then c else if a==2 then d else a==3 endif
+ite4c:
+    # layer 1
+    t6 = nand i5 i0
+    t7 = nand i0 i3
+    t8 = nand i1 i1
+    t9 = nand i0 i0
+    # layer 2
+    t10 = nand t9 i4
+    # layer 3
+    t11 = nand t9 i2
+    # layer 4
+    t12 = nand t7 t11
+    t13 = nand t10 t6
+    # layer 5
+    t14 = nand t13 i1
+    t15 = nand t8 t12
+    # layer 6
+    o0 = nand t14 t15
 xor:
     n0 = nand i0 i0
     n1 = nand i1 i1
@@ -43,6 +67,24 @@ full_adder:
     t9 = nand t2 t7
     o0 = nand t8 t9
     o1 = nand t2 t6
+full_suber:
+    # layer 1
+    t3 = nand i0 i2
+    t4 = nand i2 i2
+    t5 = nand i0 i0
+    # layer 2
+    t6 = nand t5 t4
+    t7 = nand t3 i1
+    # layer 3
+    t8 = nand t6 t7
+    t9 = nand i1 i1
+    t10 = nand t3 t6
+    # layer 4
+    t11 = nand t9 t10
+    t12 = nand t6 t8
+    # layer 5
+    o0 = nand t11 t12
+    o1 = nand t8 t3
 half_adder:
     o0 o1 = full_adder i0 i1 zero
 carry_suber_4bit:

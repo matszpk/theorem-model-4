@@ -1,43 +1,137 @@
 # Simple 4-bit CPU
 # cell_len_bits: 4, address_len: 8
-# State (bits):
-#   0-2 - CPU states:
-#     0 - fetch instruction
-#     1 - fetch first nibble of address
-#     2 - fetch second nibble of address
-#     3 - fetch memory nibble to temp register
-#     4 - execute instruction or store nibble to memory
-#     5 - push to stack, pull from stack
-#     6 - store pulled nibble to accumulator
-#   3-6 - fetched instruction
-#   7-14 - program counter
-#   15-18 - accumulator
-#   19-21 - flags
-#   22-25 - temporary register
-#   26-29 - stack pointer
 # Registers:
 #  A - accumlator (4-bit)
 #  S - stack pointer (4-bit)
 #  F - flags (3 - N, 1 - Z 0 - C)
 #  PC - program counter (8-bit)
 # Instruction set:
-# 0 - LDA
-# 1 - STA
-# 2 - ADC
-# 3 - SBC
-# 4 - AND
-# 5 - OR
-# 6 - XOR
-# 7 - ROL
-# 8 - ROR
-# 9 - BCC
-# A - BNE
-# B - BPL
+# 0 - LDA - load into accumulator
+# 1 - STA - store accumulator
+# 2 - ADC - add to accumulator (A + M + C)
+# 3 - SBC - subtract from accumulator (A - NOT(M) +C)
+# 4 - AND - perform bitwise AND on accumulator
+# 5 - OR - perform bitwise OR on accumulator
+# 6 - XOR - perform bitwise XOR on accumulator
+# 7 - ROL - rotate left 1 bit including C.
+# 8 - ROR - rotate right 1 bit including C.
+# 9 - BCC - branch if C=0
+# A - BNE - branch if Z=0
+# B - BPL - branch if N=0
 # C - JMP
 # D - PSH - push
-# E - PUL - pull
+# E - PUL - pull, if SP=0 then STOP
 # F - CLC
 main:
+    # input (state):
+    alias cpu_state_0 i0
+    alias cpu_state_1 i1
+    alias cpu_state_2 i2
+    alias cpu_instr_0 i3
+    alias cpu_instr_1 i4
+    alias cpu_instr_2 i5
+    alias cpu_instr_3 i6
+    alias cpu_pc_0 i7   # program counter
+    alias cpu_pc_1 i8
+    alias cpu_pc_2 i9
+    alias cpu_pc_3 i10
+    alias cpu_pc_4 i11
+    alias cpu_pc_5 i12
+    alias cpu_pc_6 i13
+    alias cpu_pc_7 i14
+    alias cpu_acc_0 i15
+    alias cpu_acc_1 i16
+    alias cpu_acc_2 i17
+    alias cpu_acc_3 i18
+    alias cpu_flag_c i19
+    alias cpu_flag_z i20
+    alias cpu_flag_n i21
+    alias cpu_sp_0 i22  # stack pointer
+    alias cpu_sp_1 i23
+    alias cpu_sp_2 i24
+    alias cpu_sp_3 i25
+    alias cpu_tempreg_0 i26
+    alias cpu_tempreg_1 i27
+    alias cpu_tempreg_2 i28
+    alias cpu_tempreg_3 i29
+    alias mem_value_0 i30
+    alias mem_value_1 i31
+    alias mem_value_2 i32
+    alias mem_value_3 i33
+    
+    ########
+    # phase 0 - fetch instruction
+    
+    ########
+    # phase 1 - fetch address nibble 0 only if not CLC, PSH, PUL, ROL, ROR
+    # if CLC, ROL, ROR then go to phase 3.
+    # if PSH, PUL then go to phase 2.
+    
+    ########
+    # phase 2 - fetch address nibble 1 
+    # only if not CLC, PSH, PUL, ROL, ROR.
+    
+    ########
+    # phase 3 - if not JMP then load/store to memory
+    # only if not CLC, PSH, PUL, ROL, ROR.
+    # if JMP, BCC, BNE or BPL then store address to PC and finish instruction.
+    # if STA - then store accumulator to memory and finish instruction.
+    # if PSH then store accumulator to stack and increment SP and finish instruction.
+    # if PUL then prepare mem_address for stack and decrement SP and go to phase 3.
+    # otherwise - then load from memory (set mem_address).
+    
+    ########
+    # phase 4 - get memory value (if needed) and execute operation.
+    
+    o0 = copy cpu_state_0
+    o1 = copy cpu_state_1
+    o2 = copy cpu_state_2
+    o3 = copy cpu_instr_0
+    o4 = copy cpu_instr_1
+    o5 = copy cpu_instr_2
+    o6 = copy cpu_instr_3
+    o7 = copy cpu_pc_0
+    o8 = copy cpu_pc_1
+    o9 = copy cpu_pc_2
+    o10 = copy cpu_pc_3
+    o11 = copy cpu_pc_4
+    o12 = copy cpu_pc_5
+    o13 = copy cpu_pc_6
+    o14 = copy cpu_pc_7
+    o15 = copy cpu_acc_0
+    o16 = copy cpu_acc_1
+    o17 = copy cpu_acc_2
+    o18 = copy cpu_acc_3
+    o19 = copy cpu_flag_c
+    o20 = copy cpu_flag_z
+    o21 = copy cpu_flag_n
+    o22 = copy cpu_sp_0
+    o23 = copy cpu_sp_1
+    o24 = copy cpu_sp_2
+    o25 = copy cpu_sp_3
+    o26 = copy cpu_tempreg_0
+    o27 = copy cpu_tempreg_1
+    o28 = copy cpu_tempreg_2
+    o29 = copy cpu_tempreg_3
+    o30 = copy mem_value_0
+    o31 = copy mem_value_1
+    o32 = copy mem_value_2
+    o33 = copy mem_value_3
+    # mem_rw
+    o34 = copy zero
+    # mem_address
+    o35 = copy zero
+    o36 = copy zero
+    o37 = copy zero
+    o38 = copy zero
+    o39 = copy zero
+    o40 = copy zero
+    o41 = copy zero
+    o42 = copy zero
+    # create
+    o43 = copy zero
+    # stop
+    o44 = copy zero
 copy:
     t = nand i0 i0
     o0 = nand t t
