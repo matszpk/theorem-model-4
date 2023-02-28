@@ -52,41 +52,40 @@ copy_4bit:
     o2 = copy i2
     o3 = copy i3
 full_adder:
-    alias a0 i0
-    alias a1 i1
-    alias a2 i2
-    t0 = nand a2 a1
-    t1 = nand a1 a0
-    t2 = nand a0 a2
-    t3 = nand t0 t1
-    t4 = nand t1 a0
-    t5 = nand t0 a2
-    t6 = nand t2 t3
-    t7 = nand t5 t4
-    t8 = nand a1 t6
-    t9 = nand t2 t7
-    o0 = nand t8 t9
-    o1 = nand t2 t6
+    t0 = nand i1 i2
+    t1 = nand t0 i1
+    t2 = nand i2 t0
+    t3 = nand t2 t1
+    t4 = nand t3 i0
+    t5 = nand i0 t4
+    t6 = nand t4 t3
+    o0 = nand t5 t6
+    o1 = nand t0 t4
 full_suber:
-    # layer 1
-    t3 = nand i0 i2
-    t4 = nand i2 i2
-    t5 = nand i0 i0
-    # layer 2
-    t6 = nand t5 t4
-    t7 = nand t3 i1
-    # layer 3
-    t8 = nand t6 t7
-    t9 = nand i1 i1
-    t10 = nand t3 t6
-    # layer 4
-    t11 = nand t9 t10
-    t12 = nand t6 t8
-    # layer 5
-    o0 = nand t11 t12
-    o1 = nand t8 t3
+    t0 = nand i2 i0
+    t1 = nand i0 t0
+    t2 = nand i2 t0
+    t3 = nand i1 i1
+    t4 = nand t1 t2
+    t5 = nand t3 t4
+    t6 = nand t4 i1
+    t7 = nand t5 t3
+    o0 = nand t6 t7
+    o1 = nand t0 t5
 half_adder:
-    o0 o1 = full_adder i0 i1 zero
+    t0 = nand i0 i1
+    t2 = nand i0 t0
+    t3 = nand t0 i1
+    o0 = nand t2 t3
+    o1 = nand t0 t0
+half_suber:
+    t0 = nand i1 i1
+    t1 = nand i0 i0
+    t1 = nand t0 t1
+    t0 = nand i1 i0
+    t2 = nand t1 t1
+    o0 = nand t0 t1
+    o1 = nand t2 t2
 carry_suber_4bit:
     n0 n1 n2 n3 = not_4bit i5 i6 i7 i8
     s0 c0 = full_adder i1 n0 i0

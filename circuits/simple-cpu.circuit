@@ -13,15 +13,15 @@
 # 4 - AND - perform bitwise AND on accumulator
 # 5 - OR - perform bitwise OR on accumulator
 # 6 - XOR - perform bitwise XOR on accumulator
-# 7 - ROL - rotate left 1 bit including C.
-# 8 - ROR - rotate right 1 bit including C.
-# 9 - BCC - branch if C=0
-# A - BNE - branch if Z=0
-# B - BPL - branch if N=0
-# C - JMP
-# D - PSH - push
-# E - PUL - pull, if SP=0 then STOP
-# F - CLC
+# 7 - CLC
+# 8 - ROL - rotate left 1 bit including C.
+# 9 - ROR - rotate right 1 bit including C.
+# A - BCC - branch if C=0
+# B - BNE - branch if Z=0
+# C - BPL - branch if N=0
+# D - JMP
+# E - PSH - push
+# F - PUL - pull, if SP=0 then STOP
 main:
     # input (state):
     alias cpu_state_0 i0
@@ -59,13 +59,96 @@ main:
     alias mem_value_2 i32
     alias mem_value_3 i33
     
+    one = nand zero zero
+    
+    # cpu_state_state_0_n = nand cpu_state_state_0 cpu_state_state_0
+    # cpu_state_state_1_n = nand cpu_state_state_1 cpu_state_state_1
+    # cpu_state_state_2_n = nand cpu_state_state_2 cpu_state_state_2
+    
     ########
     # phase 0 - fetch instruction
+    
+    # 1 if cpu_state_0 == 0
+    # ch_phase_0 = and_3 cpu_state_state_0_n cpu_state_state_1_n cpu_state_state_2_n
+    
+    alias mem_address_0_ph01 cpu_pc_0
+    alias mem_address_1_ph01 cpu_pc_1
+    alias mem_address_2_ph01 cpu_pc_2
+    alias mem_address_3_ph01 cpu_pc_3
+    alias mem_address_4_ph01 cpu_pc_4
+    alias mem_address_5_ph01 cpu_pc_5
+    alias mem_address_6_ph01 cpu_pc_6
+    alias mem_address_7_ph01 cpu_pc_7
+    
+    alias mem_rw_ph01 zero
+    
+    cpu_pc_0_ph0 cpu_pc_1_ph0 cpu_pc_2_ph0 cpu_pc_3_ph0 \
+        cpu_pc_4_ph0 cpu_pc_5_ph0 cpu_pc_6_ph0 cpu_pc_7_ph0 = \
+        inc_8bit cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7
+    
+    # next cpu state
+    alias cpu_state_0_ph0 one
+    alias cpu_state_1_ph0 zero
+    alias cpu_state_1_ph01 zero
     
     ########
     # phase 1 - fetch address nibble 0 only if not CLC, PSH, PUL, ROL, ROR
     # if CLC, ROL, ROR then go to phase 3.
     # if PSH, PUL then go to phase 2.
+    
+    # move mem_value into cpu_instr_0_ph1
+    cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1 cpu_instr_3_ph1 = copy_4bit \
+        mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    alias mem_address_0_ph1 cpu_pc_0
+    alias mem_address_1_ph1 cpu_pc_1
+    alias mem_address_2_ph1 cpu_pc_2
+    alias mem_address_3_ph1 cpu_pc_3
+    alias mem_address_4_ph1 cpu_pc_4
+    alias mem_address_5_ph1 cpu_pc_5
+    alias mem_address_6_ph1 cpu_pc_6
+    alias mem_address_7_ph1 cpu_pc_7
+    
+    alias mem_rw_ph0 zero
+    
+    # clc_rol_ror - instr==7 || instr==8 || instr==9 ->
+    #      (instr3 & !instr2 & !instr1) | (!instr3 & instr2 & instr1 & instr0)
+    #      nand(!(instr3 & !instr2 & !instr1), !(!instr3 & instr2 & instr1 & instr0))
+    #      nand(nand3(instr3, !instr2, !instr1), nand4(!instr3, instr2, instr1, instr0)) 
+    tmp0 = nand cpu_instr_3_ph1 cpu_instr_1_ph1
+    tmp1 = nand cpu_instr_0_ph1 cpu_instr_1_ph1
+    tmp2 = nand cpu_instr_3_ph1 tmp0
+    tmp3 = nand tmp0 cpu_instr_2_ph1
+    tmp4 = nand tmp2 tmp3
+    tmp5 = nand cpu_instr_2_ph1 tmp1
+    tmp6 = nand tmp5 tmp4
+    
+    # next cpu state
+    if_clc_rol_ror = nand tmp6 tmp6
+    alias cpu_state_0_ph1 if_clc_rol_ror
+    alias cpu_state_1_ph1 one
+    
+    # increment if not CLC, ROL or ROR.
+    cpu_pc_0_ph1 cpu_pc_1_ph1 cpu_pc_2_ph1 cpu_pc_3_ph1 = ite_4bit if_clc_rol_ror \
+        cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 \
+        cpu_pc_0_ph0 cpu_pc_1_ph0 cpu_pc_2_ph0 cpu_pc_3_ph0
+    cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 = ite_4bit if_clc_rol_ror \
+        cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
+        cpu_pc_4_ph0 cpu_pc_5_ph0 cpu_pc_6_ph0 cpu_pc_7_ph0
+    
+    # merge phase0 and phase1
+    # mem_address and mem_rw are same
+    cpu_pc_0_ph01 cpu_pc_1_ph01 cpu_pc_2_ph01 cpu_pc_3_ph01 = ite_4bit cpu_state_0 \
+        cpu_pc_0_ph1 cpu_pc_1_ph1 cpu_pc_2_ph1 cpu_pc_3_ph1 \
+        cpu_pc_0_ph0 cpu_pc_1_ph0 cpu_pc_2_ph0 cpu_pc_3_ph0
+    cpu_pc_4_ph01 cpu_pc_5_ph01 cpu_pc_6_ph01 cpu_pc_7_ph01 = ite_4bit cpu_state_0 \
+        cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 \
+        cpu_pc_4_ph0 cpu_pc_5_ph0 cpu_pc_6_ph0 cpu_pc_7_ph0
+    cpu_state_0_ph01 = ite cpu_state_0 cpu_state_0_ph1 cpu_state_0_ph0
+    cpu_state_1_ph01 = ite cpu_state_0 cpu_state_1_ph1 cpu_state_1_ph0
+    cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01 = ite_4bit cpu_state_0 \
+        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
+        cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1 cpu_instr_3_ph1
     
     ########
     # phase 2 - fetch address nibble 1 
@@ -141,6 +224,11 @@ xor:
     t0 = nand i0 n1
     t1 = nand n0 i1
     o0 = nand t0 t1
+and_3:
+    t0 = nand i0 i1
+    t0 = nand t0 t0
+    t1 = nand i2 t0
+    o0 = nand t1 t1
 # if i0 then i1 else i2
 ite:
     n0 = nand i0 i0
@@ -168,23 +256,29 @@ not_4bit:
     o2 = nand i2 i2
     o3 = nand i3 i3
 full_adder:
-    alias a0 i0
-    alias a1 i1
-    alias a2 i2
-    t0 = nand a2 a1
-    t1 = nand a1 a0
-    t2 = nand a0 a2
-    t3 = nand t0 t1
-    t4 = nand t1 a0
-    t5 = nand t0 a2
-    t6 = nand t2 t3
-    t7 = nand t5 t4
-    t8 = nand a1 t6
-    t9 = nand t2 t7
-    o0 = nand t8 t9
-    o1 = nand t2 t6
+    t0 = nand i1 i2
+    t1 = nand t0 i1
+    t2 = nand i2 t0
+    t3 = nand t2 t1
+    t4 = nand t3 i0
+    t5 = nand i0 t4
+    t6 = nand t4 t3
+    o0 = nand t5 t6
+    o1 = nand t0 t4
 half_adder:
-    o0 o1 = full_adder i0 i1 zero
+    t0 = nand i0 i1
+    t2 = nand i0 t0
+    t3 = nand t0 i1
+    o0 = nand t2 t3
+    o1 = nand t0 t0
+half_suber:
+    t0 = nand i1 i1
+    t1 = nand i0 i0
+    t1 = nand t0 t1
+    t0 = nand i1 i0
+    t2 = nand t1 t1
+    o0 = nand t0 t1
+    o1 = nand t2 t2
 # i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
 carry_adder_4bit:
     s0 c0 = full_adder i1 i5 i0
@@ -203,9 +297,16 @@ carry_suber_4bit:
     s3 c3 = full_adder i4 n3 c2
     o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
     o4 = copy c3
-# i0-i7 - 4-bit A, i8-i9 - 2-bit B
-adder_8bit_2bit:
-    t0 t1 t2 t3 t4 c0 = carry_adder_4bit zero i0 i1 i2 i3 i8 i9 zero zero
-    t4 t5 t6 t7 t8 ign = carry_adder_4bit c0 i4 i5 i6 i7 zero zero zero zero
-    o0 o1 o2 o3 = copy_4bit t0 t1 t2 t3
-    o4 o5 o6 o7 = copy_4bit t4 t5 t6 t7
+carry_inc_4bit:
+    s0 c0 = half_adder i1 i0
+    s1 c1 = half_adder i2 c0
+    s2 c2 = half_adder i3 c1
+    s3 c3 = half_adder i4 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+inc_8bit:
+    one = nand zero zero
+    s0 s1 s2 s3 c0 = carry_inc_4bit one i0 i1 i2 i3
+    s4 s5 s6 s7 ign = carry_inc_4bit c0 i4 i5 i6 i7
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 o5 o6 o7 = copy_4bit s4 s5 s6 s7
