@@ -280,7 +280,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                 .map(|i| {
                     if i < input_count {
                         vec![format!("i{i}")]
-                    } else if i == input_count {
+                    } else if i == 127 {
                         vec!["zero".to_string()]
                     } else {
                         vec![]
