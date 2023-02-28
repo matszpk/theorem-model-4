@@ -97,8 +97,10 @@ main:
     # if PSH, PUL then go to phase 2.
     
     # move mem_value into cpu_instr_0_ph1
-    cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1 cpu_instr_3_ph1 = copy_4bit \
-        mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    alias  cpu_instr_0_ph1 mem_value_0
+    alias  cpu_instr_1_ph1 mem_value_1
+    alias  cpu_instr_2_ph1 mem_value_2
+    alias  cpu_instr_3_ph1 mem_value_3
     
     alias mem_address_0_ph1 cpu_pc_0
     alias mem_address_1_ph1 cpu_pc_1
