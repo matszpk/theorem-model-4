@@ -28,7 +28,7 @@ struct RunCircuitArgs {
     #[clap(help = "Optional subcircuit name")]
     subcircuit: String,
     #[clap(help = "Input string")]
-    input: String,
+    input: Option<String>,
     #[clap(short, long, help = "Set trace mode")]
     trace: bool,
 }
@@ -87,34 +87,78 @@ fn main() -> ExitCode {
 
     match cli.command {
         Commands::Run(r) => {
-            if !r.input.chars().all(|c| c == '1' || c == '0') || r.input.len() > 128 {
-                eprintln!("Wrong given input");
-                return ExitCode::FAILURE;
-            }
-            let mut input: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-            for (i, c) in r.input.chars().enumerate() {
-                set_bit(&mut input[..], i, c == '1');
-            }
-            let (output, output_len) = if r.subcircuit != "main" {
-                let sc = circuit.subcircuits[&r.subcircuit] as usize;
-                (
-                    circuit
-                        .circuit
-                        .run_subcircuit(sc.try_into().unwrap(), &input[..], r.trace),
-                    circuit.circuit.subcircuits[sc].output_len,
-                )
+            if let Some(rinput) = r.input {
+                if !rinput.chars().all(|c| c == '1' || c == '0') || rinput.len() > 128 {
+                    eprintln!("Wrong given input");
+                    return ExitCode::FAILURE;
+                }
+                let mut input: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                for (i, c) in rinput.chars().enumerate() {
+                    set_bit(&mut input[..], i, c == '1');
+                }
+                let (output, output_len) = if r.subcircuit != "main" {
+                    let sc = circuit.subcircuits[&r.subcircuit] as usize;
+                    (
+                        circuit
+                            .circuit
+                            .run_subcircuit(sc.try_into().unwrap(), &input[..], r.trace),
+                        circuit.circuit.subcircuits[sc].output_len,
+                    )
+                } else {
+                    (
+                        circuit.circuit.run(&input[..], r.trace),
+                        circuit.circuit.output_len,
+                    )
+                };
+                println!(
+                    "Output: {}",
+                    (0..output_len as usize)
+                        .map(|i| if get_bit(&output[..], i) { "1" } else { "0" })
+                        .collect::<String>()
+                );
             } else {
-                (
-                    circuit.circuit.run(&input[..], r.trace),
-                    circuit.circuit.output_len,
-                )
-            };
-            println!(
-                "Output: {}",
-                (0..output_len as usize)
-                    .map(|i| if get_bit(&output[..], i) { "1" } else { "0" })
-                    .collect::<String>()
-            );
+                let input_len = if r.subcircuit != "main" {
+                    let sc = circuit.subcircuits[&r.subcircuit] as usize;
+                    circuit.circuit.subcircuits[sc].input_len
+                } else {
+                    circuit.circuit.input_len
+                };
+
+                for v in 0..(1u128 << input_len) {
+                    let mut input: [u8; 128 >> 3] =
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                    for i in 0..(input_len as usize) {
+                        set_bit(&mut input[..], i, ((v >> i) & 1) != 0);
+                    }
+
+                    let (output, output_len) = if r.subcircuit != "main" {
+                        let sc = circuit.subcircuits[&r.subcircuit] as usize;
+                        (
+                            circuit.circuit.run_subcircuit(
+                                sc.try_into().unwrap(),
+                                &input[..],
+                                r.trace,
+                            ),
+                            circuit.circuit.subcircuits[sc].output_len,
+                        )
+                    } else {
+                        (
+                            circuit.circuit.run(&input[..], r.trace),
+                            circuit.circuit.output_len,
+                        )
+                    };
+
+                    println!(
+                        "Table: {}: {}",
+                        (0..input_len as usize)
+                            .map(|i| if get_bit(&input[..], i) { "1" } else { "0" })
+                            .collect::<String>(),
+                        (0..output_len as usize)
+                            .map(|i| if get_bit(&output[..], i) { "1" } else { "0" })
+                            .collect::<String>()
+                    );
+                }
+            }
         }
         Commands::Test(r) => {
             let input = read_to_string(r.testsuite).unwrap();
