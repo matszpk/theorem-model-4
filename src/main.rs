@@ -149,7 +149,7 @@ fn main() -> ExitCode {
                     };
 
                     println!(
-                        "Table: {}: {}",
+                        "Entry: {}: {}",
                         (0..input_len as usize)
                             .map(|i| if get_bit(&input[..], i) { "1" } else { "0" })
                             .collect::<String>(),
