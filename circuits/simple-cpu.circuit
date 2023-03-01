@@ -252,8 +252,7 @@ main:
     if_bpl_jump = nand if_bpl_jump_tmp cpu_flag_n
     
     zero = copy zero
-    cpu_flag_c = copy cpu_flag_c
-    cpu_flag_n = copy cpu_flag_n
+    cpu_flag_c cpu_flag_z cpu_flag_n ign = copy_4bit cpu_flag_c cpu_flag_z cpu_flag_n zero
     cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 = copy_4bit cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
     
     # join it: if_bcc_jump or if_bne_jump or if_bpl_jump or if_jump
@@ -357,18 +356,18 @@ main:
     alias mem_rw_ph012 zero
     
     # merge phase0, phase1, phase2 and phase3
-    cpu_flag_c = copy cpu_flag_c
-    cpu_flag_n = copy cpu_flag_n
-    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 = copy_4bit cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
-    cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 ign = ite_4bit \
-        if_phase_3 cpu_state_0_ph3 cpu_state_1_ph3 cpu_state_2_ph3 zero \
-        cpu_state_0_ph012 cpu_state_1_ph012 cpu_state_2_ph012 zero
+    if_phase_3 = copy if_phase_3
+    cpu_flag_c cpu_flag_z cpu_flag_n ign = copy_4bit cpu_flag_c cpu_flag_z cpu_flag_n zero
     cpu_pc_0_ph0123 cpu_pc_1_ph0123 cpu_pc_2_ph0123 cpu_pc_3_ph0123 = ite_4bit if_phase_3 \
         cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 \
         cpu_pc_0_ph012 cpu_pc_1_ph012 cpu_pc_2_ph012 cpu_pc_3_ph012
     cpu_pc_4_ph0123 cpu_pc_5_ph0123 cpu_pc_6_ph0123 cpu_pc_7_ph0123 = ite_4bit if_phase_3 \
         cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 \
         cpu_pc_4_ph012 cpu_pc_5_ph012 cpu_pc_6_ph012 cpu_pc_7_ph012
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 = copy_4bit cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
+    cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 ign = ite_4bit \
+        if_phase_3 cpu_state_0_ph3 cpu_state_1_ph3 cpu_state_2_ph3 zero \
+        cpu_state_0_ph012 cpu_state_1_ph012 cpu_state_2_ph012 zero
     cpu_instr_0_ph0123 cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 = ite_4bit \
         if_phase_3 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
         cpu_instr_0_ph012 cpu_instr_1_ph012 cpu_instr_2_ph012 cpu_instr_3_ph012
@@ -430,10 +429,10 @@ main:
     cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 ign = copy_4bit \
         cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 zero
     cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 = copy_4bit cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
-    cpu_sp_0_ph0123 cpu_sp_1_ph0123 cpu_sp_2_ph0123 cpu_sp_3_ph0123 = copy_4bit \
-        cpu_sp_0_ph0123 cpu_sp_1_ph0123 cpu_sp_2_ph0123 cpu_sp_3_ph0123
     cpu_instr_0_ph0123 cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 = copy_4bit \
         cpu_instr_0_ph0123 cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123
+    cpu_sp_0_ph0123 cpu_sp_1_ph0123 cpu_sp_2_ph0123 cpu_sp_3_ph0123 = copy_4bit \
+        cpu_sp_0_ph0123 cpu_sp_1_ph0123 cpu_sp_2_ph0123 cpu_sp_3_ph0123
     cpu_tempreg_0_ph0123 cpu_tempreg_1_ph0123 cpu_tempreg_2_ph0123 cpu_tempreg_3_ph0123 = \
         copy_4bit \
         cpu_tempreg_0_ph0123 cpu_tempreg_1_ph0123 cpu_tempreg_2_ph0123 cpu_tempreg_3_ph0123
@@ -451,8 +450,7 @@ main:
         copy_4bit \
         mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123
     
-    cpu_flag_n = copy cpu_flag_n
-    cpu_flag_c = copy cpu_flag_c
+    cpu_flag_c cpu_flag_z cpu_flag_n ign = copy_4bit cpu_flag_c cpu_flag_z cpu_flag_n zero
     zero = copy zero
     
     # 2 - ADC - add to accumulator (A + M + C)
@@ -557,6 +555,7 @@ main:
     if_clc = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3_n
     
     cpu_flag_n_tall = ite if_clc cpu_flag_n cpu_acc_3
+    cpu_flag_z_tall = ite if_clc cpu_flag_z cpu_acc_3
     
     # merge phase0, phase1, phase2, phase3, phase4
     
