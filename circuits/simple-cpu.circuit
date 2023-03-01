@@ -269,6 +269,7 @@ main:
     tmp7 = nand tmp3 tmp6
     tmp8 = nand tmp7 tmp3
     if_sta_psh = nand tmp8 tmp8
+    alias if_not_sta_psh tmp8 
     
     alias mem_rw_ph3 if_sta_psh
     alias mem_value_0_ph3 cpu_acc_0
@@ -304,7 +305,18 @@ main:
     mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 = ite_4bit \
         if_psh_pul zero zero zero zero mem_value_0 mem_value_1 mem_value_2 mem_value_3
     
+    # zero state - if PSH or STA, otherwise next is 4.
+    alias cpu_state_2_ph3 if_not_sta_psh
+    alias cpu_state_1_ph3 zero
+    alias cpu_state_0_ph3 zero
+    
     # merge phase0, phase1, phase2 and phase3
+    cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 ign = ite_4bit \
+        if_phase_3 cpu_state_0_ph3 cpu_state_1_ph3 cpu_state_2_ph3 zero \
+        cpu_state_0_ph012 cpu_state_1_ph012 cpu_state_2_ph012 zero
+    cpu_instr_0_ph0123 cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 = ite_4bit \
+        if_phase_3 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
+        cpu_instr_0_ph012 cpu_instr_1_ph012 cpu_instr_2_ph012 cpu_instr_3_ph012
     cpu_pc_0_ph0123 cpu_pc_1_ph0123 cpu_pc_2_ph0123 cpu_pc_3_ph0123 = ite_4bit if_phase_3 \
         cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 \
         cpu_pc_0_ph012 cpu_pc_1_ph012 cpu_pc_2_ph012 cpu_pc_3_ph012
@@ -318,21 +330,21 @@ main:
     
     # merge phase0, phase1, phase2, phase3, phase4
     
-    o0 = copy cpu_state_0_ph012
-    o1 = copy cpu_state_1_ph012
-    o2 = copy cpu_state_2_ph012
-    o3 = copy cpu_instr_0_ph012
-    o4 = copy cpu_instr_1_ph012
-    o5 = copy cpu_instr_2_ph012
-    o6 = copy cpu_instr_3_ph012
-    o7 = copy cpu_pc_0_ph012
-    o8 = copy cpu_pc_1_ph012
-    o9 = copy cpu_pc_2_ph012
-    o10 = copy cpu_pc_3_ph012
-    o11 = copy cpu_pc_4_ph012
-    o12 = copy cpu_pc_5_ph012
-    o13 = copy cpu_pc_6_ph012
-    o14 = copy cpu_pc_7_ph012
+    o0 = copy cpu_state_0_ph0123
+    o1 = copy cpu_state_1_ph0123
+    o2 = copy cpu_state_2_ph0123
+    o3 = copy cpu_instr_0_ph0123
+    o4 = copy cpu_instr_1_ph0123
+    o5 = copy cpu_instr_2_ph0123
+    o6 = copy cpu_instr_3_ph0123
+    o7 = copy cpu_pc_0_ph0123
+    o8 = copy cpu_pc_1_ph0123
+    o9 = copy cpu_pc_2_ph0123
+    o10 = copy cpu_pc_3_ph0123
+    o11 = copy cpu_pc_4_ph0123
+    o12 = copy cpu_pc_5_ph0123
+    o13 = copy cpu_pc_6_ph0123
+    o14 = copy cpu_pc_7_ph0123
     o15 = copy cpu_acc_0_ph012
     o16 = copy cpu_acc_1_ph012
     o17 = copy cpu_acc_2_ph012
