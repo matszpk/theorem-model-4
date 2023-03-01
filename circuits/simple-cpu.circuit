@@ -238,6 +238,22 @@ main:
     tmp3 = nand tmp2 tmp1
     tmp4 = nand tmp0 tmp2
     if_jump = nand tmp4 tmp5
+    # TODO: handle conditional jumps: BCC, BNE, BPL
+    cpu_instr_2_n = nand cpu_instr_2 cpu_instr_2
+    cpu_instr_1_n = nand cpu_instr_1 cpu_instr_1
+    cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
+    if_bcc_bne = and_3 cpu_instr_1 cpu_instr_2_n cpu_instr_3
+    if_bpl = and_4 cpu_instr_1_n cpu_instr_1_n cpu_instr_2 cpu_instr_3
+    cpu_flag_c_n = nand cpu_flag_c cpu_flag_c
+    cpu_flag_z_n = nand cpu_flag_z cpu_flag_z
+    cpu_flag_n_n = nand cpu_flag_n cpu_flag_n
+    if_bcc_jump = and_3 if_bcc_bne cpu_instr_0_n cpu_flag_c_n
+    if_bne_jump = and_3 if_bcc_bne cpu_instr_0 cpu_flag_z_n
+    if_bpl_jump_tmp = nand if_bpl cpu_flag_n_n
+    if_bpl_jump = nand if_bpl_jump_tmp cpu_flag_n
+    
+    # join it: if_bcc_jump or if_bne_jump or if_bpl_jump or if_jump
+    if_jump = or_4 if_bcc_jump if_bne_jump if_bpl_jump if_jump
     
     cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 = ite_4bit if_jump \
         cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
@@ -281,6 +297,7 @@ main:
         cpu_flag_c_ph0123 cpu_flag_z_ph0123 cpu_flag_n_ph0123 zero
     cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 = copy_4bit \
         cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
+    ###################
     
     tmp0 = nand cpu_instr_1 cpu_instr_1
     tmp1 = nand cpu_instr_3 cpu_instr_2
@@ -371,6 +388,27 @@ main:
     ########
     # phase 4 - get memory value (if needed) and execute operation.
     
+    # 0 - LDA - load into accumulator
+    
+    # 1 - STA - store accumulator
+    
+    # 2 - ADC - add to accumulator (A + M + C)
+    
+    # 3 - SBC - subtract from accumulator (A - NOT(M) +C)
+    
+    # 4 - AND - perform bitwise AND on accumulator
+    # 5 - OR - perform bitwise OR on accumulator
+    # 6 - XOR - perform bitwise XOR on accumulator
+    # 7 - CLC
+    # 8 - ROL - rotate left 1 bit including C.
+    # 9 - ROR - rotate right 1 bit including C.
+    # A - BCC - branch if C=0
+    # B - BNE - branch if Z=0
+    # C - BPL - branch if N=0
+    # D - JMP
+    # E - PSH - push
+    # F - PUL - pull, if SP=0 then STOP
+    
     # merge phase0, phase1, phase2, phase3, phase4
     
     o0 = copy cpu_state_0_ph0123
@@ -443,6 +481,16 @@ and_4:
     t1 = nand t1 t1
     t2 = nand t0 t1
     o0 = nand t2 t2
+or_4:
+    t0 = nand i0 i0
+    t1 = nand i1 i1
+    t2 = nand i2 i2
+    t3 = nand i3 i3
+    t4 = nand t1 t3
+    t5 = nand i2 i0
+    t6 = nand t4 t4
+    t7 = nand i3 t5
+    o0 = nand t6 t7
 # if i0 then i1 else i2
 ite:
     n0 = nand i0 i0
