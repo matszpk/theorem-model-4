@@ -372,7 +372,13 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                         if let Some(var_pos) = var_map.get(name) {
                             let var_pos = *var_pos as usize;
                             vars[var_pos].push(new_name.clone());
-                            var_map.insert(new_name.clone(), var_pos.try_into().unwrap());
+
+                            if let Some(v) =
+                                var_map.insert(new_name.clone(), var_pos.try_into().unwrap())
+                            {
+                                // if replaced by new
+                                vars[v as usize].clear();
+                            }
                         } else {
                             return Err(ConvertError::UnknownVariableInAlias(
                                 name.clone(),
