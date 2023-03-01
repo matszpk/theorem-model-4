@@ -407,6 +407,7 @@ main:
     alias cpu_acc_1_t0 mem_value_1
     alias cpu_acc_2_t0 mem_value_2
     alias cpu_acc_3_t0 mem_value_3
+    alias cpu_flag_c_t0 cpu_flag_c
     
     # 1 - STA - store accumulator - done in phase 3
     
@@ -422,6 +423,11 @@ main:
         cpu_flag_c cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
         mem_value_0 mem_value_1 mem_value_2 mem_value_3
     
+    cpu_acc_0_t12 cpu_acc_1_t12 cpu_acc_2_t12 cpu_acc_3_t12 = ite_4bit cpu_instr_0 \
+        cpu_acc_0_t2 cpu_acc_1_t2 cpu_acc_2_t2 cpu_acc_3_t2 \
+        cpu_acc_0_t1 cpu_acc_1_t1 cpu_acc_2_t1 cpu_acc_3_t1
+    cpu_flag_c_t12 = ite cpu_instr_0 cpu_flag_c_t2 cpu_flag_c_t1
+    
     # 4 - AND - perform bitwise AND on accumulator
     
     cpu_acc_0_t3 cpu_acc_1_t3 cpu_acc_2_t3 cpu_acc_3_t3 = and_4bit \
@@ -430,15 +436,26 @@ main:
     
     # 5 - OR - perform bitwise OR on accumulator
     
-    cpu_acc_0_t3 cpu_acc_1_t3 cpu_acc_2_t3 cpu_acc_3_t3 = or_4bit \
+    cpu_instr_0 = copy cpu_instr_0
+    cpu_instr_1 = copy cpu_instr_1
+    
+    cpu_acc_0_t4 cpu_acc_1_t4 cpu_acc_2_t4 cpu_acc_3_t4 = or_4bit \
         cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
         mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    cpu_acc_0_t34 cpu_acc_1_t34 cpu_acc_2_t34 cpu_acc_3_t34 = ite_4bit cpu_instr_0 \
+        cpu_acc_0_t4 cpu_acc_1_t4 cpu_acc_2_t4 cpu_acc_3_t4 \
+        cpu_acc_0_t3 cpu_acc_1_t3 cpu_acc_2_t3 cpu_acc_3_t3
     
     # 6 - XOR - perform bitwise XOR on accumulator
     
     cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 = xor_4bit \
         cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
         mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    cpu_acc_0_t345 cpu_acc_1_t345 cpu_acc_2_t345 cpu_acc_3_t345 = ite_4bit cpu_instr_1 \
+        cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 \
+        cpu_acc_0_t34 cpu_acc_1_t34 cpu_acc_2_t34 cpu_acc_3_t34
     
     # 7 - CLC
     
@@ -459,6 +476,11 @@ main:
     alias cpu_acc_1_t7 cpu_acc_2
     alias cpu_acc_2_t7 cpu_acc_3
     alias cpu_acc_3_t7 cpu_flag_c
+    
+    cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67 = ite_4bit cpu_instr_0 \
+        cpu_acc_0_t7 cpu_acc_1_t7 cpu_acc_2_t7 cpu_acc_3_t7 \
+        cpu_acc_0_t6 cpu_acc_1_t6 cpu_acc_2_t6 cpu_acc_3_t6
+    cpu_flag_c_t67 = ite cpu_instr_0 cpu_flag_c_t7 cpu_flag_c_t6
     
     # A - BCC - branch if C=0 - done in phase 3
     # B - BNE - branch if Z=0 - done in phase 3
