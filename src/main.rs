@@ -22,6 +22,12 @@ struct Cli {
 }
 
 #[derive(Parser)]
+struct CheckCircuitArgs {
+    #[clap(help = "Set circuit filename")]
+    circuit: PathBuf,
+}
+
+#[derive(Parser)]
 struct RunCircuitArgs {
     #[clap(help = "Set circuit filename")]
     circuit: PathBuf,
@@ -45,6 +51,8 @@ struct TestCircuitArgs {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[clap(about = "Check cicrcuit file syntax")]
+    Check(CheckCircuitArgs),
     #[clap(about = "Run circuit")]
     Run(RunCircuitArgs),
     #[clap(about = "Test circuit")]
@@ -54,26 +62,20 @@ enum Commands {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let circuit_file_name = match cli.command {
+        Commands::Check(ref r) => r.circuit.clone(),
         Commands::Run(ref r) => r.circuit.clone(),
         Commands::Test(ref r) => r.circuit.clone(),
     };
 
     let input = divide_lines(&read_to_string(circuit_file_name).unwrap());
     let circuit = match parse_circuit_all(&input) {
-        Ok((_, parsed)) => {
-            //println!("{parsed:?}");
-            match CircuitDebug::try_from(parsed) {
-                Ok(circuit) => {
-                    // println!("Circuit: {:?}", circuit.circuit);
-                    // println!("Subcircuit: {:?}", circuit.subcircuits);
-                    circuit
-                }
-                Err(e) => {
-                    eprintln!("Convert Error: {}", e);
-                    return ExitCode::FAILURE;
-                }
+        Ok((_, parsed)) => match CircuitDebug::try_from(parsed) {
+            Ok(circuit) => circuit,
+            Err(e) => {
+                eprintln!("Convert Error: {}", e);
+                return ExitCode::FAILURE;
             }
-        }
+        },
         Err(e) => {
             match e {
                 nom::Err::Error(e) | nom::Err::Failure(e) => {
@@ -86,6 +88,9 @@ fn main() -> ExitCode {
     };
 
     match cli.command {
+        Commands::Check(_) => {
+            println!("Ok - Passed.");
+        }
         Commands::Run(r) => {
             if let Some(rinput) = r.input {
                 if !rinput.chars().all(|c| c == '1' || c == '0') || rinput.len() > 128 {
