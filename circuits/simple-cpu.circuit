@@ -154,6 +154,12 @@ main:
     
     zero = copy zero
     
+    mem_address_0_ph012 mem_address_1_ph012 mem_address_2_ph012 mem_address_3_ph012 = copy_4bit \
+        mem_address_0_ph012 mem_address_1_ph012 mem_address_2_ph012 mem_address_3_ph012
+    mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 mem_address_7_ph012 = copy_4bit \
+        mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 mem_address_7_ph012
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 = copy_4bit cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
+    
     ########
     # phase 2 - fetch address nibble 1 
     # only if not CLC, PSH, PUL, ROL, ROR.
@@ -194,13 +200,16 @@ main:
         cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01
     
     # prepare for phase 012
-    cpu_acc_0_ph012 cpu_acc_1_ph012 cpu_acc_2_ph012 cpu_acc_3_ph012 = copy_4bit \
-        cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
-    cpu_flag_c_ph012 cpu_flag_z_ph012 cpu_flag_n_ph012 cpu_sp_0_ph012 = copy_4bit \
+    cpu_flag_c_ph0123 cpu_flag_z_ph0123 cpu_flag_n_ph0123 cpu_sp_0_ph012 = copy_4bit \
         cpu_flag_c cpu_flag_z cpu_flag_n cpu_sp_0
     cpu_sp_1_ph012 cpu_sp_2_ph012 cpu_sp_3_ph012 ign = copy_4bit cpu_sp_1 cpu_sp_2 cpu_sp_3 zero
     mem_value_0_ph012 mem_value_1_ph012 mem_value_2_ph012 mem_value_3_ph012 = copy_4bit \
         mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    alias cpu_acc_0_ph0123 cpu_acc_0
+    alias cpu_acc_1_ph0123 cpu_acc_1
+    alias cpu_acc_2_ph0123 cpu_acc_2
+    alias cpu_acc_3_ph0123 cpu_acc_3
     
     alias mem_value_0 mem_value_0_ph012
     alias mem_value_1 mem_value_1_ph012
@@ -243,14 +252,12 @@ main:
     cpu_pc_4_ph012 cpu_pc_5_ph012 cpu_pc_6_ph012 cpu_pc_7_ph012 = copy_4bit \
         cpu_pc_4_ph012 cpu_pc_5_ph012 cpu_pc_6_ph012 cpu_pc_7_ph012
     cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 = copy_4bit cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
+    cpu_acc_0_ph0123 cpu_acc_1_ph0123 cpu_acc_2_ph0123 cpu_acc_3_ph0123 = copy_4bit \
+        cpu_acc_0_ph0123 cpu_acc_1_ph0123 cpu_acc_2_ph0123 cpu_acc_3_ph0123
+    cpu_flag_c_ph0123 cpu_flag_z_ph0123 cpu_flag_n_ph0123 ign = copy_4bit \
+        cpu_flag_c_ph0123 cpu_flag_z_ph0123 cpu_flag_n_ph0123 zero
     cpu_tempreg_0_ph012 cpu_tempreg_1_ph012 cpu_tempreg_2_ph012 cpu_tempreg_3_ph012 = copy_4bit \
         cpu_tempreg_0_ph012 cpu_tempreg_1_ph012 cpu_tempreg_2_ph012 cpu_tempreg_3_ph012
-    mem_value_0_ph012 mem_value_1_ph012 mem_value_2_ph012 mem_value_3_ph012 = copy_4bit \
-        mem_value_0_ph012 mem_value_1_ph012 mem_value_2_ph012 mem_value_3_ph012
-    cpu_acc_0_ph012 cpu_acc_1_ph012 cpu_acc_2_ph012 cpu_acc_3_ph012 = copy_4bit \
-        cpu_acc_0_ph012 cpu_acc_1_ph012 cpu_acc_2_ph012 cpu_acc_3_ph012
-    cpu_flag_c_ph012 cpu_flag_z_ph012 cpu_flag_n_ph012 ign = copy_4bit \
-        cpu_flag_c_ph012 cpu_flag_z_ph012 cpu_flag_n_ph012 zero
     zero = copy zero
     if_phase_3 cpu_state_0_ph012 cpu_state_1_ph012 cpu_state_2_ph012 = copy_4bit \
         if_phase_3 cpu_state_0_ph012 cpu_state_1_ph012 cpu_state_2_ph012
@@ -258,6 +265,22 @@ main:
         cpu_instr_0_ph012 cpu_instr_1_ph012 cpu_instr_2_ph012 cpu_instr_3_ph012
     cpu_sp_0_ph012 cpu_sp_1_ph012 cpu_sp_2_ph012 cpu_sp_3_ph012 = copy_4bit \
         cpu_sp_0_ph012 cpu_sp_1_ph012 cpu_sp_2_ph012 cpu_sp_3_ph012
+    cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 = copy_4bit \
+        cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3
+    mem_value_0_ph012 mem_value_1_ph012 mem_value_2_ph012 mem_value_3_ph012 = copy_4bit \
+        mem_value_0_ph012 mem_value_1_ph012 mem_value_2_ph012 mem_value_3_ph012
+    
+    mem_address_0_ph012 mem_address_1_ph012 mem_address_2_ph012 mem_address_3_ph012 = copy_4bit \
+        mem_address_0_ph012 mem_address_1_ph012 mem_address_2_ph012 mem_address_3_ph012
+    mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 mem_address_7_ph012 = copy_4bit \
+        mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 mem_address_7_ph012
+    
+    cpu_acc_0_ph0123 cpu_acc_1_ph0123 cpu_acc_2_ph0123 cpu_acc_3_ph0123 = copy_4bit \
+        cpu_acc_0_ph0123 cpu_acc_1_ph0123 cpu_acc_2_ph0123 cpu_acc_3_ph0123
+    cpu_flag_c_ph0123 cpu_flag_z_ph0123 cpu_flag_n_ph0123 ign = copy_4bit \
+        cpu_flag_c_ph0123 cpu_flag_z_ph0123 cpu_flag_n_ph0123 zero
+    cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 = copy_4bit \
+        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
     
     tmp0 = nand cpu_instr_1 cpu_instr_1
     tmp1 = nand cpu_instr_3 cpu_instr_2
@@ -310,6 +333,8 @@ main:
     alias cpu_state_1_ph3 zero
     alias cpu_state_0_ph3 zero
     
+    alias mem_rw_ph012 zero
+    
     # merge phase0, phase1, phase2 and phase3
     cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 ign = ite_4bit \
         if_phase_3 cpu_state_0_ph3 cpu_state_1_ph3 cpu_state_2_ph3 zero \
@@ -323,6 +348,24 @@ main:
     cpu_pc_4_ph0123 cpu_pc_5_ph0123 cpu_pc_6_ph0123 cpu_pc_7_ph0123 = ite_4bit if_phase_3 \
         cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 \
         cpu_pc_4_ph012 cpu_pc_5_ph012 cpu_pc_6_ph012 cpu_pc_7_ph012
+    cpu_sp_0_ph0123 cpu_sp_1_ph0123 cpu_sp_2_ph0123 cpu_sp_3_ph0123 = ite_4bit if_phase_3 \
+        cpu_sp_0_ph3 cpu_sp_1_ph3 cpu_sp_2_ph3 cpu_sp_3_ph3 \
+        cpu_sp_0_ph012 cpu_sp_1_ph012 cpu_sp_2_ph012 cpu_sp_3_ph012
+    cpu_tempreg_0_ph0123 cpu_tempreg_1_ph0123 cpu_tempreg_2_ph0123 cpu_tempreg_3_ph0123 = \
+        ite_4bit if_phase_3 \
+        cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
+        cpu_tempreg_0_ph012 cpu_tempreg_1_ph012 cpu_tempreg_2_ph012 cpu_tempreg_3_ph012
+    mem_value_0_ph0123 mem_value_1_ph0123 mem_value_2_ph0123 mem_value_3_ph0123 = ite_4bit \
+        if_phase_3 mem_value_0_ph3 mem_value_1_ph3 mem_value_2_ph3 mem_value_3_ph3 \
+        mem_value_0_ph012 mem_value_1_ph012 mem_value_2_ph012 mem_value_3_ph012
+    
+    mem_address_0_ph0123 mem_address_1_ph0123 mem_address_2_ph0123 mem_address_3_ph0123 = ite_4bit \
+        if_phase_3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
+        mem_address_0_ph012 mem_address_1_ph012 mem_address_2_ph012 mem_address_3_ph012
+    mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123 = ite_4bit \
+        if_phase_3 mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 \
+        mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 mem_address_7_ph012
+    mem_rw_ph0123 = ite if_phase_3 mem_rw_ph3 mem_rw_ph012
     
     zero = copy zero
     ########
@@ -345,36 +388,36 @@ main:
     o12 = copy cpu_pc_5_ph0123
     o13 = copy cpu_pc_6_ph0123
     o14 = copy cpu_pc_7_ph0123
-    o15 = copy cpu_acc_0_ph012
-    o16 = copy cpu_acc_1_ph012
-    o17 = copy cpu_acc_2_ph012
-    o18 = copy cpu_acc_3_ph012
-    o19 = copy cpu_flag_c_ph012
-    o20 = copy cpu_flag_z_ph012
-    o21 = copy cpu_flag_n_ph012
-    o22 = copy cpu_sp_0_ph012
-    o23 = copy cpu_sp_1_ph012
-    o24 = copy cpu_sp_2_ph012
-    o25 = copy cpu_sp_3_ph012
-    o26 = copy cpu_tempreg_0_ph012
-    o27 = copy cpu_tempreg_1_ph012
-    o28 = copy cpu_tempreg_2_ph012
-    o29 = copy cpu_tempreg_3_ph012
-    o30 = copy mem_value_0_ph012
-    o31 = copy mem_value_1_ph012
-    o32 = copy mem_value_2_ph012
-    o33 = copy mem_value_3_ph012
+    o15 = copy cpu_acc_0_ph0123
+    o16 = copy cpu_acc_1_ph0123
+    o17 = copy cpu_acc_2_ph0123
+    o18 = copy cpu_acc_3_ph0123
+    o19 = copy cpu_flag_c_ph0123
+    o20 = copy cpu_flag_z_ph0123
+    o21 = copy cpu_flag_n_ph0123
+    o22 = copy cpu_sp_0_ph0123
+    o23 = copy cpu_sp_1_ph0123
+    o24 = copy cpu_sp_2_ph0123
+    o25 = copy cpu_sp_3_ph0123
+    o26 = copy cpu_tempreg_0_ph0123
+    o27 = copy cpu_tempreg_1_ph0123
+    o28 = copy cpu_tempreg_2_ph0123
+    o29 = copy cpu_tempreg_3_ph0123
+    o30 = copy mem_value_0_ph0123
+    o31 = copy mem_value_1_ph0123
+    o32 = copy mem_value_2_ph0123
+    o33 = copy mem_value_3_ph0123
     # mem_rw
-    o34 = copy zero
+    o34 = copy mem_rw_ph0123
     # mem_address
-    o35 = copy zero
-    o36 = copy zero
-    o37 = copy zero
-    o38 = copy zero
-    o39 = copy zero
-    o40 = copy zero
-    o41 = copy zero
-    o42 = copy zero
+    o35 = copy mem_address_0_ph0123
+    o36 = copy mem_address_1_ph0123
+    o37 = copy mem_address_2_ph0123
+    o38 = copy mem_address_3_ph0123
+    o39 = copy mem_address_4_ph0123
+    o40 = copy mem_address_5_ph0123
+    o41 = copy mem_address_6_ph0123
+    o42 = copy mem_address_7_ph0123
     # create
     o43 = copy zero
     # stop
