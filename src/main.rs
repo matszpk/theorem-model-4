@@ -90,6 +90,11 @@ fn main() -> ExitCode {
     match cli.command {
         Commands::Check(_) => {
             println!("Ok - Passed.");
+            println!(
+                "Length: {}, Subcircuits: {}",
+                circuit.circuit.circuit.len(),
+                circuit.circuit.subcircuits.len()
+            );
         }
         Commands::Run(r) => {
             if let Some(rinput) = r.input {
