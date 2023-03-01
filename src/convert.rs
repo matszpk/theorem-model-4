@@ -357,8 +357,14 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                     var_map.remove(var_name);
                                 }
                             }
+                            if let Some(v) =
+                                var_map.insert(output.clone(), var_pos.try_into().unwrap())
+                            {
+                                // if replaced by new
+                                vars[v as usize].clear();
+                            }
+
                             vars[var_pos].push(output.clone());
-                            var_map.insert(output.clone(), var_pos.try_into().unwrap());
                             var_pos = (var_pos + 1) & 127;
                         }
                     }

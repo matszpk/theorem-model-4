@@ -31,7 +31,8 @@ main:
     alias cpu_instr_1 i4
     alias cpu_instr_2 i5
     alias cpu_instr_3 i6
-    alias cpu_pc_0 i7   # program counter
+    # program counter
+    alias cpu_pc_0 i7
     alias cpu_pc_1 i8
     alias cpu_pc_2 i9
     alias cpu_pc_3 i10
@@ -46,7 +47,8 @@ main:
     alias cpu_flag_c i19
     alias cpu_flag_z i20
     alias cpu_flag_n i21
-    alias cpu_sp_0 i22  # stack pointer
+    # stack pointer
+    alias cpu_sp_0 i22
     alias cpu_sp_1 i23
     alias cpu_sp_2 i24
     alias cpu_sp_3 i25
@@ -71,16 +73,16 @@ main:
     # 1 if cpu_state_0 == 0
     # ch_phase_0 = and_3 cpu_state_state_0_n cpu_state_state_1_n cpu_state_state_2_n
     
-    alias mem_address_0_ph01 cpu_pc_0
-    alias mem_address_1_ph01 cpu_pc_1
-    alias mem_address_2_ph01 cpu_pc_2
-    alias mem_address_3_ph01 cpu_pc_3
-    alias mem_address_4_ph01 cpu_pc_4
-    alias mem_address_5_ph01 cpu_pc_5
-    alias mem_address_6_ph01 cpu_pc_6
-    alias mem_address_7_ph01 cpu_pc_7
+    alias mem_address_0_ph012 cpu_pc_0
+    alias mem_address_1_ph012 cpu_pc_1
+    alias mem_address_2_ph012 cpu_pc_2
+    alias mem_address_3_ph012 cpu_pc_3
+    alias mem_address_4_ph012 cpu_pc_4
+    alias mem_address_5_ph012 cpu_pc_5
+    alias mem_address_6_ph012 cpu_pc_6
+    alias mem_address_7_ph012 cpu_pc_7
     
-    alias mem_rw_ph01 zero
+    alias mem_rw_ph012 zero
     
     cpu_pc_0_ph0 cpu_pc_1_ph0 cpu_pc_2_ph0 cpu_pc_3_ph0 \
         cpu_pc_4_ph0 cpu_pc_5_ph0 cpu_pc_6_ph0 cpu_pc_7_ph0 = \
@@ -97,10 +99,10 @@ main:
     # if PSH, PUL then go to phase 2.
     
     # move mem_value into cpu_instr_0_ph1
-    alias  cpu_instr_0_ph1 mem_value_0
-    alias  cpu_instr_1_ph1 mem_value_1
-    alias  cpu_instr_2_ph1 mem_value_2
-    alias  cpu_instr_3_ph1 mem_value_3
+    alias cpu_instr_0_ph1 mem_value_0
+    alias cpu_instr_1_ph1 mem_value_1
+    alias cpu_instr_2_ph1 mem_value_2
+    alias cpu_instr_3_ph1 mem_value_3
     
     alias mem_address_0_ph1 cpu_pc_0
     alias mem_address_1_ph1 cpu_pc_1
@@ -138,21 +140,56 @@ main:
     
     # merge phase0 and phase1
     # mem_address and mem_rw are same
-    cpu_pc_0_ph01 cpu_pc_1_ph01 cpu_pc_2_ph01 cpu_pc_3_ph01 = ite_4bit cpu_state_0 \
+    cpu_pc_0_ph012 cpu_pc_1_ph012 cpu_pc_2_ph012 cpu_pc_3_ph012 = ite_4bit cpu_state_0 \
         cpu_pc_0_ph1 cpu_pc_1_ph1 cpu_pc_2_ph1 cpu_pc_3_ph1 \
         cpu_pc_0_ph0 cpu_pc_1_ph0 cpu_pc_2_ph0 cpu_pc_3_ph0
-    cpu_pc_4_ph01 cpu_pc_5_ph01 cpu_pc_6_ph01 cpu_pc_7_ph01 = ite_4bit cpu_state_0 \
+    cpu_pc_4_ph012 cpu_pc_5_ph012 cpu_pc_6_ph012 cpu_pc_7_ph012 = ite_4bit cpu_state_0 \
         cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 \
         cpu_pc_4_ph0 cpu_pc_5_ph0 cpu_pc_6_ph0 cpu_pc_7_ph0
     cpu_state_0_ph01 = ite cpu_state_0 cpu_state_0_ph1 cpu_state_0_ph0
     cpu_state_1_ph01 = ite cpu_state_0 cpu_state_1_ph1 cpu_state_1_ph0
-    cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01 = ite_4bit cpu_state_0 \
-        cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1 cpu_instr_3_ph1 \
+    cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01 = ite_4bit \
+        cpu_state_0 cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1 cpu_instr_3_ph1 \
         cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
+    
+    zero = copy zero
     
     ########
     # phase 2 - fetch address nibble 1 
     # only if not CLC, PSH, PUL, ROL, ROR.
+    
+    # move mem_value into cpu_tempreg_0 - first nibble of address argument
+    alias cpu_tempreg_0_ph2 mem_value_0
+    alias cpu_tempreg_1_ph2 mem_value_1
+    alias cpu_tempreg_2_ph2 mem_value_2
+    alias cpu_tempreg_3_ph2 mem_value_3
+    
+    # this same operation like in phase 1 - increment PC.
+    alias cpu_pc_0_ph2 cpu_pc_0_ph1
+    alias cpu_pc_1_ph2 cpu_pc_1_ph1
+    alias cpu_pc_2_ph2 cpu_pc_2_ph1
+    alias cpu_pc_3_ph2 cpu_pc_3_ph1
+    alias cpu_pc_4_ph2 cpu_pc_4_ph1
+    alias cpu_pc_5_ph2 cpu_pc_5_ph1
+    alias cpu_pc_6_ph2 cpu_pc_6_ph1
+    alias cpu_pc_7_ph2 cpu_pc_7_ph1
+    
+    alias cpu_state_0_ph2 one
+    alias cpu_state_1_ph2 one
+    
+    # merge phase0, phase1 and phase2
+    cpu_state_0_n = nand cpu_state_0 cpu_state_0
+    cpu_state_1_n = nand cpu_state_1 cpu_state_1
+    if_phase_2 = and_3 cpu_state_0_n cpu_state_1_n cpu_state_2
+    
+    cpu_tempreg_0_ph012 cpu_tempreg_1_ph012 cpu_tempreg_2_ph012 cpu_tempreg_3_ph012 = ite_4bit \
+        if_phase_2 cpu_tempreg_0_ph2 cpu_tempreg_1_ph2 cpu_tempreg_2_ph2 cpu_tempreg_3_ph2 \
+        cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3
+    cpu_state_0_ph01 = ite if_phase_2 cpu_state_0_ph2 cpu_state_0_ph01
+    cpu_state_0_ph01 = ite if_phase_2 cpu_state_1_ph2 cpu_state_1_ph01
+    cpu_instr_0_ph012 cpu_instr_1_ph012 cpu_instr_2_ph012 cpu_instr_3_ph012 = ite_4bit \
+        if_phase_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
+        cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01
     
     ########
     # phase 3 - if not JMP then load/store to memory
@@ -163,8 +200,26 @@ main:
     # if PUL then prepare mem_address for stack and decrement SP and go to phase 3.
     # otherwise - then load from memory (set mem_address).
     
+    tmp0 = nand cpu_instr_1 cpu_instr_3
+    tmp1 = nand cpu_instr_3 cpu_instr_2
+    tmp2 = nand tmp0 tmp1
+    tmp3 = nand tmp2 tmp1
+    tmp4 = nand tmp0 tmp2
+    if_jump = nand tmp4 tmp5
+    
+    cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 = ite_4bit if_jump \
+        cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
+        cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3
+    cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 = ite_4bit if_jump \
+        mem_value_0 mem_value_1 mem_value_2 mem_value_3 \
+        cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7
+    
+    # merge phase0, phase1, phase2 and phase3
+    
     ########
     # phase 4 - get memory value (if needed) and execute operation.
+    
+    # merge phase0, phase1, phase2, phase3, phase4
     
     o0 = copy cpu_state_0
     o1 = copy cpu_state_1
