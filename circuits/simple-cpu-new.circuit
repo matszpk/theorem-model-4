@@ -86,6 +86,28 @@ main:
     cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 \
     cpu_tempreg_3 mem_value_0 mem_value_1 mem_value_2 mem_value_3
     
+    # phase 4
+    cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all cpu_flag_c_t_all \
+    cpu_flag_n_t_all cpu_flag_z_t_all = cpu_phase4 \
+    cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 cpu_flag_c cpu_flag_z cpu_flag_n \
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    # copy to avoid unknown
+    cpu_state_2 = copy cpu_state_2
+    cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 = copy_4bit \
+        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
+    cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 = copy_4bit cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3
+    cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 = copy_4bit cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 = copy_4bit cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
+    cpu_flag_c = copy cpu_flag_c
+    cpu_flag_z = copy cpu_flag_z
+    cpu_flag_n = copy cpu_flag_n
+    cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 = copy_4bit cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
+    cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 = copy_4bit \
+        cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3
+    mem_address_6_ph012 = copy mem_address_6_ph012
+    mem_address_7_ph012 = copy mem_address_7_ph012
+    
     # merge phase 3 with 0,1,2
     cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 cpu_instr_0_ph0123 \
     cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 cpu_pc_0_ph0123 cpu_pc_1_ph0123 \
@@ -111,52 +133,26 @@ main:
     mem_value_3_ph3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
     mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3
     
-    # finish
-    o0 = copy cpu_state_0_ph0123
-    o1 = copy cpu_state_1_ph0123
-    o2 = copy cpu_state_2_ph0123
-    o3 = copy cpu_instr_0_ph0123
-    o4 = copy cpu_instr_1_ph0123
-    o5 = copy cpu_instr_2_ph0123
-    o6 = copy cpu_instr_3_ph0123
-    o7 = copy cpu_pc_0_ph0123
-    o8 = copy cpu_pc_1_ph0123
-    o9 = copy cpu_pc_2_ph0123
-    o10 = copy cpu_pc_3_ph0123
-    o11 = copy cpu_pc_4_ph0123
-    o12 = copy cpu_pc_5_ph0123
-    o13 = copy cpu_pc_6_ph0123
-    o14 = copy cpu_pc_7_ph0123
-    o15 = copy cpu_acc_0
-    o16 = copy cpu_acc_1
-    o17 = copy cpu_acc_2
-    o18 = copy cpu_acc_3
-    o19 = copy cpu_flag_c
-    o20 = copy cpu_flag_z
-    o21 = copy cpu_flag_n
-    o22 = copy cpu_sp_0
-    o23 = copy cpu_sp_1
-    o24 = copy cpu_sp_2
-    o25 = copy cpu_sp_3
-    o26 = copy cpu_tempreg_0_ph0123
-    o27 = copy cpu_tempreg_1_ph0123
-    o28 = copy cpu_tempreg_2_ph0123
-    o29 = copy cpu_tempreg_3_ph0123
-    o30 = copy mem_value_0_ph0123
-    o31 = copy mem_value_1_ph0123
-    o32 = copy mem_value_2_ph0123
-    o33 = copy mem_value_3_ph0123
-    # mem_rw
-    o34 = copy mem_rw_ph0123
-    # mem_address
-    o35 = copy mem_address_0_ph0123
-    o36 = copy mem_address_1_ph0123
-    o37 = copy mem_address_2_ph0123
-    o38 = copy mem_address_3_ph0123
-    o39 = copy mem_address_4_ph0123
-    o40 = copy mem_address_5_ph0123
-    o41 = copy mem_address_6_ph0123
-    o42 = copy mem_address_7_ph0123
+    o0 o1 o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 o22 \
+    o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 o34 o35 o36 o37 o38 o39 o40 o41 o42 \
+    = cpu_merge_phase0123_4 cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 \
+    cpu_instr_0_ph0123 cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 \
+    cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
+    cpu_pc_0_ph0123 cpu_pc_1_ph0123 cpu_pc_2_ph0123 cpu_pc_3_ph0123 cpu_pc_4_ph0123 \
+    cpu_pc_5_ph0123 cpu_pc_6_ph0123 cpu_pc_7_ph0123 \
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+    cpu_flag_c cpu_flag_z cpu_flag_n \
+    cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 \
+    cpu_state_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
+    cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all \
+    cpu_flag_c_t_all cpu_flag_z_t_all cpu_flag_n_t_all \
+    cpu_sp_0_ph0123 cpu_sp_1_ph0123 cpu_sp_2_ph0123 cpu_sp_3_ph0123 \
+    cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
+    cpu_tempreg_0_ph0123 cpu_tempreg_1_ph0123 cpu_tempreg_2_ph0123 cpu_tempreg_3_ph0123 \
+    mem_value_0_ph0123 mem_value_1_ph0123 mem_value_2_ph0123 mem_value_3_ph0123 \
+    mem_rw_ph0123 mem_address_0_ph0123 mem_address_1_ph0123 mem_address_2_ph0123 \
+    mem_address_3_ph0123 mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 \
+    mem_address_7_ph0123
     # create
     o43 = copy mem_address_6_ph012
     # stop
@@ -852,6 +848,8 @@ cpu_merge_phase0123_4:
     # mem_address
     o35 o36 o37 o38 = ite_4bit if_phase4 zero zero zero zero \
         mem_address_0_ph0123 mem_address_1_ph0123 mem_address_2_ph0123 mem_address_3_ph0123
+    o39 o40 o41 o42 = ite_4bit if_phase4 zero zero zero zero \
+        mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123
     
 copy:
     t = nand i0 i0
