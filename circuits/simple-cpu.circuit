@@ -171,14 +171,14 @@ main:
     alias cpu_tempreg_3_ph2 mem_value_3
     
     # this same operation like in phase 1 - increment PC.
-    alias cpu_pc_0_ph2 cpu_pc_0_ph1
-    alias cpu_pc_1_ph2 cpu_pc_1_ph1
-    alias cpu_pc_2_ph2 cpu_pc_2_ph1
-    alias cpu_pc_3_ph2 cpu_pc_3_ph1
-    alias cpu_pc_4_ph2 cpu_pc_4_ph1
-    alias cpu_pc_5_ph2 cpu_pc_5_ph1
-    alias cpu_pc_6_ph2 cpu_pc_6_ph1
-    alias cpu_pc_7_ph2 cpu_pc_7_ph1
+    alias cpu_pc_0_ph2 cpu_pc_0_ph0
+    alias cpu_pc_1_ph2 cpu_pc_1_ph0
+    alias cpu_pc_2_ph2 cpu_pc_2_ph0
+    alias cpu_pc_3_ph2 cpu_pc_3_ph0
+    alias cpu_pc_4_ph2 cpu_pc_4_ph0
+    alias cpu_pc_5_ph2 cpu_pc_5_ph0
+    alias cpu_pc_6_ph2 cpu_pc_6_ph0
+    alias cpu_pc_7_ph2 cpu_pc_7_ph0
     
     alias cpu_state_0_ph2 one
     alias cpu_state_1_ph2 one
