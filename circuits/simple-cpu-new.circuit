@@ -596,7 +596,149 @@ cpu_merge_phase012_3:
     o32 o33 o34 o35 = ite_4bit \
         if_phase_3 mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 \
         mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 mem_address_7_ph012
+
+cpu_phase4:
+    alias cpu_instr_0 i0
+    alias cpu_instr_1 i1
+    alias cpu_instr_2 i2
+    alias cpu_instr_3 i3
+    alias cpu_flag_c i4
+    alias cpu_flag_z i5
+    alias cpu_flag_n i6
+    alias cpu_acc_0 i7
+    alias cpu_acc_1 i8
+    alias cpu_acc_2 i9
+    alias cpu_acc_3 i10
+    alias mem_value_0 i11
+    alias mem_value_1 i12
+    alias mem_value_2 i13
+    alias mem_value_3 i14
     
+    # 0 - LDA - load into accumulator
+    # F - PUL - pull, if SP=0 then STOP
+    
+    alias cpu_acc_0_t0 mem_value_0
+    alias cpu_acc_1_t0 mem_value_1
+    alias cpu_acc_2_t0 mem_value_2
+    alias cpu_acc_3_t0 mem_value_3
+    alias cpu_flag_c_t0 cpu_flag_c
+    
+    cpu_instr_1_n = nand cpu_instr_1 cpu_instr_1
+    cpu_instr_2_n = nand cpu_instr_2 cpu_instr_2
+    cpu_instr_3_n = nand cpu_instr_3 cpu_instr_3
+    
+    if_lda = and_3 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
+    if_pul = and_3 cpu_instr_1 cpu_instr_2 cpu_instr_3
+    tmp = nand if_lda if_pul
+    if_lda_pul = nand tmp tmp
+    
+    # 1 - STA - store accumulator - done in phase 3
+    
+    # 2 - ADC - add to accumulator (A + M + C)
+    
+    cpu_acc_0_t1 cpu_acc_1_t1 cpu_acc_2_t1 cpu_acc_3_t1 cpu_flag_c_t1 = carry_adder_4bit \
+        cpu_flag_c cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+        mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    # 3 - SBC - subtract from accumulator (A - NOT(M) +C)
+    
+    cpu_acc_0_t2 cpu_acc_1_t2 cpu_acc_2_t2 cpu_acc_3_t2 cpu_flag_c_t2 = carry_suber_4bit \
+        cpu_flag_c cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+        mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    cpu_acc_0_t12 cpu_acc_1_t12 cpu_acc_2_t12 cpu_acc_3_t12 = ite_4bit cpu_instr_0 \
+        cpu_acc_0_t2 cpu_acc_1_t2 cpu_acc_2_t2 cpu_acc_3_t2 \
+        cpu_acc_0_t1 cpu_acc_1_t1 cpu_acc_2_t1 cpu_acc_3_t1
+    cpu_flag_c_t12 = ite cpu_instr_0 cpu_flag_c_t2 cpu_flag_c_t1
+    
+    cpu_acc_0_t012 cpu_acc_1_t012 cpu_acc_2_t012 cpu_acc_3_t012 = ite_4bit if_lda_pul \
+        cpu_acc_0_t0 cpu_acc_1_t0 cpu_acc_2_t0 cpu_acc_3_t0 \
+        cpu_acc_0_t12 cpu_acc_1_t12 cpu_acc_2_t12 cpu_acc_3_t12
+    cpu_flag_c_t012 = ite if_lda_pul cpu_flag_c_t0 cpu_flag_c_t12
+    
+    # 4 - AND - perform bitwise AND on accumulator
+    
+    cpu_acc_0_t3 cpu_acc_1_t3 cpu_acc_2_t3 cpu_acc_3_t3 = and_4bit \
+        cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+        mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    # 5 - OR - perform bitwise OR on accumulator
+    
+    cpu_acc_0_t4 cpu_acc_1_t4 cpu_acc_2_t4 cpu_acc_3_t4 = or_4bit \
+        cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+        mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    cpu_acc_0_t34 cpu_acc_1_t34 cpu_acc_2_t34 cpu_acc_3_t34 = ite_4bit cpu_instr_0 \
+        cpu_acc_0_t4 cpu_acc_1_t4 cpu_acc_2_t4 cpu_acc_3_t4 \
+        cpu_acc_0_t3 cpu_acc_1_t3 cpu_acc_2_t3 cpu_acc_3_t3
+    
+    # 6 - XOR - perform bitwise XOR on accumulator
+    
+    cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 = xor_4bit \
+        cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+        mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    # 7 - CLC
+    
+    alias cpu_flag_c_tx zero
+    
+    cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 = ite_4bit cpu_instr_0 \
+        cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+        cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5
+    cpu_flag_c_5 = ite cpu_instr_0 cpu_flag_c_tx cpu_flag_c
+    
+    cpu_acc_0_t345 cpu_acc_1_t345 cpu_acc_2_t345 cpu_acc_3_t345 = ite_4bit cpu_instr_1 \
+        cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 \
+        cpu_acc_0_t34 cpu_acc_1_t34 cpu_acc_2_t34 cpu_acc_3_t34
+    
+    cpu_acc_0_t012345 cpu_acc_1_t012345 cpu_acc_2_t012345 cpu_acc_3_t012345 = ite_4bit \
+        cpu_instr_2 cpu_acc_0_t345 cpu_acc_1_t345 cpu_acc_2_t345 cpu_acc_3_t345 \
+        cpu_acc_0_t012 cpu_acc_1_t012 cpu_acc_2_t012 cpu_acc_3_t012
+    cpu_flag_c_t012345 = ite cpu_instr_2 cpu_flag_c cpu_flag_c_t012
+    
+    # 8 - ROL - rotate left 1 bit including C.
+    
+    alias cpu_acc_0_t6 cpu_flag_c
+    alias cpu_acc_1_t6 cpu_acc_0
+    alias cpu_acc_2_t6 cpu_acc_1
+    alias cpu_acc_3_t6 cpu_acc_2
+    alias cpu_flag_c_t6 cpu_acc_3
+    
+    # 9 - ROR - rotate right 1 bit including C.
+    
+    alias cpu_flag_c_t7 cpu_acc_0
+    alias cpu_acc_0_t7 cpu_acc_1
+    alias cpu_acc_1_t7 cpu_acc_2
+    alias cpu_acc_2_t7 cpu_acc_3
+    alias cpu_acc_3_t7 cpu_flag_c
+    
+    cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67 = ite_4bit cpu_instr_0 \
+        cpu_acc_0_t7 cpu_acc_1_t7 cpu_acc_2_t7 cpu_acc_3_t7 \
+        cpu_acc_0_t6 cpu_acc_1_t6 cpu_acc_2_t6 cpu_acc_3_t6
+    cpu_flag_c_t67 = ite cpu_instr_0 cpu_flag_c_t7 cpu_flag_c_t6
+    
+    # A - BCC - branch if C=0 - done in phase 3
+    # B - BNE - branch if Z=0 - done in phase 3
+    # C - BPL - branch if N=0 - done in phase 3
+    # D - JMP - done in phase 3
+    # E - PSH - push - done in phase 3
+    
+    if_clc = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3_n
+    cpu_acc_0_n = nand cpu_acc_0 cpu_acc_0
+    cpu_acc_1_n = nand cpu_acc_1 cpu_acc_1
+    cpu_acc_2_n = nand cpu_acc_2 cpu_acc_2
+    cpu_acc_3_n = nand cpu_acc_3 cpu_acc_3
+    if_zero = and_4 cpu_acc_0_n cpu_acc_1_n cpu_acc_2_n cpu_acc_3_n
+    
+    # cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all
+    o0 o1 o2 o3 = ite_4bit cpu_instr_3 cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67 \
+        cpu_acc_0_t012345 cpu_acc_1_t012345 cpu_acc_2_t012345 cpu_acc_3_t012345
+    o4 = ite cpu_instr_3 cpu_flag_c_t67 cpu_flag_c_t012345
+    
+    # cpu_flag_n_t_all
+    o5 = ite if_clc cpu_flag_z if_zero
+    # cpu_flag_n_t_all
+    o6 = ite if_clc cpu_flag_n cpu_acc_3
 copy:
     t = nand i0 i0
     o0 = nand t t
