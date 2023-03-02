@@ -302,7 +302,6 @@ cpu_phase012:
     # merge phase0, phase1 and phase2
     
     cpu_state_0_n = nand cpu_state_0 cpu_state_0
-    cpu_state_1_n = nand cpu_state_1 cpu_state_1
     cpu_state_2_n = nand cpu_state_2 cpu_state_2
     if_phase_2 = and_3 cpu_state_0_n cpu_state_1 cpu_state_2
     if_phase_3 = and_3 cpu_state_0 cpu_state_1 cpu_state_2_n
@@ -383,10 +382,8 @@ cpu_phase3:
     # if PUL then prepare mem_address for stack and decrement SP and go to phase 3.
     # otherwise - then load from memory (set mem_address).
     
-    cpu_instr_3_n = nand cpu_instr_3 cpu_instr_3
-    cpu_instr_2_n = nand cpu_instr_2 cpu_instr_2
-    cpu_instr_1_n = nand cpu_instr_1 cpu_instr_1
-    cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
+    cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit \
+        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
     
     if_psh = and_4 cpu_instr_0_n cpu_instr_1 cpu_instr_2 cpu_instr_3
     if_sta = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
@@ -396,9 +393,8 @@ cpu_phase3:
     if_jump = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2 cpu_instr_3
     if_bcc_bne = and_3 cpu_instr_1 cpu_instr_2_n cpu_instr_3
     if_bpl = and_4 cpu_instr_1_n cpu_instr_1_n cpu_instr_2 cpu_instr_3
-    cpu_flag_c_n = nand cpu_flag_c cpu_flag_c
-    cpu_flag_z_n = nand cpu_flag_z cpu_flag_z
-    cpu_flag_n_n = nand cpu_flag_n cpu_flag_n
+    cpu_flag_c_n cpu_flag_z_n cpu_flag_n_n ign = not_4bit \
+        cpu_flag_c cpu_flag_z cpu_flag_n zero
     if_bcc_jump = and_3 if_bcc_bne cpu_instr_0_n cpu_flag_c_n
     if_bne_jump = and_3 if_bcc_bne cpu_instr_0 cpu_flag_z_n
     if_bpl_jump = and if_bpl cpu_flag_n_n
@@ -704,11 +700,8 @@ cpu_phase4:
     # E - PSH - push - done in phase 3
     
     if_clc = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3_n
-    cpu_acc_0_n = nand cpu_acc_0 cpu_acc_0
-    cpu_acc_1_n = nand cpu_acc_1 cpu_acc_1
-    cpu_acc_2_n = nand cpu_acc_2 cpu_acc_2
-    cpu_acc_3_n = nand cpu_acc_3 cpu_acc_3
-    if_zero = and_4 cpu_acc_0_n cpu_acc_1_n cpu_acc_2_n cpu_acc_3_n
+    if_not_zero = or_4 cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
+    if_zero = nand if_not_zero if_not_zero
     
     # cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all
     o0 o1 o2 o3 = ite_4bit cpu_instr_3 cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67 \
