@@ -87,6 +87,29 @@ main:
     cpu_tempreg_3 mem_value_0 mem_value_1 mem_value_2 mem_value_3
     
     # merge phase 3 with 0,1,2
+    cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 cpu_instr_0_ph0123 \
+    cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 cpu_pc_0_ph0123 cpu_pc_1_ph0123 \
+    cpu_pc_2_ph0123 cpu_pc_3_ph0123 cpu_pc_4_ph0123 cpu_pc_5_ph0123 cpu_pc_6_ph0123 \
+    cpu_pc_7_ph0123 cpu_sp_0_ph0123 cpu_sp_1_ph0123 cpu_sp_2_ph0123 cpu_sp_3_ph0123 \
+    cpu_tempreg_0_ph0123 cpu_tempreg_1_ph0123 cpu_tempreg_2_ph0123 cpu_tempreg_3_ph0123 \
+    mem_rw_ph0123 mem_value_0_ph0123 mem_value_1_ph0123 mem_value_2_ph0123 mem_value_3_ph0123 \
+    mem_address_0_ph0123 mem_address_1_ph0123 mem_address_2_ph0123 mem_address_3_ph0123 \
+    mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123 \
+    = cpu_merge_phase012_3 \
+    cpu_state_0 cpu_state_1 cpu_state_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
+    cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 cpu_state_0_ph012 cpu_state_1_ph012 \
+    cpu_state_2_ph012 cpu_instr_0_ph012 cpu_instr_1_ph012 cpu_instr_2_ph012 cpu_instr_3_ph012 \
+    cpu_pc_0_ph012 cpu_pc_1_ph012 cpu_pc_2_ph012 cpu_pc_3_ph012 cpu_pc_4_ph012 cpu_pc_5_ph012 \
+    cpu_pc_6_ph012 cpu_pc_7_ph012 cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 \
+    cpu_tempreg_0_ph012 cpu_tempreg_1_ph012 cpu_tempreg_2_ph012 cpu_tempreg_3_ph012 \
+    cpu_state_0_ph3 cpu_state_1_ph3 cpu_state_2_ph3 cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 \
+    cpu_pc_3_ph3 cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 cpu_sp_0_ph3 cpu_sp_1_ph3 \
+    cpu_sp_2_ph3 cpu_sp_3_ph3 mem_rw_ph012 mem_value_0 mem_value_1 mem_value_2 \
+    mem_value_3 mem_address_0_ph012 mem_address_1_ph012 mem_address_2_ph012 \
+    mem_address_3_ph012 mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 \
+    mem_address_7_ph012 mem_rw_ph3 mem_value_0_ph3 mem_value_1_ph3 mem_value_2_ph3 \
+    mem_value_3_ph3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
+    mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3
     
     # finish
     o0 = copy cpu_state_0_ph012
@@ -546,7 +569,7 @@ cpu_merge_phase012_3:
     # cpu_instr_X_ph0123
     o3 o4 o5 o6 = ite_4bit if_phase_3 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
         cpu_instr_0_ph012 cpu_instr_1_ph012 cpu_instr_2_ph012 cpu_instr_3_ph012
-    # cpu_instr_X_ph0123
+    # cpu_pc_X_ph0123
     o7 o8 o9 o10 = ite_4bit if_phase_3 cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 \
         cpu_pc_0_ph012 cpu_pc_1_ph012 cpu_pc_2_ph012 cpu_pc_3_ph012
     o11 o12 o13 o14 = ite_4bit if_phase_3 cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 \
