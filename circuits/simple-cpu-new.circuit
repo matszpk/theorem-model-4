@@ -404,17 +404,10 @@ cpu_phase3:
     if_sta_psh = nand tmp8 tmp8
     alias if_not_sta_psh tmp8 
     
-    tmp0 = nand cpu_instr_1 cpu_instr_3
-    tmp1 = nand cpu_instr_3 cpu_instr_2
-    tmp2 = nand tmp0 tmp1
-    tmp3 = nand tmp2 tmp1
-    tmp4 = nand tmp0 tmp2
-    # TODO: fix!!!
-    tmp5 = nand tmp0 tmp3
-    if_jump = nand tmp4 tmp5
     cpu_instr_2_n = nand cpu_instr_2 cpu_instr_2
     cpu_instr_1_n = nand cpu_instr_1 cpu_instr_1
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
+    if_jump = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2 cpu_instr_3
     if_bcc_bne = and_3 cpu_instr_1 cpu_instr_2_n cpu_instr_3
     if_bpl = and_4 cpu_instr_1_n cpu_instr_1_n cpu_instr_2 cpu_instr_3
     cpu_flag_c_n = nand cpu_flag_c cpu_flag_c
