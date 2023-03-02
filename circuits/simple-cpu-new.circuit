@@ -256,10 +256,6 @@ cpu_phase012:
     # phase 2 - fetch address nibble 1 
     # only if not CLC, PSH, PUL, ROL, ROR.
     
-    # temporary. should be removed!
-    mem_rw_ph01 = copy mem_rw_ph01
-    mem_address_7_ph01 = copy mem_address_7_ph01
-    
     # move mem_value into cpu_tempreg_0 - first nibble of address argument
     alias cpu_tempreg_0_ph2 mem_value_0
     alias cpu_tempreg_1_ph2 mem_value_1
@@ -363,11 +359,24 @@ cpu_phase0123:
     # if PUL then prepare mem_address for stack and decrement SP and go to phase 3.
     # otherwise - then load from memory (set mem_address).
     
+    tmp0 = nand cpu_instr_1 cpu_instr_1
+    tmp1 = nand cpu_instr_3 cpu_instr_2
+    tmp2 = nand cpu_instr_0 cpu_instr_2
+    tmp3 = nand cpu_instr_3 tmp0
+    tmp4 = nand tmp0 cpu_instr_0
+    tmp5 = nand tmp4 tmp1
+    tmp6 = nand tmp5 tmp2
+    tmp7 = nand tmp3 tmp6
+    tmp8 = nand tmp7 tmp3
+    if_sta_psh = nand tmp8 tmp8
+    alias if_not_sta_psh tmp8 
+    
     tmp0 = nand cpu_instr_1 cpu_instr_3
     tmp1 = nand cpu_instr_3 cpu_instr_2
     tmp2 = nand tmp0 tmp1
     tmp3 = nand tmp2 tmp1
     tmp4 = nand tmp0 tmp2
+    # TODO: fix!!!
     tmp5 = nand tmp0 tmp3
     if_jump = nand tmp4 tmp5
     cpu_instr_2_n = nand cpu_instr_2 cpu_instr_2
@@ -386,34 +395,10 @@ cpu_phase0123:
     # join it: if_bcc_jump or if_bne_jump or if_bpl_jump or if_jump
     if_jump = or_4 if_bcc_jump if_bne_jump if_bpl_jump if_jump
     
-    cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 = ite_4bit if_jump \
-        cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
-        cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3
-    cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 = ite_4bit if_jump \
-        mem_value_0 mem_value_1 mem_value_2 mem_value_3 \
-        cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7
-    
-    tmp0 = nand cpu_instr_1 cpu_instr_1
-    tmp1 = nand cpu_instr_3 cpu_instr_2
-    tmp2 = nand cpu_instr_0 cpu_instr_2
-    tmp3 = nand cpu_instr_3 tmp0
-    tmp4 = nand tmp0 cpu_instr_0
-    tmp5 = nand tmp4 tmp1
-    tmp6 = nand tmp5 tmp2
-    tmp7 = nand tmp3 tmp6
-    tmp8 = nand tmp7 tmp3
-    if_sta_psh = nand tmp8 tmp8
-    alias if_not_sta_psh tmp8 
-    
-    alias mem_rw_ph3 if_sta_psh
-    alias mem_value_0_ph3 cpu_acc_0
-    alias mem_value_1_ph3 cpu_acc_1
-    alias mem_value_2_ph3 cpu_acc_2
-    alias mem_value_3_ph3 cpu_acc_3
-    
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
     if_psh = and_4 cpu_instr_0_n cpu_instr_1 cpu_instr_2 cpu_instr_3
     if_pul = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
+    
     cpu_sp_0_inc cpu_sp_1_inc cpu_sp_2_inc cpu_sp_3_inc ign = carry_inc_4bit \
         zero cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
     cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec = dec_4bit \
@@ -421,37 +406,48 @@ cpu_phase0123:
     cpu_sp_0_tmp cpu_sp_1_tmp cpu_sp_2_tmp cpu_sp_3_tmp = ite_4bit if_psh \
         cpu_sp_0_inc cpu_sp_1_inc cpu_sp_2_inc cpu_sp_3_inc \
         cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
-    cpu_sp_0_ph3 cpu_sp_1_ph3 cpu_sp_2_ph3 cpu_sp_3_ph3 = ite_4bit if_pul \
-        cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec \
-        cpu_sp_0_tmp cpu_sp_1_tmp cpu_sp_2_tmp cpu_sp_3_tmp
     
     # calculating mem_address - SP if PSH,PUL else tmpreg|(mem_value<<4)
     mem_address_0_tmp mem_address_1_tmp mem_address_2_tmp mem_address_3_tmp = ite_4bit \
         if_psh cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 \
         cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3
     
-    mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 = ite_4bit \
-        if_pul cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec \
-        mem_address_0_tmp mem_address_1_tmp mem_address_2_tmp mem_address_3_tmp
     if_psh_n = nand if_psh if_psh
     if_pul_n = nand if_pul if_pul
     if_psh_pul = nand if_psh_n if_pul_n
-    mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 = ite_4bit \
-        if_psh_pul zero zero zero zero mem_value_0 mem_value_1 mem_value_2 mem_value_3
     
     # zero state - if PSH or STA, otherwise next is 4.
-    alias cpu_state_2_ph3 if_not_sta_psh
-    alias cpu_state_1_ph3 zero
-    alias cpu_state_0_ph3 zero
-    
-    alias mem_rw_ph012 zero
-    
-    cpu_state_2_n = nand cpu_state_2 cpu_state_2
-    if_phase_3 = and_3 cpu_state_0 cpu_state_1 cpu_state_2_n
-    
+    # cpu_state_0_ph3
     o0 = copy zero
-
+    # cpu_state_1_ph3
+    o1 = copy zero
+    # cpu_state_2_ph3
+    o2 = copy if_not_sta_psh
     
+    # cpu_pc_X_ph3
+    o3 o4 o5 o6 = ite_4bit if_jump cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
+        cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3
+    o7 o8 o9 o10 = ite_4bit if_jump mem_value_0 mem_value_1 mem_value_2 mem_value_3 \
+        cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7
+    
+    # cpu_sp_X_ph3
+    o11 o12 o13 o14 = ite_4bit if_pul cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec \
+        cpu_sp_0_tmp cpu_sp_1_tmp cpu_sp_2_tmp cpu_sp_3_tmp
+    
+    # mem_rw_ph3
+    o15 = copy if_sta_psh
+    # mem_value_X_ph3
+    o16 o17 o18 o19 = copy_4bit cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
+    
+    # mem_address_X_ph3
+    o20 o21 o22 o23 = ite_4bit if_pul cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec \
+        mem_address_0_tmp mem_address_1_tmp mem_address_2_tmp mem_address_3_tmp
+    o24 o25 o26 o27 = ite_4bit if_psh_pul zero zero zero zero mem_value_0 mem_value_1 \
+        mem_value_2 mem_value_3
+    
+    #alias mem_rw_ph012 zero
+    #cpu_state_2_n = nand cpu_state_2 cpu_state_2
+    #if_phase_3 = and_3 cpu_state_0 cpu_state_1 cpu_state_2_n
     # merge phase0, phase1, phase2 and phase3
 #    cpu_pc_0_ph0123 cpu_pc_1_ph0123 cpu_pc_2_ph0123 cpu_pc_3_ph0123 = ite_4bit if_phase_3 \
         cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 \
