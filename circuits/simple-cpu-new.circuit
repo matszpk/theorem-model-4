@@ -61,7 +61,7 @@ main:
     alias mem_value_2 i32
     alias mem_value_3 i33
     
-    # input (state):
+    # phase 0,1,2
     cpu_state_0_ph012 cpu_state_1_ph012 cpu_state_2_ph012 cpu_instr_0_ph012 cpu_instr_1_ph012 \
     cpu_instr_2_ph012 cpu_instr_3_ph012 cpu_pc_0_ph012 cpu_pc_1_ph012 cpu_pc_2_ph012 \
     cpu_pc_3_ph012 cpu_pc_4_ph012 cpu_pc_5_ph012 cpu_pc_6_ph012 cpu_pc_7_ph012 \
@@ -73,6 +73,20 @@ main:
         cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
         cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
         mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    # phase 3
+    cpu_state_0_ph3 cpu_state_1_ph3 cpu_state_2_ph3 cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 \
+    cpu_pc_3_ph3 cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 cpu_sp_0_ph3 cpu_sp_1_ph3 \
+    cpu_sp_2_ph3 cpu_sp_3_ph3 mem_rw_ph3 mem_value_0_ph3 mem_value_1_ph3 mem_value_2_ph3 \
+    mem_value_3_ph3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
+    mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 \
+    = cpu_phase3 cpu_state_0 cpu_state_1 cpu_state_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 \
+    cpu_instr_3 cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_flag_c cpu_flag_z cpu_flag_n \
+    cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 \
+    cpu_tempreg_3 mem_value_0 mem_value_1 mem_value_2 mem_value_3
+    
+    # merge phase 3 with 0,1,2
     
     # finish
     o0 = copy cpu_state_0_ph012
@@ -121,9 +135,9 @@ main:
     o41 = copy mem_address_6_ph012
     o42 = copy mem_address_7_ph012
     # create
-    o43 = copy zero
+    o43 = copy mem_address_6_ph012
     # stop
-    o44 = copy zero
+    o44 = copy mem_address_6_ph012
 
 cpu_phase012:
     # input (state):
