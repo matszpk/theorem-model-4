@@ -232,17 +232,12 @@ cpu_phase012:
     alias mem_rw_ph0 zero
     
     # clc_rol_ror_psh_pull
-    tmp0 = nand cpu_instr_2_ph1 cpu_instr_3_ph1
-    tmp1 = nand cpu_instr_2_ph1 cpu_instr_0_ph1
-    tmp2 = nand cpu_instr_1_ph1 cpu_instr_1_ph1
-    tmp3 = nand cpu_instr_3_ph1 tmp0
-    tmp4 = nand tmp0 tmp1
-    tmp5 = nand tmp2 cpu_instr_1_ph1
-    tmp6 = nand tmp4 cpu_instr_0_ph1
-    tmp7 = nand tmp6 tmp2
+    tmp0 = xor cpu_instr_1_ph1 cpu_instr_3_ph1
+    tmp1 = nand tmp0 tmp0
+    tmp2 = and_3 cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1
+    if_clc_rol_ror_psh_pul = ite cpu_instr_3_ph1 tmp1 tmp2
     
     # next cpu state
-    if_clc_rol_ror_psh_pul = nand tmp5 tmp7
     # if if_clc_rol_ror_psh_pul then state=3 else state=2
     alias cpu_state_0_ph1 if_clc_rol_ror_psh_pul
     alias cpu_state_1_ph1 one
@@ -388,21 +383,16 @@ cpu_phase3:
     # if PUL then prepare mem_address for stack and decrement SP and go to phase 3.
     # otherwise - then load from memory (set mem_address).
     
-    tmp0 = nand cpu_instr_1 cpu_instr_1
-    tmp1 = nand cpu_instr_3 cpu_instr_2
-    tmp2 = nand cpu_instr_0 cpu_instr_2
-    tmp3 = nand cpu_instr_3 tmp0
-    tmp4 = nand tmp0 cpu_instr_0
-    tmp5 = nand tmp4 tmp1
-    tmp6 = nand tmp5 tmp2
-    tmp7 = nand tmp3 tmp6
-    tmp8 = nand tmp7 tmp3
-    if_sta_psh = nand tmp8 tmp8
-    alias if_not_sta_psh tmp8 
-    
+    cpu_instr_3_n = nand cpu_instr_3 cpu_instr_3
     cpu_instr_2_n = nand cpu_instr_2 cpu_instr_2
     cpu_instr_1_n = nand cpu_instr_1 cpu_instr_1
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
+    
+    if_psh = and_4 cpu_instr_0_n cpu_instr_1 cpu_instr_2 cpu_instr_3
+    if_sta = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
+    if_sta_psh = or if_sta if_psh
+    if_not_sta_psh = nand if_sta_psh if_sta_psh
+    
     if_jump = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2 cpu_instr_3
     if_bcc_bne = and_3 cpu_instr_1 cpu_instr_2_n cpu_instr_3
     if_bpl = and_4 cpu_instr_1_n cpu_instr_1_n cpu_instr_2 cpu_instr_3
@@ -417,7 +407,6 @@ cpu_phase3:
     if_jump = or_4 if_bcc_jump if_bne_jump if_bpl_jump if_jump
     
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
-    if_psh = and_4 cpu_instr_0_n cpu_instr_1 cpu_instr_2 cpu_instr_3
     if_pul = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
     
     if_sp_zero = and_4 cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
