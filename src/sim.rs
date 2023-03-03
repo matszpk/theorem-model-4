@@ -279,6 +279,8 @@ pub fn run_test_suite(
     trace: bool,
 ) -> bool {
     let mut passed = true;
+    let mut passed_count = 0;
+    let mut failed_count = 0;
     for (i, tc) in testsuite.into_iter().enumerate() {
         println!("Testcase {}: {}", i, tc.name);
 
@@ -322,9 +324,17 @@ pub fn run_test_suite(
                     .collect::<String>()
             );
             passed = false;
+            failed_count += 1;
         } else {
             println!("Testcase {}: {} PASSED", i, tc.name);
+            passed_count += 1;
         }
     }
+    println!(
+        "Total passed: {}, Total failed: {}, Total: {}",
+        passed_count,
+        failed_count,
+        passed_count + failed_count
+    );
     passed
 }
