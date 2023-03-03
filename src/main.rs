@@ -10,6 +10,7 @@ use clap::{Parser, Subcommand};
 use nom::error::convert_error;
 
 use std::fs::read_to_string;
+use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -44,7 +45,7 @@ struct TestCircuitArgs {
     #[clap(help = "Set circuit filename")]
     circuit: PathBuf,
     #[clap(help = "Set testsuite filename")]
-    testsuite: PathBuf,
+    testsuite: Option<PathBuf>,
     #[clap(short, long, help = "Set trace mode")]
     trace: bool,
 }
@@ -171,7 +172,14 @@ fn main() -> ExitCode {
             }
         }
         Commands::Test(r) => {
-            let input = divide_lines(&read_to_string(r.testsuite).unwrap());
+            let input = divide_lines(&
+                if let Some(testsuite) = r.testsuite {
+                    read_to_string(testsuite).unwrap()
+                } else {
+                    let mut out = String::new();
+                    io::stdin().read_to_string(&mut out).unwrap();
+                    out
+                });
             match parse_test_suite(&input) {
                 Ok((_, test_suite)) => {
                     if !run_test_suite(&circuit, test_suite, r.trace) {

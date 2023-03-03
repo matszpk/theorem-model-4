@@ -838,6 +838,11 @@ xor:
     t0 = nand i0 n1
     t1 = nand n0 i1
     o0 = nand t0 t1
+xor_4bit:
+    o0 = xor i0 i4
+    o1 = xor i1 i5
+    o2 = xor i2 i6
+    o3 = xor i3 i7
 and:
     t = nand i0 i1
     o0 = nand t t
@@ -872,11 +877,6 @@ ite:
     t0 = nand i0 i1
     t1 = nand n0 i2
     o0 = nand t0 t1
-xor_4bit:
-    o0 = xor i0 i4
-    o1 = xor i1 i5
-    o2 = xor i2 i6
-    o3 = xor i3 i7
 ite_4bit:
     o0 = ite i0 i1 i5
     o1 = ite i0 i2 i6
