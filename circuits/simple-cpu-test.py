@@ -113,8 +113,8 @@ def cpu_phase012_1_input_test_func(case):
 
 def cpu_phase012_2_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
-        {'state':1,'instr':case&0xf,'pc':(case>>4)&0xff,
-                 'tempreg':(case>>12)&3,'mem_value':(case>>14)&3})
+        {'state':1,'instr':case&0x3,'pc':(case>>2)&0xff,
+                 'tempreg':(case>>10)&3,'mem_value':(case>>12)&0xf})
 
 def cpu_phase012_3_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
