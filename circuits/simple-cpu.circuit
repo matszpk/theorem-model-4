@@ -315,7 +315,7 @@ cpu_phase012:
     o3 o4 o5 o6 = ite_4bit if_phase_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
         cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01
     # cpu_pc_X_ph012
-    o7 o8 o9 o10 = ite_4bit if_phase_2 cpu_pc_0_ph2 cpu_pc_1_ph2 cpu_pc_2_ph1 cpu_pc_3_ph2 \
+    o7 o8 o9 o10 = ite_4bit if_phase_2 cpu_pc_0_ph2 cpu_pc_1_ph2 cpu_pc_2_ph2 cpu_pc_3_ph2 \
         cpu_pc_0_ph01 cpu_pc_1_ph01 cpu_pc_2_ph01 cpu_pc_3_ph01
     # cpu_pc_X_ph012
     o11 o12 o13 o14 = ite_4bit if_phase_2 cpu_pc_4_ph2 cpu_pc_5_ph2 cpu_pc_6_ph2 cpu_pc_7_ph2 \

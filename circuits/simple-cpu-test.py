@@ -111,19 +111,61 @@ def cpu_phase012_1_input_test_func(case):
         {'state':0,'instr':case&0xf,'pc':(case>>4)&0xff,
                  'tempreg':(case>>12)&3,'mem_value':(case>>14)&3})
 
+def cpu_phase012_1_2_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':0,'instr':case&0xf,'pc':(case>>4)&0xff,
+                 'tempreg':((case>>12)&3)<<2,'mem_value':((case>>14)&3)<<2})
+
 def cpu_phase012_2_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'state':1,'instr':case&0x3,'pc':(case>>2)&0xff,
                  'tempreg':(case>>10)&3,'mem_value':(case>>12)&0xf})
+
+def cpu_phase012_2_2_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':1,'instr':(case&0x3)<<2,'pc':(case>>2)&0xff,
+                 'tempreg':((case>>10)&3)<<2,'mem_value':(case>>12)&0xf})
+
+def cpu_phase012_2_3_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':1,'instr':9,'pc':case&0xff,
+                 'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
 
 def cpu_phase012_3_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'state':2,'instr':case&0xf,'pc':(case>>4)&0xff,
                  'tempreg':(case>>12)&3,'mem_value':(case>>14)&3})
 
+def cpu_phase012_3_2_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':2,'instr':case&0xf,'pc':(case>>4)&0xff,
+                 'tempreg':((case>>12)&3)<<2,'mem_value':((case>>14)&3)<<2})
+
+def cpu_phase012_3_3_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':2,'instr':case&0xf,'pc':(case>>4)&0xff,
+                 'tempreg':11,'mem_value':(case>>12)&0xf})
+
+def cpu_phase012_3_4_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':2,'instr':case&0xf,'pc':(case>>4)&0xff,
+                 'tempreg':(case>>12)&0xf,'mem_value':5})
+
 gen_testsuite("cpu_phase012_1", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
                 cpu_phase012_1_input_test_func)
+gen_testsuite("cpu_phase012_1_2", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
+                cpu_phase012_1_2_input_test_func)
 gen_testsuite("cpu_phase012_2", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
                 cpu_phase012_2_input_test_func)
+gen_testsuite("cpu_phase012_2_2", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
+                cpu_phase012_2_2_input_test_func)
+gen_testsuite("cpu_phase012_2_3", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
+                cpu_phase012_2_3_input_test_func)
 gen_testsuite("cpu_phase012_3", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
                 cpu_phase012_3_input_test_func)
+gen_testsuite("cpu_phase012_3_2", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
+                cpu_phase012_3_2_input_test_func)
+gen_testsuite("cpu_phase012_3_3", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
+                cpu_phase012_3_3_input_test_func)
+gen_testsuite("cpu_phase012_3_4", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
+                cpu_phase012_3_4_input_test_func)
