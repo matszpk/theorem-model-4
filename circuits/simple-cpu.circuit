@@ -303,8 +303,7 @@ cpu_phase012:
     
     cpu_state_0_n = nand cpu_state_0 cpu_state_0
     cpu_state_2_n = nand cpu_state_2 cpu_state_2
-    if_phase_2 = and_3 cpu_state_0_n cpu_state_1 cpu_state_2
-    if_phase_3 = and_3 cpu_state_0 cpu_state_1 cpu_state_2_n
+    if_phase_2 = and_3 cpu_state_0_n cpu_state_1 cpu_state_2_n
     
     # cpu_state_0_ph012
     o0 = ite if_phase_2 cpu_state_0_ph2 cpu_state_0_ph01
