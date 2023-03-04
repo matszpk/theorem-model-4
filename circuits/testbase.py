@@ -20,7 +20,7 @@ def bin_decomp(listname, v):
         pos += ilen
     return dic_out
 
-def bin_comp(listname, dic):
+def bin_comp(listname, dic_in):
     pos, v = 0, 0
     for (name, ilen) in listname:
         mask = (1<<ilen)-1
