@@ -109,7 +109,21 @@ def cpu_phase012(data):
 def cpu_phase012_1_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'state':0,'instr':case&0xf,'pc':(case>>4)&0xff,
-                 'tempreg':14,'mem_value':11})
+                 'tempreg':(case>>12)&3,'mem_value':(case>>14)&3})
 
-gen_testsuite("cpu_phase012_1", "cpu_phase012", 23, 28, range(0, 1<<12), cpu_phase012,
+def cpu_phase012_2_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':1,'instr':case&0xf,'pc':(case>>4)&0xff,
+                 'tempreg':(case>>12)&3,'mem_value':(case>>14)&3})
+
+def cpu_phase012_3_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':2,'instr':case&0xf,'pc':(case>>4)&0xff,
+                 'tempreg':(case>>12)&3,'mem_value':(case>>14)&3})
+
+gen_testsuite("cpu_phase012_1", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
                 cpu_phase012_1_input_test_func)
+gen_testsuite("cpu_phase012_2", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
+                cpu_phase012_2_input_test_func)
+gen_testsuite("cpu_phase012_3", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
+                cpu_phase012_3_input_test_func)
