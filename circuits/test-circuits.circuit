@@ -122,3 +122,37 @@ if_clc_rol_ror_psh_pul:
     tmp1 = nand tmp0 tmp0
     tmp2 = and_3 cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1
     o0 = ite cpu_instr_3_ph1 tmp1 tmp2
+if_sta_psh:
+    alias cpu_instr_0 i0
+    alias cpu_instr_1 i1
+    alias cpu_instr_2 i2
+    alias cpu_instr_3 i3
+    cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit \
+        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
+    
+    if_psh = and_4 cpu_instr_0_n cpu_instr_1 cpu_instr_2 cpu_instr_3
+    if_sta = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
+    o0 = or if_sta if_psh
+if_jump:
+    alias cpu_instr_0 i0
+    alias cpu_instr_1 i1
+    alias cpu_instr_2 i2
+    alias cpu_instr_3 i3
+    alias cpu_flag_c i4
+    alias cpu_flag_z i5
+    alias cpu_flag_n i6
+    
+    cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit \
+        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
+    
+    if_jump = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2 cpu_instr_3
+    if_bcc_bne = and_3 cpu_instr_1 cpu_instr_2_n cpu_instr_3
+    if_bpl = and_4 cpu_instr_1_n cpu_instr_1_n cpu_instr_2 cpu_instr_3
+    cpu_flag_c_n cpu_flag_z_n cpu_flag_n_n ign = not_4bit \
+        cpu_flag_c cpu_flag_z cpu_flag_n zero
+    if_bcc_jump = and_3 if_bcc_bne cpu_instr_0_n cpu_flag_c_n
+    if_bne_jump = and_3 if_bcc_bne cpu_instr_0 cpu_flag_z_n
+    if_bpl_jump = and if_bpl cpu_flag_n_n
+    
+    # join it: if_bcc_jump or if_bne_jump or if_bpl_jump or if_jump
+    o0 = or_4 if_bcc_jump if_bne_jump if_bpl_jump if_jump
