@@ -232,7 +232,7 @@ cpu_phase012:
     alias mem_rw_ph0 zero
     
     # clc_rol_ror_psh_pull
-    tmp0 = xor cpu_instr_1_ph1 cpu_instr_3_ph1
+    tmp0 = xor cpu_instr_1_ph1 cpu_instr_2_ph1
     tmp1 = nand tmp0 tmp0
     tmp2 = and_3 cpu_instr_0_ph1 cpu_instr_1_ph1 cpu_instr_2_ph1
     if_clc_rol_ror_psh_pul = ite cpu_instr_3_ph1 tmp1 tmp2
