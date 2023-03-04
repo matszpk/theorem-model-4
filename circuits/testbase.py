@@ -1,4 +1,4 @@
-def reverse_bits(n,width):
+def revbits(n,width):
     return int(('{:0{width}b}'.format(n, width=width))[::-1], 2)
 
 def gen_testsuite(testname, funcname, inwidth, outwidth, cases, func, infunc = lambda x: x):
@@ -6,8 +6,8 @@ def gen_testsuite(testname, funcname, inwidth, outwidth, cases, func, infunc = l
         inmask = (1<<inwidth)-1
         outmask = (1<<outwidth)-1
         wc = infunc(c) & inmask
-        rc = reverse_bits(wc, inwidth)
-        res=reverse_bits(func(wc), outwidth) & outmask
+        rc = revbits(wc, inwidth)
+        res=revbits(func(wc), outwidth) & outmask
         print("{}_test_{} {} {:0{iw}b} {:0{ow}b}" \
                 .format(testname, c, funcname, rc, res, iw=inwidth, ow=outwidth))
 

@@ -47,3 +47,5 @@ gen_testsuite("dec_4bit", "dec_4bit", 4, 4, range(0, 1<<4), lambda x: (16+x-1)&0
 gen_testsuite("inc_8bit", "inc_8bit", 8, 8, range(0, 1<<8), lambda x: (x+1)&0xff)
 # gen_testsuite("ite_4bit_2", "ite_4bit", 9, 4, range(0, 1<<3), ite_4bit, \
 #        lambda x: (x&1)|((((x>>1)&1)*0xf)<<1)|(((x>>2)*0xf)<<5))
+for i in range(0, 1024):
+    print("{:010b} {:010b}".format(i,revbits(i,10)))
