@@ -67,15 +67,19 @@ instr_jmp=13
 instr_psh=14
 instr_pul=15
 
-def cpu_phase_012(data):
-    v = bin_decomp((('state',3),('instr',4),('pc',8),('tempreg',4),('mem_value',4)), data)
+cpu_phase012_input_str = (('state',3),('instr',4),('pc',8),('tempreg',4),('mem_value',4))
+cpu_phase012_output_str = (('state',3),('instr',4),('pc',8), ('tempreg',4),('mem_rw',1), \
+    ('mem_address',8))
+
+def cpu_phase012(data):
+    v = bin_decomp(cpu_phase012_input_str, data)
     state, instr, pc = v['state'], v['instr'], v['pc']
     tempreg, mem_value = v['tempreg'], v['mem_value']
     next_pc = (pc + 1) & 0xff
     outv = dict()
     if state==0:
         outv = {'state':1,'instr':instr,'pc':next_pc,'tempreg':tempreg,'mem_rw':0,
-                 'mem_address':pc }
+                 'mem_address':pc}
     elif state==1:
         new_instr = mem_value
         if_clc_rol_psh_pul = new_instr==instr_clc or new_instr==instr_rol or \
@@ -93,13 +97,19 @@ def cpu_phase_012(data):
                 'mem_address':pc }
     else:
         raise "Error!"
-    return bin_comp((('state',3),('instr',4),('pc',8),
-                     ('tempreg',4),('mem_rw',1),('mem_address',8)), outv)
+    return bin_comp(cpu_phase012_output_str, outv)
 
-print(
-    bin_decomp((('state',3),('instr',4),('pc',8),
-            ('tempreg',4),('mem_rw',1),('mem_address',8)),
-    cpu_phase_012(
-        bin_comp((('state',3),('instr',4),('pc',8),('tempreg',4),('mem_value',4)),
-                {'state':2,'instr':instr_sbc,'pc':41,'tempreg':7,'mem_value':11})
-        )))
+# print(
+#     bin_decomp(cpu_phase_012_output_str,
+#     cpu_phase012(
+#         bin_comp(cpu_phase_012_input_str,
+#                 {'state':2,'instr':instr_or,'pc':41,'tempreg':7,'mem_value':11})
+#         )))
+
+def cpu_phase012_1_input_test_func(case):
+    return bin_comp(cpu_phase012_input_str,
+        {'state':0,'instr':case&0xf,'pc':(case>>4)&0xff,
+                 'tempreg':14,'mem_value':11})
+
+gen_testsuite("cpu_phase012_1", "cpu_phase012", 23, 28, range(0, 1<<12), cpu_phase012,
+                cpu_phase012_1_input_test_func)

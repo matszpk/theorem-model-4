@@ -219,7 +219,7 @@ cpu_phase012:
     alias mem_address_4_ph1 mem_address_4_ph0
     alias mem_address_5_ph1 mem_address_5_ph0
     alias mem_address_6_ph1 mem_address_6_ph0
-    alias mem_address_7_ph1 mem_address_0_ph0
+    alias mem_address_7_ph1 mem_address_7_ph0
     
     alias mem_rw_ph1 mem_rw_ph0
     
@@ -274,7 +274,7 @@ cpu_phase012:
     alias mem_address_4_ph01 mem_address_4_ph1
     alias mem_address_5_ph01 mem_address_5_ph1
     alias mem_address_6_ph01 mem_address_6_ph1
-    alias mem_address_7_ph01 mem_address_0_ph1
+    alias mem_address_7_ph01 mem_address_7_ph1
     
     ########
     # phase 2 - fetch address nibble 1 
