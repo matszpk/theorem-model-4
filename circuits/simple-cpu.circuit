@@ -406,12 +406,9 @@ cpu_phase3:
     
     if_sp_zero = and_4 cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
     
-    cpu_sp_0_inc cpu_sp_1_inc cpu_sp_2_inc cpu_sp_3_inc ign = carry_inc_4bit \
-        zero cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
+    cpu_sp_0_tmp cpu_sp_1_tmp cpu_sp_2_tmp cpu_sp_3_tmp ign = carry_inc_4bit \
+        if_psh cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
     cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec = dec_4bit \
-        cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
-    cpu_sp_0_tmp cpu_sp_1_tmp cpu_sp_2_tmp cpu_sp_3_tmp = ite_4bit if_psh \
-        cpu_sp_0_inc cpu_sp_1_inc cpu_sp_2_inc cpu_sp_3_inc \
         cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
     
     # calculating mem_address - SP if PSH,PUL else tmpreg|(mem_value<<4)

@@ -251,6 +251,38 @@ def cpu_phase3_xor_1_input_test_func(case):
     return bin_comp(cpu_phase3_input_str,
         {'state':3,'instr':instr_xor,'pc':(case&0xf)<<2,'acc':(case>>4)&0xf,
             'flags':0b011,'sp':6,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_clc_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_clc,'pc':(case&0xf)<<2,'acc':(case>>4)&0xf,
+            'flags':0b011,'sp':6,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_rol_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_rol,'pc':(case&0xf)<<2,'acc':(case>>4)&0xf,
+            'flags':0b011,'sp':6,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_ror_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_ror,'pc':(case&0xf)<<2,'acc':(case>>4)&0xf,
+            'flags':0b011,'sp':6,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_bcc_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_bcc,'pc':(case&0x1f)<<2,'acc':11,
+            'flags':(case>>5)&0x7,'sp':6,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_bne_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_bne,'pc':(case&0x1f)<<2,'acc':11,
+            'flags':(case>>5)&0x7,'sp':6,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_bpl_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_bpl,'pc':(case&0x1f)<<2,'acc':11,
+            'flags':(case>>5)&0x7,'sp':6,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_jmp_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_jmp,'pc':(case&0x1f)<<2,'acc':11,
+            'flags':(case>>5)&0x7,'sp':6,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_psh_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_psh,'pc':(case&0xf)<<2,'acc':12,'flags':0b011,
+            'sp':(case>>4)&0xf,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
 
 gen_testsuite("cpu_phase3_lda_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_lda_1_input_test_func)
@@ -266,6 +298,22 @@ gen_testsuite("cpu_phase3_or_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phas
                 cpu_phase3_or_1_input_test_func)
 gen_testsuite("cpu_phase3_xor_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_xor_1_input_test_func)
+gen_testsuite("cpu_phase3_clc_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_clc_1_input_test_func)
+gen_testsuite("cpu_phase3_rol_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_rol_1_input_test_func)
+gen_testsuite("cpu_phase3_ror_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_ror_1_input_test_func)
+gen_testsuite("cpu_phase3_bcc_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_bcc_1_input_test_func)
+gen_testsuite("cpu_phase3_bne_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_bne_1_input_test_func)
+gen_testsuite("cpu_phase3_bpl_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_bpl_1_input_test_func)
+gen_testsuite("cpu_phase3_jmp_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_jmp_1_input_test_func)
+gen_testsuite("cpu_phase3_psh_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_psh_1_input_test_func)
 
 # print(
 #     bin_decomp(cpu_phase3_output_str,
