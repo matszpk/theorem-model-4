@@ -258,6 +258,14 @@ gen_testsuite("cpu_phase3_sta_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_pha
                 cpu_phase3_sta_1_input_test_func)
 gen_testsuite("cpu_phase3_adc_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_adc_1_input_test_func)
+gen_testsuite("cpu_phase3_sbc_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_sbc_1_input_test_func)
+gen_testsuite("cpu_phase3_and_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_and_1_input_test_func)
+gen_testsuite("cpu_phase3_or_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_or_1_input_test_func)
+gen_testsuite("cpu_phase3_xor_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_xor_1_input_test_func)
 
 # print(
 #     bin_decomp(cpu_phase3_output_str,
