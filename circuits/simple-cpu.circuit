@@ -825,7 +825,7 @@ cpu_merge_phase0123_4:
         mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123
     o43 = copy zero
     o44 = ite if_phase4 zero if_stop_ph0123
-    
+
 copy:
     t = nand i0 i0
     o0 = nand t t
