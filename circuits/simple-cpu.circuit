@@ -404,7 +404,8 @@ cpu_phase3:
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
     if_pul = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
     
-    if_sp_zero = and_4 cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
+    if_sp_zero_n = or_4 cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
+    if_sp_zero = nand if_sp_zero_n if_sp_zero_n
     
     cpu_sp_0_tmp cpu_sp_1_tmp cpu_sp_2_tmp cpu_sp_3_tmp ign = carry_inc_4bit \
         if_psh cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3

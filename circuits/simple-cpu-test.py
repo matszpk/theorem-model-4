@@ -283,6 +283,10 @@ def cpu_phase3_psh_1_input_test_func(case):
     return bin_comp(cpu_phase3_input_str,
         {'state':3,'instr':instr_psh,'pc':(case&0xf)<<2,'acc':12,'flags':0b011,
             'sp':(case>>4)&0xf,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
+def cpu_phase3_pul_1_input_test_func(case):
+    return bin_comp(cpu_phase3_input_str,
+        {'state':3,'instr':instr_pul,'pc':(case&0xf)<<2,'acc':12,'flags':0b011,
+            'sp':(case>>4)&0xf,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
 
 gen_testsuite("cpu_phase3_lda_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_lda_1_input_test_func)
@@ -314,6 +318,8 @@ gen_testsuite("cpu_phase3_jmp_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_pha
                 cpu_phase3_jmp_1_input_test_func)
 gen_testsuite("cpu_phase3_psh_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_psh_1_input_test_func)
+gen_testsuite("cpu_phase3_pul_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
+                cpu_phase3_pul_1_input_test_func)
 
 # print(
 #     bin_decomp(cpu_phase3_output_str,
