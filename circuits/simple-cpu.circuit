@@ -79,7 +79,7 @@ main:
     cpu_pc_3_ph3 cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 cpu_sp_0_ph3 cpu_sp_1_ph3 \
     cpu_sp_2_ph3 cpu_sp_3_ph3 mem_rw_ph3 mem_value_0_ph3 mem_value_1_ph3 mem_value_2_ph3 \
     mem_value_3_ph3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
-    mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 if_stop_ph012 \
+    mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 if_stop_ph3 \
     = cpu_phase3 cpu_state_0 cpu_state_1 cpu_state_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 \
     cpu_instr_3 cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
     cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_flag_c cpu_flag_z cpu_flag_n \
@@ -131,7 +131,7 @@ main:
     mem_address_3_ph012 mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 \
     mem_address_7_ph012 mem_rw_ph3 mem_value_0_ph3 mem_value_1_ph3 mem_value_2_ph3 \
     mem_value_3_ph3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
-    mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 if_stop_ph012
+    mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 if_stop_ph3
     
     o0 o1 o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 o22 \
     o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 o34 o35 o36 o37 o38 o39 o40 o41 o42 o43 o44 \
@@ -527,7 +527,7 @@ cpu_merge_phase012_3:
     alias mem_address_5_ph3 i72
     alias mem_address_6_ph3 i73
     alias mem_address_7_ph3 i74
-    alias if_stop_ph012 i75
+    alias if_stop_ph3 i75
     
     cpu_state_2_n = nand cpu_state_2 cpu_state_2
     if_phase_3 = and_3 cpu_state_0 cpu_state_1 cpu_state_2_n
@@ -566,7 +566,7 @@ cpu_merge_phase012_3:
     o32 o33 o34 o35 = ite_4bit \
         if_phase_3 mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 \
         mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 mem_address_7_ph012
-    o36 = ite if_phase_3 zero if_stop_ph012
+    o36 = ite if_phase_3 if_stop_ph3 zero
 
 cpu_phase4:
     alias cpu_instr_0 i0

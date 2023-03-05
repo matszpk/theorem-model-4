@@ -106,11 +106,6 @@ def cpu_phase012(data):
         raise "Error!"
     return bin_comp(cpu_phase012_output_str, outv)
 
-cpu_phase3_input_str = (('state',3),('instr',4),('pc',8),('acc',4),('flags',3),
-                ('sp',4),('tempreg',4),('mem_value',4))
-cpu_phase3_output_str = (('state',3),('pc',8),('sp',4),('mem_rw',1),('mem_value',4),
-                ('mem_address',8),('stop',1))
-
 # print(
 #     bin_decomp(cpu_phase012_output_str,
 #     cpu_phase012(
@@ -182,6 +177,11 @@ gen_testsuite("cpu_phase012_3_3", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_p
 gen_testsuite("cpu_phase012_3_4", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
                 cpu_phase012_3_4_input_test_func)
 
+cpu_phase3_input_str = (('state',3),('instr',4),('pc',8),('acc',4),('flags',3),
+                ('sp',4),('tempreg',4),('mem_value',4))
+cpu_phase3_output_str = (('state',3),('pc',8),('sp',4),('mem_rw',1),('mem_value',4),
+                ('mem_address',8),('stop',1))
+
 def cpu_phase3(data):
     v = bin_decomp(cpu_phase3_input_str, data)
     state, instr, pc = v['state'], v['instr'], v['pc']
@@ -217,7 +217,7 @@ def cpu_phase3(data):
     
     return bin_comp(cpu_phase3_output_str,
         { 'state': next_state, 'pc': next_pc, 'sp': next_sp, 'mem_rw': new_mem_rw,
-            'mem_value': new_mem_value, 'mem_address': new_mem_address, 'stop': stop, })
+            'mem_value': new_mem_value, 'mem_address': new_mem_address, 'stop': stop })
 
 def cpu_phase3_lda_1_input_test_func(case):
     return bin_comp(cpu_phase3_input_str,
@@ -358,6 +358,29 @@ gen_testsuite("cpu_phase3_pul_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_pha
                 cpu_phase3_pul_1_input_test_func)
 gen_testsuite("cpu_phase3_pul_1_2", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_pul_1_2_input_test_func)
+
+cpu_phase012_3_input_str = (('state',3),('instr',4),('tempreg',4),('state_012',3),
+                ('instr_012',4),('pc_012',8),('sp_012',4),('tempreg_012',4),('state_3',3),
+                ('pc_3',8),('sp_3',4),('mem_rw_012',1),('mem_value_012',4),
+                ('mem_address_012',8),('mem_rw_3',1),('mem_value_3',4),('mem_address_3',8),
+                ('stop_3',1))
+cpu_phase012_3_output_str = (('state',3),('instr',4),('pc',8),('sp',4),('tempreg',4),
+                ('mem_rw',1),('mem_value',4),('mem_address',8),('stop',1))
+
+def cpu_phase012_3(data):
+    v = bin_decomp(cpu_phase012_3_input_str, data)
+    if_phase3 = v['state']==3
+    return bin_comp(cpu_phase012_3_output_str, {
+            'state': v['state_3'] if if_phase3 else v['state_012'],
+            'instr': v['instr'] if if_phase3 else v['instr_012'],
+            'pc': v['pc_3'] if if_phase3 else v['pc_012'],
+            'sp': v['sp_3'] if if_phase3 else v['sp_012'],
+            'tempreg': v['tempreg'] if if_phase3 else v['tempreg_012'],
+            'mem_rw': v['mem_rw_3'] if if_phase3 else ['mem_rw_012'],
+            'mem_value': v['mem_value_3'] if if_phase3 else ['mem_value_012'],
+            'mem_address': v['mem_value_3'] if if_phase3 else ['mem_address_012'],
+            'stop': v['stop_3'] if if_phase3 else 0
+        })
 
 # print(
 #     bin_decomp(cpu_phase3_output_str,
