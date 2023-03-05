@@ -411,8 +411,33 @@ def cpu_merge_phase012_3_1_input_test_func(case):
             'stop_3':1,
         })
 
+def cpu_merge_phase012_3_2_input_test_func(case):
+    return bin_comp(cpu_merge_phase012_3_input_str,
+        {
+            'state':case&3,
+            'instr':1,
+            'tempreg':2,
+            'state_012':3,
+            'instr_012':4,
+            'pc_012':111,
+            'sp_012':5,
+            'tempreg_012':6,
+            'state_3':7,
+            'pc_3':222,
+            'sp_3':8,
+            'mem_rw_012':9,
+            'mem_value_012':10,
+            'mem_address_012':77,
+            'mem_rw_3':1,
+            'mem_value_3':11,
+            'mem_address_3':99,
+            'stop_3':1,
+        })
+
 gen_testsuite("cpu_merge_phase012_3_1", "cpu_merge_phase012_3", 76, 37, range(0, 1<<2),
                 cpu_merge_phase012_3, cpu_merge_phase012_3_1_input_test_func)
+gen_testsuite("cpu_merge_phase012_3_2", "cpu_merge_phase012_3", 76, 37, range(0, 1<<2),
+                cpu_merge_phase012_3, cpu_merge_phase012_3_2_input_test_func)
 
 # print(
 #     bin_decomp(cpu_phase3_output_str,
