@@ -50,6 +50,14 @@ struct TestCircuitArgs {
     trace: bool,
 }
 
+#[derive(Parser)]
+struct DumpCircuitArgs {
+    #[clap(help = "Set circuit filename")]
+    circuit: PathBuf,
+    #[clap(help = "Set output filename")]
+    output: PathBuf,
+}
+
 #[derive(Subcommand)]
 enum Commands {
     #[clap(about = "Check cicrcuit file syntax")]
@@ -58,6 +66,8 @@ enum Commands {
     Run(RunCircuitArgs),
     #[clap(about = "Test circuit")]
     Test(TestCircuitArgs),
+    #[clap(about = "Dump circuit into raw file")]
+    Dump(DumpCircuitArgs),
 }
 
 fn main() -> ExitCode {
@@ -66,6 +76,7 @@ fn main() -> ExitCode {
         Commands::Check(ref r) => r.circuit.clone(),
         Commands::Run(ref r) => r.circuit.clone(),
         Commands::Test(ref r) => r.circuit.clone(),
+        Commands::Dump(ref r) => r.circuit.clone(),
     };
 
     let input = divide_lines(&read_to_string(circuit_file_name).unwrap());
@@ -172,14 +183,13 @@ fn main() -> ExitCode {
             }
         }
         Commands::Test(r) => {
-            let input = divide_lines(&
-                if let Some(testsuite) = r.testsuite {
-                    read_to_string(testsuite).unwrap()
-                } else {
-                    let mut out = String::new();
-                    io::stdin().read_to_string(&mut out).unwrap();
-                    out
-                });
+            let input = divide_lines(&if let Some(testsuite) = r.testsuite {
+                read_to_string(testsuite).unwrap()
+            } else {
+                let mut out = String::new();
+                io::stdin().read_to_string(&mut out).unwrap();
+                out
+            });
             match parse_test_suite(&input) {
                 Ok((_, test_suite)) => {
                     if !run_test_suite(&circuit, test_suite, r.trace) {
@@ -195,6 +205,12 @@ fn main() -> ExitCode {
                     }
                     return ExitCode::FAILURE;
                 }
+            }
+        }
+        Commands::Dump(r) => {
+            if let Err(e) = circuit.circuit.dump(r.output) {
+                eprintln!("Error while dumping: {:?}", e);
+                return ExitCode::FAILURE;
             }
         }
     };

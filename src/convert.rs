@@ -37,10 +37,12 @@ pub enum ConvertError {
     WrongInputNumberInSubcircuit(Statement, String),
     #[error("Wrong output number {0:?} in subcircuit {1}")]
     WrongOutputNumberInSubcircuit(Statement, String),
-    #[error("Parse error of input/output of subcircuit")]
+    #[error("Parse error of input/output of subcircuit {0}")]
     SubcircuitInputOutputParseError(#[from] std::num::ParseIntError),
     #[error("Unknown variable {0} in alias in subcircuit {1}")]
     UnknownVariableInAlias(String, String),
+    #[error("Number error: {0}")]
+    NumberError(#[from] std::num::TryFromIntError),
 }
 
 impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
@@ -331,7 +333,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                     sc.name.clone(),
                                 ));
                             }
-                            body.push((128 + *sc_ci).try_into().unwrap());
+                            body.push((128 + *sc_ci).try_into()?);
                         } else {
                             return Err(ConvertError::UnknownSubcircuitInSubcircuit(
                                 subcircuit.clone(),
@@ -341,7 +343,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                         // put stmt inputs
                         for input in inputs {
                             if let Some(var) = var_map.get(input.as_str()) {
-                                body.push(u8::try_from(*var).unwrap());
+                                body.push(*var);
                             } else {
                                 return Err(ConvertError::VariableUnvailableInSubcircuit(
                                     input.clone(),

@@ -1,6 +1,18 @@
 use crate::convert::*;
 use crate::parser::*;
 
+use std::fs::File;
+use std::io::{self, Write};
+use std::path::Path;
+
+#[derive(thiserror::Error, Debug)]
+pub enum DumpError {
+    #[error("IO error: {0}")]
+    IO(#[from] io::Error),
+    #[error("Numeric error: {0}")]
+    Num(#[from] std::num::TryFromIntError),
+}
+
 // runtime environment
 #[derive(Clone, Copy, Debug)]
 pub struct SubcircuitInfo {
@@ -237,6 +249,23 @@ impl Circuit {
             input_len,
             output_len,
         });
+    }
+
+    pub fn dump(&self, path: impl AsRef<Path>) -> Result<(), DumpError> {
+        let mut file = File::create(path)?;
+        let main_data = [
+            self.input_len,
+            self.output_len,
+            u8::try_from(self.subcircuits.len())?,
+        ];
+        file.write_all(main_data.as_slice())?;
+        for c in &self.subcircuits {
+            let sc_pos = u16::try_from(c.location)?.to_le_bytes();
+            let sc_data = [sc_pos[0], sc_pos[1], c.input_len, c.output_len];
+            file.write_all(sc_data.as_slice())?;
+        }
+        file.write_all(&self.circuit)?;
+        Ok(())
     }
 }
 
