@@ -796,8 +796,7 @@ cpu_merge_phase0123_4:
     alias mem_address_7_ph0123 i70
     alias if_stop_ph0123 i71
     
-    if_phase4_n = nand cpu_state_2 cpu_state_2
-    if_phase4 = nand if_phase4_n if_phase4_n
+    alias if_phase4 cpu_state_2
     
     # cpu_state_X
     o0 = ite if_phase4 zero cpu_state_0_ph0123
