@@ -440,10 +440,12 @@ def cpu_merge_phase012_3_2_input_test_func(case):
             'stop_3':1,
         })
 
+"""
 gen_testsuite("cpu_merge_phase012_3_1", "cpu_merge_phase012_3", 76, 37, range(0, 1<<2),
                 cpu_merge_phase012_3, cpu_merge_phase012_3_1_input_test_func)
 gen_testsuite("cpu_merge_phase012_3_2", "cpu_merge_phase012_3", 76, 37, range(0, 1<<2),
                 cpu_merge_phase012_3, cpu_merge_phase012_3_2_input_test_func)
+"""
 
 cpu_phase4_input_str = (('instr',4),('flags',3),('acc',4),('mem_value',4))
 cpu_phase4_output_str = (('acc',4),('flags',3))
@@ -483,15 +485,50 @@ def cpu_phase4(data):
     elif instr==instr_pul:
         new_acc = mem_value
     
-    new_flags = set_flag_z(new_flags, new_acc==0)
-    new_flags = set_flag_n(new_flags, (new_acc&8)!=0)
+    if instr!=instr_clc:
+        new_flags = set_flag_z(new_flags, new_acc==0)
+        new_flags = set_flag_n(new_flags, (new_acc&8)!=0)
     
     return bin_comp(cpu_phase4_output_str, { 'acc': new_acc, 'flags': new_flags })
 
-def cpu_phase4_1_input_test_func(case):
-    return bin_comp(cpu_merge_phase4_input_str,
+def cpu_phase4_lda_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_lda,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_adc_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_adc,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_sbc_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_sbc,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_and_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_and,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_or_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_or,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_xor_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_xor,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_clc_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_clc,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
 
-print(
-    bin_decomp(cpu_phase4_output_str,
-        cpu_phase4(bin_comp(cpu_phase4_input_str,
-                {'instr':instr_ror,'flags':1,'acc':9,'mem_value':9}))))
+gen_testsuite("cpu_phase4_lda_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_lda_1_input_test_func)
+gen_testsuite("cpu_phase4_adc_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_adc_1_input_test_func)
+gen_testsuite("cpu_phase4_sbc_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_sbc_1_input_test_func)
+gen_testsuite("cpu_phase4_and_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_and_1_input_test_func)
+gen_testsuite("cpu_phase4_or_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_or_1_input_test_func)
+gen_testsuite("cpu_phase4_xor_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_xor_1_input_test_func)
+gen_testsuite("cpu_phase4_clc_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_clc_1_input_test_func)
+
+# print(
+#     bin_decomp(cpu_phase4_output_str,
+#         cpu_phase4(bin_comp(cpu_phase4_input_str,
+#                 {'instr':instr_clc,'flags':7,'acc':15,'mem_value':0}))))

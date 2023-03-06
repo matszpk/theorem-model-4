@@ -600,8 +600,7 @@ cpu_phase4:
     
     if_lda = and_3 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
     if_pul = and_3 cpu_instr_1 cpu_instr_2 cpu_instr_3
-    tmp = nand if_lda if_pul
-    if_lda_pul = nand tmp tmp
+    if_lda_pul = or if_lda if_pul
     
     # 1 - STA - store accumulator - done in phase 3
     
@@ -665,7 +664,7 @@ cpu_phase4:
     cpu_acc_0_t012345 cpu_acc_1_t012345 cpu_acc_2_t012345 cpu_acc_3_t012345 = ite_4bit \
         cpu_instr_2 cpu_acc_0_t345 cpu_acc_1_t345 cpu_acc_2_t345 cpu_acc_3_t345 \
         cpu_acc_0_t012 cpu_acc_1_t012 cpu_acc_2_t012 cpu_acc_3_t012
-    cpu_flag_c_t012345 = ite cpu_instr_2 cpu_flag_c cpu_flag_c_t012
+    cpu_flag_c_t012345 = ite cpu_instr_2 cpu_flag_c_5 cpu_flag_c_t012
     
     # 8 - ROL - rotate left 1 bit including C.
     
