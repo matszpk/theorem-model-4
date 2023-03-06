@@ -376,6 +376,14 @@ impl PrimalMachine {
             }
             stop = get_bit(&output, input_len - 1);
         }
+        if trace {
+            println!(
+                "State {}",
+                (0..state_len)
+                    .map(|i| if get_bit(&input[..], i) { "1" } else { "0" })
+                    .collect::<String>()
+            );
+        }
     }
 }
 
