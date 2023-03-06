@@ -642,6 +642,8 @@ cpu_phase4:
         cpu_acc_0_t4 cpu_acc_1_t4 cpu_acc_2_t4 cpu_acc_3_t4 \
         cpu_acc_0_t3 cpu_acc_1_t3 cpu_acc_2_t3 cpu_acc_3_t3
     
+    alias cpu_flag_c_34 cpu_flag_c
+    
     # 6 - XOR - perform bitwise XOR on accumulator
     
     cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 = xor_4bit \
@@ -660,11 +662,12 @@ cpu_phase4:
     cpu_acc_0_t345 cpu_acc_1_t345 cpu_acc_2_t345 cpu_acc_3_t345 = ite_4bit cpu_instr_1 \
         cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 \
         cpu_acc_0_t34 cpu_acc_1_t34 cpu_acc_2_t34 cpu_acc_3_t34
+    cpu_flag_c_345 = ite cpu_instr_1 cpu_flag_c_5 cpu_flag_c_34
     
     cpu_acc_0_t012345 cpu_acc_1_t012345 cpu_acc_2_t012345 cpu_acc_3_t012345 = ite_4bit \
         cpu_instr_2 cpu_acc_0_t345 cpu_acc_1_t345 cpu_acc_2_t345 cpu_acc_3_t345 \
         cpu_acc_0_t012 cpu_acc_1_t012 cpu_acc_2_t012 cpu_acc_3_t012
-    cpu_flag_c_t012345 = ite cpu_instr_2 cpu_flag_c_5 cpu_flag_c_t012
+    cpu_flag_c_t012345 = ite cpu_instr_2 cpu_flag_c_345 cpu_flag_c_t012
     
     # 8 - ROL - rotate left 1 bit including C.
     
@@ -689,6 +692,11 @@ cpu_phase4:
         cpu_acc_0_t6 cpu_acc_1_t6 cpu_acc_2_t6 cpu_acc_3_t6
     cpu_flag_c_t67 = ite cpu_instr_0 cpu_flag_c_t7 cpu_flag_c_t6
     
+    cpu_acc_0_t678 cpu_acc_1_t678 cpu_acc_2_t678 cpu_acc_3_t678 = ite_4bit if_pul \
+        cpu_acc_0_t0 cpu_acc_1_t0 cpu_acc_2_t0 cpu_acc_3_t0 \
+        cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67
+    cpu_flag_c_t678 = ite if_pul cpu_flag_c cpu_flag_c_t67
+    
     # A - BCC - branch if C=0 - done in phase 3
     # B - BNE - branch if Z=0 - done in phase 3
     # C - BPL - branch if N=0 - done in phase 3
@@ -698,9 +706,9 @@ cpu_phase4:
     if_clc = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3_n
     
     cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all = ite_4bit cpu_instr_3 \
-        cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67 \
+        cpu_acc_0_t678 cpu_acc_1_t678 cpu_acc_2_t678 cpu_acc_3_t678 \
         cpu_acc_0_t012345 cpu_acc_1_t012345 cpu_acc_2_t012345 cpu_acc_3_t012345
-    cpu_flag_c_t_all = ite cpu_instr_3 cpu_flag_c_t67 cpu_flag_c_t012345
+    cpu_flag_c_t_all = ite cpu_instr_3 cpu_flag_c_t678 cpu_flag_c_t012345
     
     if_not_zero = or_4 cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all
     if_zero = nand if_not_zero if_not_zero

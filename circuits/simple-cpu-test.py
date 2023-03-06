@@ -512,6 +512,15 @@ def cpu_phase4_xor_1_input_test_func(case):
 def cpu_phase4_clc_1_input_test_func(case):
     return bin_comp(cpu_phase4_input_str,{'instr':instr_clc,'flags':case&7,
             'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_rol_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_rol,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_ror_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_ror,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
+def cpu_phase4_pul_1_input_test_func(case):
+    return bin_comp(cpu_phase4_input_str,{'instr':instr_pul,'flags':case&7,
+            'acc':(case>>3)&0xf,'mem_value':(case>>7)&0xf})
 
 gen_testsuite("cpu_phase4_lda_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
                 cpu_phase4_lda_1_input_test_func)
@@ -527,6 +536,12 @@ gen_testsuite("cpu_phase4_xor_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phas
                 cpu_phase4_xor_1_input_test_func)
 gen_testsuite("cpu_phase4_clc_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
                 cpu_phase4_clc_1_input_test_func)
+gen_testsuite("cpu_phase4_rol_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_rol_1_input_test_func)
+gen_testsuite("cpu_phase4_ror_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_ror_1_input_test_func)
+gen_testsuite("cpu_phase4_pul_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
+                cpu_phase4_pul_1_input_test_func)
 
 # print(
 #     bin_decomp(cpu_phase4_output_str,
