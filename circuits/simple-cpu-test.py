@@ -79,7 +79,7 @@ def set_flag_c(flags,c):
     return (flags&~1)|(1 if c else 0)
 def set_flag_z(flags,z):
     return (flags&~2)|(2 if z else 0)
-def set_flag_z(flags,n):
+def set_flag_n(flags,n):
     return (flags&~4)|(4 if n else 0)
 
 cpu_phase012_input_str = (('state',3),('instr',4),('pc',8),('tempreg',4),('mem_value',4))
@@ -461,7 +461,7 @@ def cpu_phase4(data):
         new_flags = set_flag_c(new_flags, res>=16)
         new_acc = res & 0xf
     elif instr==instr_sbc:
-        res = acc + mem_value^0xf + (flags&1)
+        res = acc + (mem_value^0xf) + (flags&1)
         new_flags = set_flag_c(new_flags, res>=16)
         new_acc = res & 0xf
     elif instr==instr_and:
@@ -486,4 +486,9 @@ def cpu_phase4(data):
     new_flags = set_flag_z(new_flags, new_acc==0)
     new_flags = set_flag_n(new_flags, (new_acc&8)!=0)
     
-    return bin_comp(cpu_phase3_output_str, { 'acc': new_acc, 'flags': new_flags })
+    return bin_comp(cpu_phase4_output_str, { 'acc': new_acc, 'flags': new_flags })
+
+print(
+    bin_decomp(cpu_phase4_output_str,
+        cpu_phase4(bin_comp(cpu_phase4_input_str,
+                {'instr':instr_ror,'flags':1,'acc':9,'mem_value':9}))))
