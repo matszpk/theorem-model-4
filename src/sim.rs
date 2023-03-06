@@ -300,6 +300,56 @@ impl PrimalMachine {
 
     // input: [state, mem_value]
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
+    pub fn run(&mut self, initial_state: &[u8], trace: bool) {
+        let input_len = self.circuit.input_len as usize;
+        let output_len = self.circuit.output_len as usize;
+        let cell_len = 1 << self.cell_len_bits;
+        let address_len = self.address_len as usize;
+        assert_eq!(input_len + 1 + address_len + 1 + 1, output_len);
+        assert_eq!(initial_state.len(), (input_len + 7) >> 3);
+        let state_len = input_len - cell_len;
+
+        let mut state = Vec::from(initial_state);
+        let mut stop = false;
+        let mut input = vec![0; ((input_len + 7) >> 3) as usize];
+        while !stop {
+            // put state into input
+            for i in 0..state_len {
+                set_bit(&mut input, i, get_bit(initial_state, i));
+            }
+            let output = self.circuit.run(&input, trace);
+            // put back to state
+            for i in 0..state_len {
+                set_bit(&mut state, i, get_bit(&output, i));
+            }
+            // memory access
+            // address
+            let mut address = 0;
+            for i in 0..address_len {
+                address |= usize::from(get_bit(&output, state_len + cell_len + 1 + i)) << i;
+            }
+            // get mem_rw
+            if get_bit(&output, state_len + cell_len) {
+                // write
+                for i in 0..cell_len {
+                    set_bit(
+                        &mut self.memory,
+                        (address << self.cell_len_bits) + i,
+                        get_bit(&output, state_len + i),
+                    );
+                }
+            } else {
+                for i in 0..cell_len {
+                    set_bit(
+                        &mut input,
+                        state_len + i,
+                        get_bit(&self.memory, (address << self.cell_len_bits) + i),
+                    );
+                }
+            }
+            stop = get_bit(&output, input_len - 1);
+        }
+    }
 }
 
 pub fn run_test_suite(
