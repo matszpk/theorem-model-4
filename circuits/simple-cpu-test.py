@@ -75,6 +75,12 @@ def flag_z(flags):
     return flags&2 != 0
 def flag_n(flags):
     return flags&4 != 0
+def set_flag_c(flags,c):
+    return (flags&~1)|(1 if c else 0)
+def set_flag_z(flags,z):
+    return (flags&~2)|(2 if z else 0)
+def set_flag_z(flags,n):
+    return (flags&~4)|(4 if n else 0)
 
 cpu_phase012_input_str = (('state',3),('instr',4),('pc',8),('tempreg',4),('mem_value',4))
 cpu_phase012_output_str = (('state',3),('instr',4),('pc',8), ('tempreg',4),('mem_rw',1),
@@ -439,10 +445,45 @@ gen_testsuite("cpu_merge_phase012_3_1", "cpu_merge_phase012_3", 76, 37, range(0,
 gen_testsuite("cpu_merge_phase012_3_2", "cpu_merge_phase012_3", 76, 37, range(0, 1<<2),
                 cpu_merge_phase012_3, cpu_merge_phase012_3_2_input_test_func)
 
-# print(
-#     bin_decomp(cpu_phase3_output_str,
-#     cpu_phase3(
-#         bin_comp(cpu_phase3_input_str,
-#                 {'state':3,'instr':instr_pul,'pc':41,'acc':7,'flags':0b011,'sp':4,
-#                  'tempreg':7,'mem_value':11})
-#         )))
+cpu_phase4_input_str = (('instr',4),('flags',3),('acc',4),('mem_value',4))
+cpu_phase4_output_str = (('acc',4),('flags',3))
+
+def cpu_phase4(data):
+    v = bin_decomp(cpu_phase4_input_str, data)
+    instr, flags, acc, mem_value = v['instr'], v['flags'], v['acc'], v['mem_value']
+    
+    new_acc = acc
+    new_flags = flags
+    if instr==instr_lda:
+        new_acc = mem_value
+    elif instr==instr_adc:
+        res = acc + mem_value + (flags&1)
+        new_flags = set_flag_c(new_flags, res>=16)
+        new_acc = res & 0xf
+    elif instr==instr_sbc:
+        res = acc + mem_value^0xf + (flags&1)
+        new_flags = set_flag_c(new_flags, res>=16)
+        new_acc = res & 0xf
+    elif instr==instr_and:
+        new_acc = (acc & mem_value) & 0xf
+    elif instr==instr_or:
+        new_acc = (acc | mem_value) & 0xf
+    elif instr==instr_xor:
+        new_acc = (acc ^ mem_value) & 0xf
+    elif instr==instr_clc:
+        new_flags = set_flag_c(new_flags, False)
+    elif instr==instr_rol:
+        res = (acc<<1) + (flags&1)
+        new_flags = set_flag_c(new_flags, res>=16)
+        new_acc = res & 0xf
+    elif instr==instr_ror:
+        res = (acc>>1) + ((flags&1)<<3)
+        new_flags = set_flag_c(new_flags, acc&1!=0)
+        new_acc = res
+    elif instr==instr_pul:
+        new_acc = mem_value
+    
+    new_flags = set_flag_z(new_flags, new_acc==0)
+    new_flags = set_flag_n(new_flags, (new_acc&8)!=0)
+    
+    return bin_comp(cpu_phase3_output_str, { 'acc': new_acc, 'flags': new_flags })
