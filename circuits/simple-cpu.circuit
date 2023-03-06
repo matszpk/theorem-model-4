@@ -105,8 +105,6 @@ main:
     cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 = copy_4bit cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
     cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 = copy_4bit \
         cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3
-    mem_address_6_ph012 = copy mem_address_6_ph012
-    mem_address_7_ph012 = copy mem_address_7_ph012
     
     # merge phase 3 with 0,1,2
     cpu_state_0_ph0123 cpu_state_1_ph0123 cpu_state_2_ph0123 cpu_instr_0_ph0123 \
