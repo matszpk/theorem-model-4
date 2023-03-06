@@ -285,10 +285,10 @@ impl PrimalMachine {
         assert_eq!(
             circuit.output_len as u32,
             // state len in bits, rest is address_len and special bits
-            (circuit.input_len - (1 << cell_len_bits)) as u32 + address_len + 3
+            circuit.input_len as u32 + address_len + 3
         );
         let mem_len = if cell_len_bits + address_len >= 3 {
-            1 << (cell_len_bits + address_len)
+            1 << (cell_len_bits + address_len - 3)
         } else {
             1
         };
@@ -306,27 +306,34 @@ impl PrimalMachine {
 
     // input: [state, mem_value]
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
-    pub fn run(&mut self, initial_state: &[u8], trace: bool) {
+    pub fn run(&mut self, initial_state: &[u8], trace: bool, circuit_trace: bool) {
         let input_len = self.circuit.input_len as usize;
         let output_len = self.circuit.output_len as usize;
         let cell_len = 1 << self.cell_len_bits;
         let address_len = self.address_len as usize;
         assert_eq!(input_len + 1 + address_len + 1 + 1, output_len);
-        assert_eq!(initial_state.len(), (input_len + 7) >> 3);
         let state_len = input_len - cell_len;
+        assert_eq!(initial_state.len(), (state_len + 7) >> 3);
 
-        let mut state = Vec::from(initial_state);
         let mut stop = false;
         let mut input = vec![0; ((input_len + 7) >> 3) as usize];
+        for i in 0..state_len {
+            set_bit(&mut input, i, get_bit(initial_state, i));
+        }
         while !stop {
             // put state into input
-            for i in 0..state_len {
-                set_bit(&mut input, i, get_bit(initial_state, i));
+            if trace {
+                println!(
+                    "State {}",
+                    (0..state_len)
+                        .map(|i| if get_bit(&input[..], i) { "1" } else { "0" })
+                        .collect::<String>()
+                );
             }
-            let output = self.circuit.run(&input, trace);
+            let output = self.circuit.run(&input, circuit_trace);
             // put back to state
             for i in 0..state_len {
-                set_bit(&mut state, i, get_bit(&output, i));
+                set_bit(&mut input, i, get_bit(&output, i));
             }
             // memory access
             // address
@@ -336,6 +343,13 @@ impl PrimalMachine {
             }
             // get mem_rw
             if get_bit(&output, state_len + cell_len) {
+                if trace {
+                    let mut value = 0;
+                    for i in 0..cell_len {
+                        value |= usize::from(get_bit(&output, state_len + i)) << i;
+                    }
+                    println!("Write {:#016x} {:#016x}", address, value);
+                }
                 // write
                 for i in 0..cell_len {
                     set_bit(
@@ -351,6 +365,13 @@ impl PrimalMachine {
                         state_len + i,
                         get_bit(&self.memory, (address << self.cell_len_bits) + i),
                     );
+                }
+                if trace {
+                    let mut value = 0;
+                    for i in 0..cell_len {
+                        value |= usize::from(get_bit(&input, state_len + i)) << i;
+                    }
+                    println!("Read {:#016x} {:#016x}", address, value);
                 }
             }
             stop = get_bit(&output, input_len - 1);

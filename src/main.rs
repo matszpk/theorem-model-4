@@ -70,6 +70,8 @@ struct RunMachineArgs {
     memory: PathBuf,
     #[clap(short, long, help = "Set trace mode")]
     trace: bool,
+    #[clap(short, long, help = "Set circuit trace mode")]
+    circuit_trace: bool,
 }
 
 #[derive(Subcommand)]
@@ -246,7 +248,7 @@ fn main() -> ExitCode {
                 set_bit(&mut initial_state[..], i, c == '1');
             }
             let initial_state = &initial_state[0..((pm.state_len() + 7) >> 3)];
-            pm.run(initial_state, r.trace);
+            pm.run(initial_state, r.trace, r.circuit_trace);
         }
     };
 
