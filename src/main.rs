@@ -250,7 +250,7 @@ fn main() -> ExitCode {
             let initial_state = &initial_state[0..((pm.state_len() + 7) >> 3)];
             pm.run(initial_state, r.trace, r.circuit_trace);
         }
-    };
+    }
 
     ExitCode::SUCCESS
 }
