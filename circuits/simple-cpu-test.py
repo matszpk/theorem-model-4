@@ -24,7 +24,6 @@ def carry_suber_4bit(case):
     a,b,c = v['a'],v['b'],v['c']
     return (a + (b ^ 0xf) + c) & 0x1f
 
-"""
 gen_testsuite("copy", "copy", 1, 1, range(0, 1<<1), lambda x: x)
 gen_testsuite("copy_4bit", "copy_4bit", 4, 4, range(0, 1<<4), lambda x: x)
 gen_testsuite("not_4bit", "not_4bit", 4, 4, range(0, 1<<4), lambda x: x^0xf)
@@ -46,9 +45,6 @@ gen_testsuite("carry_adder_4bit", "carry_adder_4bit", 9, 5, range(0, 1<<9), carr
 gen_testsuite("carry_suber_4bit", "carry_suber_4bit", 9, 5, range(0, 1<<9), carry_suber_4bit)
 gen_testsuite("dec_4bit", "dec_4bit", 4, 4, range(0, 1<<4), lambda x: (16+x-1)&0xf)
 gen_testsuite("inc_8bit", "inc_8bit", 8, 8, range(0, 1<<8), lambda x: (x+1)&0xff)
-# gen_testsuite("ite_4bit_2", "ite_4bit", 9, 4, range(0, 1<<3), ite_4bit, \
-#        lambda x: (x&1)|((((x>>1)&1)*0xf)<<1)|(((x>>2)*0xf)<<5))
-"""
 
 # cpu phases
 
@@ -114,13 +110,6 @@ def cpu_phase012(data):
         raise "Error!"
     return bin_comp(cpu_phase012_output_str, outv)
 
-# print(
-#     bin_decomp(cpu_phase012_output_str,
-#     cpu_phase012(
-#         bin_comp(cpu_phase012_input_str,
-#                 {'state':2,'instr':instr_or,'pc':41,'tempreg':7,'mem_value':11})
-#         )))
-
 def cpu_phase012_1_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'state':0,'instr':case&0xf,'pc':(case>>4)&0xff,
@@ -166,7 +155,6 @@ def cpu_phase012_3_4_input_test_func(case):
         {'state':2,'instr':case&0xf,'pc':(case>>4)&0xff,
                  'tempreg':(case>>12)&0xf,'mem_value':5})
 
-"""
 gen_testsuite("cpu_phase012_1", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
                 cpu_phase012_1_input_test_func)
 gen_testsuite("cpu_phase012_1_2", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
@@ -185,7 +173,6 @@ gen_testsuite("cpu_phase012_3_3", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_p
                 cpu_phase012_3_3_input_test_func)
 gen_testsuite("cpu_phase012_3_4", "cpu_phase012", 23, 28, range(0, 1<<16), cpu_phase012,
                 cpu_phase012_3_4_input_test_func)
-"""
 
 cpu_phase3_input_str = (('state',3),('instr',4),('pc',8),('acc',4),('flags',3),
                 ('sp',4),('tempreg',4),('mem_value',4))
@@ -322,7 +309,6 @@ def cpu_phase3_pul_1_2_input_test_func(case):
         {'state':3,'instr':instr_pul,'pc':32+(case&0xf),'acc':12,'flags':0b110,
             'sp':(case>>4)&0xf,'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
 
-"""
 gen_testsuite("cpu_phase3_lda_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_lda_1_input_test_func)
 gen_testsuite("cpu_phase3_lda_1_2", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
@@ -369,7 +355,6 @@ gen_testsuite("cpu_phase3_pul_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_pha
                 cpu_phase3_pul_1_input_test_func)
 gen_testsuite("cpu_phase3_pul_1_2", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_pul_1_2_input_test_func)
-"""
 
 cpu_merge_phase012_3_input_str = (('state',3),('instr',4),('tempreg',4),('state_012',3),
                 ('instr_012',4),('pc_012',8),('sp_012',4),('tempreg_012',4),('state_3',3),
@@ -440,12 +425,10 @@ def cpu_merge_phase012_3_2_input_test_func(case):
             'stop_3':1,
         })
 
-"""
 gen_testsuite("cpu_merge_phase012_3_1", "cpu_merge_phase012_3", 76, 37, range(0, 1<<2),
                 cpu_merge_phase012_3, cpu_merge_phase012_3_1_input_test_func)
 gen_testsuite("cpu_merge_phase012_3_2", "cpu_merge_phase012_3", 76, 37, range(0, 1<<2),
                 cpu_merge_phase012_3, cpu_merge_phase012_3_2_input_test_func)
-"""
 
 cpu_phase4_input_str = (('instr',4),('flags',3),('acc',4),('mem_value',4))
 cpu_phase4_output_str = (('acc',4),('flags',3))
@@ -543,7 +526,106 @@ gen_testsuite("cpu_phase4_ror_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phas
 gen_testsuite("cpu_phase4_pul_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phase4,
                 cpu_phase4_pul_1_input_test_func)
 
-# print(
-#     bin_decomp(cpu_phase4_output_str,
-#         cpu_phase4(bin_comp(cpu_phase4_input_str,
-#                 {'instr':instr_clc,'flags':7,'acc':15,'mem_value':0}))))
+cpu_merge_phase0123_4_input_str = (('state_0123',3),('instr_0123',4),('pc',8),
+                ('pc_0123',8),('acc_0123',4),('flags_0123',3),('sp',4),('state2',1),
+                ('instr',4),('acc_t_all',4),('flags_t_all',3),('sp_0123',4),
+                ('tempreg',4),('tempreg_0123',4),('mem_value_0123',4),('mem_rw_0123',1),
+                ('mem_address_0123',8),('stop_0123',1))
+cpu_merge_phase0123_4_output_str = (('state',3),('instr',4),('pc',8),('acc',4),('flags',3),
+                ('sp',4), ('tempreg',4),('mem_value',4),('mem_rw',1),('mem_address',8),
+                ('create',1),('stop',1))
+
+
+def cpu_merge_phase0123_4(data):
+    v = bin_decomp(cpu_merge_phase0123_4_input_str, data)
+    if_phase4 = v['state2']==1
+    return bin_comp(cpu_merge_phase0123_4_output_str, {
+            'state': 0 if if_phase4 else v['state_0123'],
+            'instr': v['instr'] if if_phase4 else v['instr_0123'],
+            'pc': v['pc'] if if_phase4 else v['pc_0123'],
+            'acc': v['acc_t_all'] if if_phase4 else v['acc_0123'],
+            'flags': v['flags_t_all'] if if_phase4 else v['flags_0123'],
+            'sp': v['sp'] if if_phase4 else v['sp_0123'],
+            'tempreg': v['tempreg'] if if_phase4 else v['tempreg_0123'],
+            'mem_value': 0 if if_phase4 else v['mem_value_0123'],
+            'mem_rw': 0 if if_phase4 else v['mem_rw_0123'],
+            'mem_address': 0 if if_phase4 else v['mem_address_0123'],
+            'create': 0,
+            'stop': 0 if if_phase4 else v['stop_0123']
+        })
+
+def cpu_merge_phase0123_4_1_input_test_func(case):
+    return bin_comp(cpu_merge_phase0123_4_input_str,
+        {
+            'state2':case&1,
+            'state_0123':2,
+            'instr_0123':7,
+            'pc':52,
+            'pc_0123':167,
+            'acc_0123':8,
+            'flags_0123':9,
+            'sp':12,
+            'instr':2,
+            'acc_t_all':10,
+            'flags_t_all':5,
+            'sp_0123':1,
+            'tempreg':6,
+            'tempreg_0123':13,
+            'mem_value_0123':4,
+            'mem_rw_0123':0,
+            'mem_address_0123':159,
+            'stop_0123':0,
+        })
+
+def cpu_merge_phase0123_4_2_input_test_func(case):
+    return bin_comp(cpu_merge_phase0123_4_input_str,
+        {
+            'state2':case&1,
+            'state_0123':2,
+            'instr_0123':1,
+            'pc':52,
+            'pc_0123':167,
+            'acc_0123':2,
+            'flags_0123':3,
+            'sp':4,
+            'instr':5,
+            'acc_t_all':6,
+            'flags_t_all':7,
+            'sp_0123':8,
+            'tempreg':9,
+            'tempreg_0123':10,
+            'mem_value_0123':11,
+            'mem_rw_0123':1,
+            'mem_address_0123':189,
+            'stop_0123':1,
+        })
+
+def cpu_merge_phase0123_4_3_input_test_func(case):
+    return bin_comp(cpu_merge_phase0123_4_input_str,
+        {
+            'state2':case&1,
+            'state_0123':3,
+            'instr_0123':15,
+            'pc':52,
+            'pc_0123':167,
+            'acc_0123':2,
+            'flags_0123':6,
+            'sp':4,
+            'instr':5,
+            'acc_t_all':6,
+            'flags_t_all':2,
+            'sp_0123':8,
+            'tempreg':9,
+            'tempreg_0123':10,
+            'mem_value_0123':11,
+            'mem_rw_0123':1,
+            'mem_address_0123':189,
+            'stop_0123':0,
+        })
+
+gen_testsuite("cpu_merge_phase0123_4_1", "cpu_merge_phase0123_4", 72, 45, range(0, 2),
+                cpu_merge_phase0123_4, cpu_merge_phase0123_4_1_input_test_func)
+gen_testsuite("cpu_merge_phase0123_4_2", "cpu_merge_phase0123_4", 72, 45, range(0, 2),
+                cpu_merge_phase0123_4, cpu_merge_phase0123_4_2_input_test_func)
+gen_testsuite("cpu_merge_phase0123_4_3", "cpu_merge_phase0123_4", 72, 45, range(0, 2),
+                cpu_merge_phase0123_4, cpu_merge_phase0123_4_3_input_test_func)
