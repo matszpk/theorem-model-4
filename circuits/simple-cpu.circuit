@@ -137,10 +137,8 @@ main:
     cpu_instr_0_ph0123 cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 \
     cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
     cpu_pc_0_ph0123 cpu_pc_1_ph0123 cpu_pc_2_ph0123 cpu_pc_3_ph0123 cpu_pc_4_ph0123 \
-    cpu_pc_5_ph0123 cpu_pc_6_ph0123 cpu_pc_7_ph0123 \
-    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
-    cpu_flag_c cpu_flag_z cpu_flag_n \
-    cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 \
+    cpu_pc_5_ph0123 cpu_pc_6_ph0123 cpu_pc_7_ph0123 cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+    cpu_flag_c cpu_flag_z cpu_flag_n cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 \
     cpu_state_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
     cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all \
     cpu_flag_c_t_all cpu_flag_z_t_all cpu_flag_n_t_all \
