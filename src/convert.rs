@@ -409,20 +409,3 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
         })
     }
 }
-
-pub struct PrimalMachineDebug {
-    pub machine: PrimalMachine,
-    pub subcircuits: HashMap<String, u8>,
-}
-
-impl TryFrom<ParsedPrimalMachine> for PrimalMachineDebug {
-    type Error = ConvertError;
-
-    fn try_from(parsed: ParsedPrimalMachine) -> Result<Self, Self::Error> {
-        let cd = CircuitDebug::try_from(parsed.circuit)?;
-        Ok(PrimalMachineDebug {
-            machine: PrimalMachine::new(cd.circuit, parsed.cell_len_bits, parsed.address_len),
-            subcircuits: cd.subcircuits,
-        })
-    }
-}

@@ -149,42 +149,6 @@ pub fn parse_circuit_all(input: &str) -> VOIResult<Vec<ParsedSubcircuit>> {
     )(input)
 }
 
-pub fn parse_field_u32<'a>(name: &'a str) -> impl FnMut(&'a str) -> VOIResult<u32> {
-    delimited(
-        tuple((
-            empty_or_comment,
-            cc::space0,
-            bc::tag(name),
-            cc::space0,
-            cc::char(':'),
-            cc::space0,
-        )),
-        cc::u32,
-        pair(cc::space0, cc::line_ending),
-    )
-}
-
-pub fn parse_primal_machine(input: &str) -> VOIResult<ParsedPrimalMachine> {
-    context(
-        "primal_machine",
-        all_consuming(terminated(
-            map(
-                tuple((
-                    parse_field_u32("cell_len_bits"),
-                    parse_field_u32("address_len"),
-                    many0(preceded(empty_or_comment, parse_subcircuit)),
-                )),
-                |(cell_len_bits, address_len, circuit)| ParsedPrimalMachine {
-                    cell_len_bits,
-                    address_len,
-                    circuit,
-                },
-            ),
-            cc::multispace0,
-        )),
-    )(input)
-}
-
 // parser for testcases
 
 pub struct TestCase {

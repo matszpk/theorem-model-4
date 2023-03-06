@@ -277,7 +277,9 @@ pub struct PrimalMachine {
 }
 
 impl PrimalMachine {
-    pub fn new(circuit: Circuit, cell_len_bits: u32, address_len: u32) -> Self {
+    pub fn new(circuit: Circuit, cell_len_bits: u32) -> Self {
+        assert!(circuit.output_len > circuit.input_len + 4);
+        let address_len = (circuit.output_len - (circuit.input_len) - 3) as u32;
         assert!(cell_len_bits + address_len < usize::BITS + 3);
         assert!((1 << cell_len_bits) <= circuit.input_len);
         assert_eq!(
@@ -296,6 +298,10 @@ impl PrimalMachine {
             address_len,
             memory: vec![0; mem_len],
         }
+    }
+
+    pub fn state_len(&self) -> usize {
+        self.circuit.input_len as usize - (1 << self.cell_len_bits)
     }
 
     // input: [state, mem_value]

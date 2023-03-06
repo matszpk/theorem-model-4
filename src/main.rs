@@ -58,6 +58,20 @@ struct DumpCircuitArgs {
     output: PathBuf,
 }
 
+#[derive(Parser)]
+struct RunMachineArgs {
+    #[clap(help = "Set circuit filename")]
+    circuit: PathBuf,
+    #[clap(help = "Set machine cell len bits")]
+    cell_len_bits: u8,
+    #[clap(help = "Initial state")]
+    initial_state: String,
+    #[clap(help = "Initial memory file")]
+    memory: PathBuf,
+    #[clap(short, long, help = "Set trace mode")]
+    trace: bool,
+}
+
 #[derive(Subcommand)]
 enum Commands {
     #[clap(about = "Check cicrcuit file syntax")]
@@ -68,6 +82,8 @@ enum Commands {
     Test(TestCircuitArgs),
     #[clap(about = "Dump circuit into raw file")]
     Dump(DumpCircuitArgs),
+    #[clap(about = "Run machine")]
+    RunMachine(RunMachineArgs),
 }
 
 fn main() -> ExitCode {
@@ -77,6 +93,7 @@ fn main() -> ExitCode {
         Commands::Run(ref r) => r.circuit.clone(),
         Commands::Test(ref r) => r.circuit.clone(),
         Commands::Dump(ref r) => r.circuit.clone(),
+        Commands::RunMachine(ref r) => r.circuit.clone(),
     };
 
     let input = divide_lines(&read_to_string(circuit_file_name).unwrap());
@@ -212,6 +229,24 @@ fn main() -> ExitCode {
                 eprintln!("Error while dumping: {:?}", e);
                 return ExitCode::FAILURE;
             }
+        }
+        Commands::RunMachine(r) => {
+            let mut pm = PrimalMachine::new(circuit.circuit, r.cell_len_bits as u32);
+            let mem = match std::fs::read(r.memory) {
+                Ok(mem) => mem,
+                Err(e) => {
+                    eprintln!("Error reading memory: {:?}", e);
+                    return ExitCode::FAILURE;
+                }
+            };
+            pm.memory.copy_from_slice(mem.as_slice());
+            let mut initial_state: [u8; 128 >> 3] =
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            for (i, c) in r.initial_state.chars().enumerate() {
+                set_bit(&mut initial_state[..], i, c == '1');
+            }
+            let initial_state = &initial_state[0..((pm.state_len() + 7) >> 3)];
+            pm.run(initial_state, r.trace);
         }
     };
 
