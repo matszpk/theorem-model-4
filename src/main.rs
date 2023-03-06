@@ -72,6 +72,8 @@ struct RunMachineArgs {
     trace: bool,
     #[clap(short, long, help = "Set circuit trace mode")]
     circuit_trace: bool,
+    #[clap(short, long, help = "Set memory dump")]
+    dump: bool,
 }
 
 #[derive(Subcommand)]
@@ -249,6 +251,20 @@ fn main() -> ExitCode {
             }
             let initial_state = &initial_state[0..((pm.state_len() + 7) >> 3)];
             pm.run(initial_state, r.trace, r.circuit_trace);
+
+            if r.dump {
+                for (i, chunk) in pm.memory.chunks(16).enumerate() {
+                    println!(
+                        "{:016x} {}",
+                        i * 16,
+                        chunk
+                            .iter()
+                            .map(|x| format!("{x:02x}"))
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    );
+                }
+            }
         }
     }
 
