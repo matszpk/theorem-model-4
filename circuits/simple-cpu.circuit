@@ -88,7 +88,7 @@ main:
     
     # phase 4
     cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all cpu_flag_c_t_all \
-    cpu_flag_n_t_all cpu_flag_z_t_all = cpu_phase4 \
+    cpu_flag_z_t_all cpu_flag_n_t_all = cpu_phase4 \
     cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 cpu_flag_c cpu_flag_z cpu_flag_n \
     cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 mem_value_0 mem_value_1 mem_value_2 mem_value_3
     
@@ -697,18 +697,23 @@ cpu_phase4:
     # E - PSH - push - done in phase 3
     
     if_clc = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3_n
-    if_not_zero = or_4 cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
+    
+    cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all = ite_4bit cpu_instr_3 \
+        cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67 \
+        cpu_acc_0_t012345 cpu_acc_1_t012345 cpu_acc_2_t012345 cpu_acc_3_t012345
+    cpu_flag_c_t_all = ite cpu_instr_3 cpu_flag_c_t67 cpu_flag_c_t012345
+    
+    if_not_zero = or_4 cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all
     if_zero = nand if_not_zero if_not_zero
     
     # cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all
-    o0 o1 o2 o3 = ite_4bit cpu_instr_3 cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67 \
-        cpu_acc_0_t012345 cpu_acc_1_t012345 cpu_acc_2_t012345 cpu_acc_3_t012345
-    o4 = ite cpu_instr_3 cpu_flag_c_t67 cpu_flag_c_t012345
+    o0 o1 o2 o3 = copy_4bit cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all
+    o4 = copy cpu_flag_c_t_all
     
-    # cpu_flag_n_t_all
-    o5 = ite if_clc cpu_flag_z if_zero
     # cpu_flag_z_t_all
-    o6 = ite if_clc cpu_flag_n cpu_acc_3
+    o5 = ite if_clc cpu_flag_z if_zero
+    # cpu_flag_n_t_all
+    o6 = ite if_clc cpu_flag_n cpu_acc_3_t_all
 
 cpu_merge_phase0123_4:
     alias cpu_state_0_ph0123 i0

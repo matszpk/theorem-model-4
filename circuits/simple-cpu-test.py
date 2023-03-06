@@ -488,6 +488,9 @@ def cpu_phase4(data):
     
     return bin_comp(cpu_phase4_output_str, { 'acc': new_acc, 'flags': new_flags })
 
+def cpu_phase4_1_input_test_func(case):
+    return bin_comp(cpu_merge_phase4_input_str,
+
 print(
     bin_decomp(cpu_phase4_output_str,
         cpu_phase4(bin_comp(cpu_phase4_input_str,
