@@ -894,12 +894,12 @@ cpu_merge_phase0123_4:
     o22 o23 o24 o25 o26 o27 o28 o29 = ite_8bit if_phase4 :8:cpu_sp_0 \
         :8:cpu_sp_0_ph0123
     # mem_value_X
-    o30 o31 o32 o33 = ite_4bit if_phase4 zero zero zero zero \
+    o30 o31 o32 o33 = ite_4bit if_phase4 :3:o0 zero \
         :4:mem_value_0_ph0123
     # mem_rw
     o34 = ite if_phase4 zero mem_rw_ph0123
     # mem_address
-    o35 o36 o37 o38 o39 o40 o41 o42 = ite_8bit if_phase4 zero zero zero zero zero zero zero zero \
+    o35 o36 o37 o38 o39 o40 o41 o42 = ite_8bit if_phase4 :4:o30 :4:o30 \
         :8:mem_address_0_ph0123
     o43 = copy zero
     o44 = ite if_phase4 zero if_stop_ph0123
