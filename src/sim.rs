@@ -5,6 +5,8 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::path::Path;
 
+// TODO: Add special pseudo-code repeat code. Allow empty circuit - (a copying circuits).
+
 #[derive(thiserror::Error, Debug)]
 pub enum DumpError {
     #[error("IO error: {0}")]
