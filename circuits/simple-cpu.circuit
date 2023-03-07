@@ -147,6 +147,116 @@ main:
     mem_rw_ph0123 :8:mem_address_0_ph0123 \
     if_stop_ph0123
 
+copy:
+    empty 1
+xor:
+    n0 = nand i0 i0
+    n1 = nand i1 i1
+    t0 = nand i0 n1
+    t1 = nand n0 i1
+    o0 = nand t0 t1
+xor_4bit:
+    o0 = xor i0 i4
+    o1 = xor i1 i5
+    o2 = xor i2 i6
+    o3 = xor i3 i7
+and:
+    t = nand i0 i1
+    o0 = nand t t
+and_4bit:
+    o0 = and i0 i4
+    o1 = and i1 i5
+    o2 = and i2 i6
+    o3 = and i3 i7
+or:
+    t0 = nand i0 i0
+    t1 = nand i1 i1
+    o0 = nand t0 t1
+or_4bit:
+    o0 = or i0 i4
+    o1 = or i1 i5
+    o2 = or i2 i6
+    o3 = or i3 i7
+and_3:
+    t0 = and i0 i1
+    o0 = and t0 i2
+and_4:
+    t0 = and i0 i1
+    t1 = and i2 i3
+    o0 = and t0 t1
+or_4:
+    t0 = or i0 i1
+    t1 = or i2 i3
+    o0 = or t0 t1
+# if i0 then i1 else i2
+ite:
+    n0 = nand i0 i0
+    t0 = nand i0 i1
+    t1 = nand n0 i2
+    o0 = nand t0 t1
+ite_4bit:
+    o0 = ite i0 i1 i5
+    o1 = ite i0 i2 i6
+    o2 = ite i0 i3 i7
+    o3 = ite i0 i4 i8
+copy_4bit:
+    empty 4
+not_4bit:
+    o0 = nand i0 i0
+    o1 = nand i1 i1
+    o2 = nand i2 i2
+    o3 = nand i3 i3
+full_adder:
+    s0 = xor i0 i1
+    a0 = and i0 i1
+    a1 = and s0 i2
+    o0 = xor s0 i2
+    o1 = or a0 a1
+half_adder:
+    o0 = xor i0 i1
+    o1 = and i0 i1
+half_suber:
+    x = xor i0 i1
+    o0 = nand x x
+    o1 = or i0 i1
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_adder_4bit:
+    s0 c0 = full_adder i1 i5 i0
+    s1 c1 = full_adder i2 i6 c0
+    s2 c2 = full_adder i3 i7 c1
+    s3 c3 = full_adder i4 i8 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+# 4-bit subtractor with carry
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_suber_4bit:
+    n0 n1 n2 n3 = not_4bit i5 i6 i7 i8
+    s0 c0 = full_adder i1 n0 i0
+    s1 c1 = full_adder i2 n1 c0
+    s2 c2 = full_adder i3 n2 c1
+    s3 c3 = full_adder i4 n3 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+carry_inc_4bit:
+    s0 c0 = half_adder i1 i0
+    s1 c1 = half_adder i2 c0
+    s2 c2 = half_adder i3 c1
+    s3 c3 = half_adder i4 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+dec_4bit:
+    d0 c0 = half_suber i0 zero
+    d1 c1 = half_suber i1 c0
+    d2 c2 = half_suber i2 c1
+    d3 c3 = half_suber i3 c2
+    o0 o1 o2 o3 = copy_4bit d0 d1 d2 d3
+inc_8bit:
+    one = nand zero zero
+    s0 s1 s2 s3 c0 = carry_inc_4bit one i0 i1 i2 i3
+    s4 s5 s6 s7 ign = carry_inc_4bit c0 i4 i5 i6 i7
+    o0 o1 o2 o3 = copy_4bit :4:s0
+    o4 o5 o6 o7 = copy_4bit :4:s4
+
 cpu_phase012:
     # input (phase):
     alias cpu_phase_0 i0
@@ -823,113 +933,3 @@ cpu_merge_phase0123_4:
         :4:mem_address_4_ph0123
     o43 = copy zero
     o44 = ite if_phase4 zero if_stop_ph0123
-
-copy:
-    empty 1
-xor:
-    n0 = nand i0 i0
-    n1 = nand i1 i1
-    t0 = nand i0 n1
-    t1 = nand n0 i1
-    o0 = nand t0 t1
-xor_4bit:
-    o0 = xor i0 i4
-    o1 = xor i1 i5
-    o2 = xor i2 i6
-    o3 = xor i3 i7
-and:
-    t = nand i0 i1
-    o0 = nand t t
-and_4bit:
-    o0 = and i0 i4
-    o1 = and i1 i5
-    o2 = and i2 i6
-    o3 = and i3 i7
-or:
-    t0 = nand i0 i0
-    t1 = nand i1 i1
-    o0 = nand t0 t1
-or_4bit:
-    o0 = or i0 i4
-    o1 = or i1 i5
-    o2 = or i2 i6
-    o3 = or i3 i7
-and_3:
-    t0 = and i0 i1
-    o0 = and t0 i2
-and_4:
-    t0 = and i0 i1
-    t1 = and i2 i3
-    o0 = and t0 t1
-or_4:
-    t0 = or i0 i1
-    t1 = or i2 i3
-    o0 = or t0 t1
-# if i0 then i1 else i2
-ite:
-    n0 = nand i0 i0
-    t0 = nand i0 i1
-    t1 = nand n0 i2
-    o0 = nand t0 t1
-ite_4bit:
-    o0 = ite i0 i1 i5
-    o1 = ite i0 i2 i6
-    o2 = ite i0 i3 i7
-    o3 = ite i0 i4 i8
-copy_4bit:
-    empty 4
-not_4bit:
-    o0 = nand i0 i0
-    o1 = nand i1 i1
-    o2 = nand i2 i2
-    o3 = nand i3 i3
-full_adder:
-    s0 = xor i0 i1
-    a0 = and i0 i1
-    a1 = and s0 i2
-    o0 = xor s0 i2
-    o1 = or a0 a1
-half_adder:
-    o0 = xor i0 i1
-    o1 = and i0 i1
-half_suber:
-    x = xor i0 i1
-    o0 = nand x x
-    o1 = or i0 i1
-# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
-carry_adder_4bit:
-    s0 c0 = full_adder i1 i5 i0
-    s1 c1 = full_adder i2 i6 c0
-    s2 c2 = full_adder i3 i7 c1
-    s3 c3 = full_adder i4 i8 c2
-    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
-    o4 = copy c3
-# 4-bit subtractor with carry
-# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
-carry_suber_4bit:
-    n0 n1 n2 n3 = not_4bit i5 i6 i7 i8
-    s0 c0 = full_adder i1 n0 i0
-    s1 c1 = full_adder i2 n1 c0
-    s2 c2 = full_adder i3 n2 c1
-    s3 c3 = full_adder i4 n3 c2
-    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
-    o4 = copy c3
-carry_inc_4bit:
-    s0 c0 = half_adder i1 i0
-    s1 c1 = half_adder i2 c0
-    s2 c2 = half_adder i3 c1
-    s3 c3 = half_adder i4 c2
-    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
-    o4 = copy c3
-dec_4bit:
-    d0 c0 = half_suber i0 zero
-    d1 c1 = half_suber i1 c0
-    d2 c2 = half_suber i2 c1
-    d3 c3 = half_suber i3 c2
-    o0 o1 o2 o3 = copy_4bit d0 d1 d2 d3
-inc_8bit:
-    one = nand zero zero
-    s0 s1 s2 s3 c0 = carry_inc_4bit one i0 i1 i2 i3
-    s4 s5 s6 s7 ign = carry_inc_4bit c0 i4 i5 i6 i7
-    o0 o1 o2 o3 = copy_4bit :4:s0
-    o4 o5 o6 o7 = copy_4bit :4:s4
