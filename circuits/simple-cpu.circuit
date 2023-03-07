@@ -130,9 +130,8 @@ main:
     o0 o1 o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 o22 \
     o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 o34 o35 o36 o37 o38 o39 o40 o41 o42 o43 o44 \
     = cpu_merge_phase0123_4 :7:cpu_phase_0_ph0123 \
-    :19:cpu_pc_0 \
+    :24:cpu_phase_2 \
     :8:cpu_pc_0_ph0123 \
-    cpu_phase_2 :4:cpu_instr_0 \
     :7:cpu_acc_0_t_all \
     :4:cpu_sp_0_ph0123 \
     :4:cpu_tempreg_0 \
@@ -811,38 +810,38 @@ cpu_merge_phase0123_4:
     alias cpu_instr_1_ph0123 i4
     alias cpu_instr_2_ph0123 i5
     alias cpu_instr_3_ph0123 i6
-    alias cpu_pc_0 i7
-    alias cpu_pc_1 i8
-    alias cpu_pc_2 i9
-    alias cpu_pc_3 i10
-    alias cpu_pc_4 i11
-    alias cpu_pc_5 i12
-    alias cpu_pc_6 i13
-    alias cpu_pc_7 i14
-    alias cpu_acc_0_ph0123 i15
-    alias cpu_acc_1_ph0123 i16
-    alias cpu_acc_2_ph0123 i17
-    alias cpu_acc_3_ph0123 i18
-    alias cpu_flag_c_ph0123 i19
-    alias cpu_flag_z_ph0123 i20
-    alias cpu_flag_n_ph0123 i21
-    alias cpu_sp_0 i22
-    alias cpu_sp_1 i23
-    alias cpu_sp_2 i24
-    alias cpu_sp_3 i25
-    alias cpu_pc_0_ph0123 i26
-    alias cpu_pc_1_ph0123 i27
-    alias cpu_pc_2_ph0123 i28
-    alias cpu_pc_3_ph0123 i29
-    alias cpu_pc_4_ph0123 i30
-    alias cpu_pc_5_ph0123 i31
-    alias cpu_pc_6_ph0123 i32
-    alias cpu_pc_7_ph0123 i33
-    alias cpu_phase_2 i34
-    alias cpu_instr_0 i35
-    alias cpu_instr_1 i36
-    alias cpu_instr_2 i37
-    alias cpu_instr_3 i38
+    alias cpu_phase_2 i7
+    alias cpu_instr_0 i8
+    alias cpu_instr_1 i9
+    alias cpu_instr_2 i10
+    alias cpu_instr_3 i11
+    alias cpu_pc_0 i12
+    alias cpu_pc_1 i13
+    alias cpu_pc_2 i14
+    alias cpu_pc_3 i15
+    alias cpu_pc_4 i16
+    alias cpu_pc_5 i17
+    alias cpu_pc_6 i18
+    alias cpu_pc_7 i19
+    alias cpu_acc_0_ph0123 i20
+    alias cpu_acc_1_ph0123 i21
+    alias cpu_acc_2_ph0123 i22
+    alias cpu_acc_3_ph0123 i23
+    alias cpu_flag_c_ph0123 i24
+    alias cpu_flag_z_ph0123 i25
+    alias cpu_flag_n_ph0123 i26
+    alias cpu_sp_0 i27
+    alias cpu_sp_1 i28
+    alias cpu_sp_2 i29
+    alias cpu_sp_3 i30
+    alias cpu_pc_0_ph0123 i31
+    alias cpu_pc_1_ph0123 i32
+    alias cpu_pc_2_ph0123 i33
+    alias cpu_pc_3_ph0123 i34
+    alias cpu_pc_4_ph0123 i35
+    alias cpu_pc_5_ph0123 i36
+    alias cpu_pc_6_ph0123 i37
+    alias cpu_pc_7_ph0123 i38
     alias cpu_acc_0_t_all i39
     alias cpu_acc_1_t_all i40
     alias cpu_acc_2_t_all i41
