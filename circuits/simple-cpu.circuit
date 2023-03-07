@@ -936,5 +936,5 @@ inc_8bit:
     one = nand zero zero
     s0 s1 s2 s3 c0 = carry_inc_4bit one i0 i1 i2 i3
     s4 s5 s6 s7 ign = carry_inc_4bit c0 i4 i5 i6 i7
-    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
-    o4 o5 o6 o7 = copy_4bit s4 s5 s6 s7
+    o0 o1 o2 o3 = copy_4bit :4:s0
+    o4 o5 o6 o7 = copy_4bit :4:s4

@@ -397,8 +397,14 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                         output: outputs,
                         subcircuit,
                     } => {
+                        let input_count: u8 = inputs.iter().map(|input|
+                            match input {
+                                Input::Single(_) => 1,
+                                Input::Repeat(count,_) => *count
+                            }).sum();
+                        
                         if subcircuit.as_str() == "nand" {
-                            if inputs.len() != 2 {
+                            if input_count != 2 {
                                 return Err(ConvertError::WrongInputNumberInSubcircuit(
                                     stmt.clone(),
                                     sc.name.clone(),
@@ -411,7 +417,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                 ));
                             }
                         } else if let Some((sc_i, sc_ci)) = subcircuits.get(subcircuit) {
-                            if inputs.len() != sc_inputs_outputs[*sc_i].0.into() {
+                            if input_count != sc_inputs_outputs[*sc_i].0.into() {
                                 return Err(ConvertError::WrongInputNumberInSubcircuit(
                                     stmt.clone(),
                                     sc.name.clone(),

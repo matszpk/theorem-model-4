@@ -151,18 +151,17 @@ impl Circuit {
                             } else {
                                 // repeat input: 128+rep_count base_output
                                 // repeats: base_output + i
-                                let rep_count = ii - 128;
+                                let rep_count = std::cmp::min(ii - 128, sc_input_len - i);
                                 step_index += 1;
-                                let ii = std::cmp::min(
-                                    self.circuit[step_index] as usize,
-                                    sc_input_len - i,
-                                );
-                                step_index += 1;
-                                for j in 0..rep_count {
-                                    let v = get_bit(&step_mem[..], ii + j);
-                                    set_bit(&mut sc_input[..], i + j, v);
+                                if step_index < circuit_end {
+                                    let ii = self.circuit[step_index] as usize;
+                                    step_index += 1;
+                                    for j in 0..rep_count {
+                                        let v = get_bit(&step_mem[..], ii + j);
+                                        set_bit(&mut sc_input[..], i + j, v);
+                                    }
+                                    i += rep_count;
                                 }
-                                i += rep_count;
                             }
                         }
                     }

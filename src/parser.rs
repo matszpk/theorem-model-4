@@ -59,7 +59,7 @@ fn parse_input(input: &str) -> VOIResult<Input> {
         alt((
             map(identifier, |x| Input::Single(x.to_string())),
             map(
-                preceded(bc::tag("rep:"), pair(cc::u8, identifier)),
+                preceded(cc::char(':'), separated_pair(cc::u8, cc::char(':'), identifier)),
                 |(count, base)| Input::Repeat(count, base.to_string()),
             ),
         )),
