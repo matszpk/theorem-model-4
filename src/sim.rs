@@ -374,7 +374,7 @@ impl PrimalMachine {
                     println!("Read {:#016x} {:#016x}", address, value);
                 }
             }
-            stop = get_bit(&output, input_len - 1);
+            stop = get_bit(&output, output_len - 1);
         }
         if trace {
             println!(
