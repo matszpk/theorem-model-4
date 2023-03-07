@@ -613,9 +613,10 @@ cpu_merge_phase012_3:
     if_phase_3 = and_3 cpu_phase_0 cpu_phase_1 cpu_phase_2_n
     # merge phase0, phase1, phase2 and phase3
     # cpu_phase_X_ph0123
-    o0 = ite if_phase_3 cpu_phase_0_ph3 cpu_phase_0_ph012
-    o1 = ite if_phase_3 cpu_phase_1_ph3 cpu_phase_1_ph012
-    o2 = ite if_phase_3 cpu_phase_2_ph3 cpu_phase_2_ph012
+    # o0 = ite if_phase_3 cpu_phase_0_ph3 cpu_phase_0_ph012
+    # o1 = ite if_phase_3 cpu_phase_1_ph3 cpu_phase_1_ph012
+    # o2 = ite if_phase_3 cpu_phase_2_ph3 cpu_phase_2_ph012
+    ign o0 o1 o2 = ite_4bit if_phase_3 :4:mem_address_7_ph012 :4:mem_value_3_ph012
     # cpu_instr_X_ph0123
     o3 o4 o5 o6 = ite_4bit if_phase_3 :4:cpu_instr_0 \
         :4:cpu_instr_0_ph012
@@ -669,9 +670,8 @@ cpu_phase4:
     alias cpu_acc_3_t0 mem_value_3
     alias cpu_flag_c_t0 cpu_flag_c
     
-    cpu_instr_1_n = nand cpu_instr_1 cpu_instr_1
-    cpu_instr_2_n = nand cpu_instr_2 cpu_instr_2
-    cpu_instr_3_n = nand cpu_instr_3 cpu_instr_3
+    cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n ign = not_4bit \
+        cpu_instr_1 cpu_instr_2 cpu_instr_3 zero
     
     if_lda = and_3 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
     if_pul = and_3 :3:cpu_instr_1
