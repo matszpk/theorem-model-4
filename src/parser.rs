@@ -16,6 +16,9 @@ pub enum Statement {
         new_name: String,
         name: String,
     },
+    Empty {
+        input_output_len: u8,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -105,6 +108,10 @@ pub fn parse_statement(input: &str) -> VOIResult<Statement> {
                         subcircuit: subcircuit.to_string(),
                         input,
                     },
+                ),
+                map(
+                    preceded(tuple((cc::space0, bc::tag("empty"), cc::space0)), cc::u8),
+                    |input_output_len| Statement::Empty { input_output_len },
                 ),
             )),
             cut(pair(cc::space0, cc::line_ending)),

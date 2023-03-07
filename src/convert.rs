@@ -15,8 +15,6 @@ pub enum ConvertError {
     NoMainCircuit,
     #[error("Subcircuit {0} duplicated")]
     DuplicatedSubcircuit(String),
-    #[error("Subcircuit {0} is empty")]
-    EmptySubcircuit(String),
     #[error("Subcircuit {0} doesn't have inputs")]
     NoInputsInSubcircuit(String),
     #[error("Subcircuit {0} doesn't have outputs")]
@@ -43,6 +41,8 @@ pub enum ConvertError {
     UnknownVariableInAlias(String, String),
     #[error("Number error: {0}")]
     NumberError(#[from] std::num::TryFromIntError),
+    #[error("Illegal empty in non empty subcircuit {0}")]
+    IllegalEmptyInNonEmptySubcircuit(String),
 }
 
 impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
@@ -68,9 +68,6 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
         };
 
         for sc in &parsed {
-            if sc.statements.is_empty() {
-                return Err(ConvertError::EmptySubcircuit(sc.name.clone()));
-            }
             // check whether all subcircuits have any inputs
             if !sc.statements.iter().any(|stmt| match stmt {
                 Statement::Statement { input: inputs, .. } => inputs.iter().any(|input| {
@@ -83,6 +80,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                         && input.len() >= 2
                         && input.chars().skip(1).all(|c| c.is_digit(10))
                 }
+                Statement::Empty { input_output_len } => *input_output_len != 0,
             }) {
                 return Err(ConvertError::NoInputsInSubcircuit(sc.name.clone()));
             }
@@ -96,6 +94,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                         && output.len() >= 2
                         && output.chars().skip(1).all(|c| c.is_digit(10))
                 }),
+                Statement::Empty { input_output_len } => *input_output_len != 0,
                 _ => false,
             }) {
                 return Err(ConvertError::NoOutputsInSubcircuit(sc.name.clone()));
@@ -150,6 +149,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                 vec![]
                             }
                         }
+                        _ => vec![],
                     })
                     .flatten()
             })
@@ -215,34 +215,64 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                 vec![]
                             }
                         }
+                        Statement::Empty { input_output_len } => {
+                            (0..*input_output_len).collect::<Vec<_>>()
+                        }
                     })
                     .flatten()
                     .max()
                     .unwrap()
                     + 1;
                 // get number of outputs by getting last output name in last statement.
-                let output_count = sc
-                    .statements
-                    .iter()
-                    .rev()
-                    .find_map(|stmt| match stmt {
-                        Statement::Statement { output, .. } => Some(output),
-                        _ => None,
-                    })
-                    .unwrap()
-                    .last()
-                    .unwrap()[1..]
-                    .parse::<u8>()
-                    .unwrap()
-                    + 1;
+                let output_count =
+                    if let Some(Statement::Empty { input_output_len }) = sc.statements.first() {
+                        *input_output_len
+                    } else {
+                        sc.statements
+                            .iter()
+                            .rev()
+                            .find_map(|stmt| match stmt {
+                                Statement::Statement { output, .. } => Some(output),
+                                _ => None,
+                            })
+                            .unwrap()
+                            .last()
+                            .unwrap()[1..]
+                            .parse::<u8>()
+                            .unwrap()
+                            + 1
+                    };
                 (input_count, output_count)
             })
             .collect::<Vec<_>>();
 
         for (i, ci_opt) in sorted_scs {
             let sc = &parsed[i];
-            // statements
 
+            if sc.statements.len() != 1
+                && sc
+                    .statements
+                    .iter()
+                    .any(|x| matches!(x, Statement::Empty { .. }))
+            {
+                return Err(ConvertError::IllegalEmptyInNonEmptySubcircuit(
+                    sc.name.clone(),
+                ));
+            }
+
+            if sc.statements.len() == 1 {
+                if let Statement::Empty { input_output_len } = sc.statements[0] {
+                    if let Some(ci) = ci_opt {
+                        assert_eq!(ci, circuit.subcircuits.len());
+                        circuit.push_subcircuit([], input_output_len, input_output_len);
+                    } else {
+                        circuit.push_main([], input_output_len, input_output_len);
+                    }
+                    continue;
+                }
+            }
+
+            // statements
             let (input_count, output_count) = sc_inputs_outputs[i];
 
             if input_count >= 128 {
@@ -387,6 +417,9 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                 sc.name.clone(),
                             ));
                         }
+                    }
+                    _ => {
+                        panic!("Wrong place!");
                     }
                 }
             }

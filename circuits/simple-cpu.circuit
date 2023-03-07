@@ -830,8 +830,7 @@ cpu_merge_phase0123_4:
     o44 = ite if_phase4 zero if_stop_ph0123
 
 copy:
-    t = nand i0 i0
-    o0 = nand t t
+    empty 1
 xor:
     n0 = nand i0 i0
     n1 = nand i1 i1
@@ -883,10 +882,7 @@ ite_4bit:
     o2 = ite i0 i3 i7
     o3 = ite i0 i4 i8
 copy_4bit:
-    o0 = copy i0
-    o1 = copy i1
-    o2 = copy i2
-    o3 = copy i3
+    empty 4
 not_4bit:
     o0 = nand i0 i0
     o1 = nand i1 i1
