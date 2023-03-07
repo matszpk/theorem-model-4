@@ -139,12 +139,33 @@ impl Circuit {
 
                     let sc_input_len = self.subcircuits[sc].input_len as usize;
                     let sc_output_len = self.subcircuits[sc].output_len as usize;
-                    for i in 0..sc_input_len {
-                        let ii = self.circuit[step_index + i] as usize;
-                        let v = get_bit(&step_mem[..], ii);
-                        set_bit(&mut sc_input[..], i, v);
+                    {
+                        let mut i = 0;
+                        while i < sc_input_len {
+                            let ii = self.circuit[step_index] as usize;
+                            if ii < 128 {
+                                let v = get_bit(&step_mem[..], ii);
+                                set_bit(&mut sc_input[..], i, v);
+                                i += 1;
+                                step_index += 1;
+                            } else {
+                                // repeat input: 128+rep_count base_output
+                                // repeats: base_output + i
+                                let rep_count = ii - 128;
+                                step_index += 1;
+                                let ii = std::cmp::min(
+                                    self.circuit[step_index] as usize,
+                                    sc_input_len - i,
+                                );
+                                step_index += 1;
+                                for j in 0..rep_count {
+                                    let v = get_bit(&step_mem[..], ii + j);
+                                    set_bit(&mut sc_input[..], i + j, v);
+                                }
+                                i += rep_count;
+                            }
+                        }
                     }
-                    step_index += sc_input_len;
 
                     let (sc_output, sc_oi) =
                         self.run_circuit(Some(sc), &sc_input, sc_input_len, level + 1, trace);

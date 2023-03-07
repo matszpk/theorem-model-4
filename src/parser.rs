@@ -6,11 +6,17 @@ use nom::{
 // parser
 
 #[derive(Clone, Debug)]
+pub enum Input {
+    Single(String),
+    Repeat(u8, String),
+}
+
+#[derive(Clone, Debug)]
 pub enum Statement {
     Statement {
         output: Vec<String>, // output: output in subcircuit should have name 'oXXX'
         subcircuit: String,  // subcircuit: can be 'nand' or other subcircuit
-        input: Vec<String>,  // input of subcircuit should have name 'iXXX
+        input: Vec<Input>,   // input of subcircuit should have name 'iXXX
     },
     Alias {
         new_name: String,
@@ -106,7 +112,10 @@ pub fn parse_statement(input: &str) -> VOIResult<Statement> {
                     |(output, subcircuit, input)| Statement::Statement {
                         output,
                         subcircuit: subcircuit.to_string(),
-                        input,
+                        input: input
+                            .iter()
+                            .map(|x| Input::Single(x.clone()))
+                            .collect::<Vec<_>>(),
                     },
                 ),
                 map(

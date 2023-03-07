@@ -43,6 +43,8 @@ pub enum ConvertError {
     NumberError(#[from] std::num::TryFromIntError),
     #[error("Illegal empty in non empty subcircuit {0}")]
     IllegalEmptyInNonEmptySubcircuit(String),
+    #[error("Wrong repeat count in {0:?} in subcircuit {1}")]
+    WrongRepeatCount(Statement, String),
 }
 
 impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
@@ -68,13 +70,44 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
         };
 
         for sc in &parsed {
+            // check repeat count
+            if let Some(stmt) = sc
+                .statements
+                .iter()
+                .filter(|stmt| match stmt {
+                    Statement::Statement { input: inputs, .. } => inputs.iter().any(|input| {
+                        if let Input::Repeat(count, _) = input {
+                            *count >= 128
+                        } else {
+                            false
+                        }
+                    }),
+                    _ => false,
+                })
+                .next()
+            {
+                return Err(ConvertError::WrongRepeatCount(
+                    stmt.clone(),
+                    sc.name.clone(),
+                ));
+            }
+
             // check whether all subcircuits have any inputs
             if !sc.statements.iter().any(|stmt| match stmt {
-                Statement::Statement { input: inputs, .. } => inputs.iter().any(|input| {
-                    input.starts_with("i")
-                        && input.len() >= 2
-                        && input.chars().skip(1).all(|c| c.is_digit(10))
-                }),
+                Statement::Statement { input: inputs, .. } => {
+                    inputs.iter().any(|input| match input {
+                        Input::Single(input) => {
+                            input.starts_with("i")
+                                && input.len() >= 2
+                                && input.chars().skip(1).all(|c| c.is_digit(10))
+                        }
+                        Input::Repeat(_, input) => {
+                            input.starts_with("i")
+                                && input.len() >= 2
+                                && input.chars().skip(1).all(|c| c.is_digit(10))
+                        }
+                    })
+                }
                 Statement::Alias { name: input, .. } => {
                     input.starts_with("i")
                         && input.len() >= 2
@@ -132,12 +165,22 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                     .map(|stmt| match stmt {
                         Statement::Statement { input: inputs, .. } => inputs
                             .iter()
-                            .filter(|input| {
-                                input.starts_with("i")
-                                    && input.len() >= 2
-                                    && input.chars().skip(1).all(|c| c.is_digit(10))
+                            .filter(|input| match input {
+                                Input::Single(input) => {
+                                    input.starts_with("i")
+                                        && input.len() >= 2
+                                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                                }
+                                Input::Repeat(_, input) => {
+                                    input.starts_with("i")
+                                        && input.len() >= 2
+                                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                                }
                             })
-                            .map(|input| input[1..].parse::<u8>())
+                            .map(|input| match input {
+                                Input::Single(input) => input[1..].parse::<u8>(),
+                                Input::Repeat(_, input) => input[1..].parse::<u8>(),
+                            })
                             .collect::<Vec<_>>(),
                         Statement::Alias { name: input, .. } => {
                             if input.starts_with("i")
@@ -198,12 +241,29 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                     .map(|stmt| match stmt {
                         Statement::Statement { input: inputs, .. } => inputs
                             .iter()
-                            .filter(|input| {
-                                input.starts_with("i")
-                                    && input.len() >= 2
-                                    && input.chars().skip(1).all(|c| c.is_digit(10))
+                            .filter(|input| match input {
+                                Input::Single(input) => {
+                                    input.starts_with("i")
+                                        && input.len() >= 2
+                                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                                }
+                                Input::Repeat(_, input) => {
+                                    input.starts_with("i")
+                                        && input.len() >= 2
+                                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                                }
                             })
-                            .map(|input| input[1..].parse::<u8>().unwrap())
+                            .map(|input| match input {
+                                Input::Single(input) => {
+                                    let b = input[1..].parse::<u8>().unwrap();
+                                    b..b + 1
+                                }
+                                Input::Repeat(count, input) => {
+                                    let base = input[1..].parse::<u8>().unwrap();
+                                    base..base + count
+                                }
+                            })
+                            .flatten()
                             .collect::<Vec<_>>(),
                         Statement::Alias { name: input, .. } => {
                             if input.starts_with("i")
@@ -372,14 +432,30 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                         }
                         // put stmt inputs
                         for input in inputs {
-                            if let Some(var) = var_map.get(input.as_str()) {
-                                body.push(*var);
-                            } else {
-                                return Err(ConvertError::VariableUnvailableInSubcircuit(
-                                    input.clone(),
-                                    stmt.clone(),
-                                    sc.name.clone(),
-                                ));
+                            match input {
+                                Input::Single(input) => {
+                                    if let Some(var) = var_map.get(input.as_str()) {
+                                        body.push(*var);
+                                    } else {
+                                        return Err(ConvertError::VariableUnvailableInSubcircuit(
+                                            input.clone(),
+                                            stmt.clone(),
+                                            sc.name.clone(),
+                                        ));
+                                    }
+                                }
+                                Input::Repeat(count, input) => {
+                                    if let Some(var) = var_map.get(input.as_str()) {
+                                        body.push(count + 128);
+                                        body.push(*var);
+                                    } else {
+                                        return Err(ConvertError::VariableUnvailableInSubcircuit(
+                                            input.clone(),
+                                            stmt.clone(),
+                                            sc.name.clone(),
+                                        ));
+                                    }
+                                }
                             }
                         }
                         // put stmt outputs
