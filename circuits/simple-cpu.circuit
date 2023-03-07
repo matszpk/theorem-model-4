@@ -105,8 +105,8 @@ main:
     
     # merge phase 3 with 0,1,2
     # input: cpu_phase_X, cpu_instr_X, cpu_phase_ph012, cpu_instr_ph012, cpu_pc_ph012,
-    # cpu_tempreg_ph012...,
-    # 3:cpu_phase_0_ph3, :8:cpu_pc_0_ph3, :4:cpu_sp_0_ph3, .. ,
+    # cpu_tempreg_ph012,mem_rw_ph012, mem_address_ph012,...,
+    # 3:cpu_phase_0_ph3, :8:cpu_pc_0_ph3, :4:cpu_sp_0_ph3,
     # mem_rw_ph3, :4:mem_value_0_ph3, :8:mem_address_0_ph3, ..
     cpu_phase_0_ph0123 cpu_phase_1_ph0123 cpu_phase_2_ph0123 cpu_instr_0_ph0123 \
     cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 cpu_pc_0_ph0123 cpu_pc_1_ph0123 \
@@ -118,12 +118,10 @@ main:
     mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123 \
     if_stop_ph0123 = cpu_merge_phase012_3 \
     :7:cpu_phase_0 \
-    :4:cpu_tempreg_0 :19:cpu_phase_0_ph012 \
+    :4:cpu_tempreg_0 :28:cpu_phase_0_ph012 \
     :4:cpu_sp_0 \
-    :15:cpu_phase_0_ph3 \
-    mem_rw_ph012 :4:mem_value_0 \
-    :8:mem_address_0_ph012 \
-    :13:mem_rw_ph3 if_stop_ph3
+    :4:mem_value_0 \
+    :29:cpu_phase_0_ph3
     
     # input: :3:cpu_phase_0_ph0123 :4:cpu_instr_0_ph0123,...
     # :4:cpu_acc_0, :3:cpu_flag_c, :4:cpu_sp_0
@@ -570,38 +568,38 @@ cpu_merge_phase012_3:
     alias cpu_tempreg_1_ph012 i27
     alias cpu_tempreg_2_ph012 i28
     alias cpu_tempreg_3_ph012 i29
-    alias cpu_sp_0_ph012 i30
-    alias cpu_sp_1_ph012 i31
-    alias cpu_sp_2_ph012 i32
-    alias cpu_sp_3_ph012 i33
-    alias cpu_phase_0_ph3 i34
-    alias cpu_phase_1_ph3 i35
-    alias cpu_phase_2_ph3 i36
-    alias cpu_pc_0_ph3 i37
-    alias cpu_pc_1_ph3 i38
-    alias cpu_pc_2_ph3 i39
-    alias cpu_pc_3_ph3 i40
-    alias cpu_pc_4_ph3 i41
-    alias cpu_pc_5_ph3 i42
-    alias cpu_pc_6_ph3 i43
-    alias cpu_pc_7_ph3 i44
-    alias cpu_sp_0_ph3 i45
-    alias cpu_sp_1_ph3 i46
-    alias cpu_sp_2_ph3 i47
-    alias cpu_sp_3_ph3 i48
-    alias mem_rw_ph012 i49
-    alias mem_value_0_ph012 i50
-    alias mem_value_1_ph012 i51
-    alias mem_value_2_ph012 i52
-    alias mem_value_3_ph012 i53
-    alias mem_address_0_ph012 i54
-    alias mem_address_1_ph012 i55
-    alias mem_address_2_ph012 i56
-    alias mem_address_3_ph012 i57
-    alias mem_address_4_ph012 i58
-    alias mem_address_5_ph012 i59
-    alias mem_address_6_ph012 i60
-    alias mem_address_7_ph012 i61
+    alias mem_rw_ph012 i30
+    alias mem_address_0_ph012 i31
+    alias mem_address_1_ph012 i32
+    alias mem_address_2_ph012 i33
+    alias mem_address_3_ph012 i34
+    alias mem_address_4_ph012 i35
+    alias mem_address_5_ph012 i36
+    alias mem_address_6_ph012 i37
+    alias mem_address_7_ph012 i38
+    alias cpu_sp_0_ph012 i39
+    alias cpu_sp_1_ph012 i40
+    alias cpu_sp_2_ph012 i41
+    alias cpu_sp_3_ph012 i42
+    alias mem_value_0_ph012 i43
+    alias mem_value_1_ph012 i44
+    alias mem_value_2_ph012 i45
+    alias mem_value_3_ph012 i46
+    alias cpu_phase_0_ph3 i47
+    alias cpu_phase_1_ph3 i48
+    alias cpu_phase_2_ph3 i49
+    alias cpu_pc_0_ph3 i50
+    alias cpu_pc_1_ph3 i51
+    alias cpu_pc_2_ph3 i52
+    alias cpu_pc_3_ph3 i53
+    alias cpu_pc_4_ph3 i54
+    alias cpu_pc_5_ph3 i55
+    alias cpu_pc_6_ph3 i56
+    alias cpu_pc_7_ph3 i57
+    alias cpu_sp_0_ph3 i58
+    alias cpu_sp_1_ph3 i59
+    alias cpu_sp_2_ph3 i60
+    alias cpu_sp_3_ph3 i61
     alias mem_rw_ph3 i62
     alias mem_value_0_ph3 i63
     alias mem_value_1_ph3 i64
