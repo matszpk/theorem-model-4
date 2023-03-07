@@ -357,7 +357,7 @@ gen_testsuite("cpu_phase3_pul_1_2", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_p
                 cpu_phase3_pul_1_2_input_test_func)
 
 cpu_merge_phase012_3_input_str = (('phase',3),('instr',4),('tempreg',4),('phase_012',3),
-                ('instr_012',4),('pc_012',8),('sp_012',4),('tempreg_012',4),('phase_3',3),
+                ('instr_012',4),('pc_012',8),('tempreg_012',4),('sp_012',4),('phase_3',3),
                 ('pc_3',8),('sp_3',4),('mem_rw_012',1),('mem_value_012',4),
                 ('mem_address_012',8),('mem_rw_3',1),('mem_value_3',4),('mem_address_3',8),
                 ('stop_3',1))
@@ -430,7 +430,7 @@ gen_testsuite("cpu_merge_phase012_3_1", "cpu_merge_phase012_3", 76, 37, range(0,
 gen_testsuite("cpu_merge_phase012_3_2", "cpu_merge_phase012_3", 76, 37, range(0, 1<<2),
                 cpu_merge_phase012_3, cpu_merge_phase012_3_2_input_test_func)
 
-cpu_phase4_input_str = (('instr',4),('flags',3),('acc',4),('mem_value',4))
+cpu_phase4_input_str = (('instr',4),('acc',4),('flags',3),('mem_value',4))
 cpu_phase4_output_str = (('acc',4),('flags',3))
 
 def cpu_phase4(data):

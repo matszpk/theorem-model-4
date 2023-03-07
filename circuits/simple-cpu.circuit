@@ -83,11 +83,12 @@ main:
     = cpu_phase3 :31:cpu_instr_0
     
     # phase 4
+    # input: cpu_instr, acc, flag
     # TODO: change order of input
     cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all cpu_flag_c_t_all \
     cpu_flag_z_t_all cpu_flag_n_t_all = cpu_phase4 \
-    :4:cpu_instr_0 :3:cpu_flag_c \
-    :4:cpu_acc_0 :4:mem_value_0
+    :4:cpu_instr_0 :7:cpu_acc_0 \
+    :4:mem_value_0
     
     # copy to avoid unknown
     cpu_phase_2 = copy cpu_phase_2
@@ -103,7 +104,8 @@ main:
         = copy_8bit :8:cpu_sp_0
     
     # merge phase 3 with 0,1,2
-    # input: cpu_phase_X, cpu_instr_X, .., cpu_instr_ph012, cpu_pc_ph012, ...,
+    # input: cpu_phase_X, cpu_instr_X, cpu_phase_ph012, cpu_instr_ph012, cpu_pc_ph012,
+    # cpu_tempreg_ph012...,
     # 3:cpu_phase_0_ph3, :8:cpu_pc_0_ph3, :4:cpu_sp_0_ph3, .. ,
     # mem_rw_ph3, :4:mem_value_0_ph3, :8:mem_address_0_ph3, ..
     cpu_phase_0_ph0123 cpu_phase_1_ph0123 cpu_phase_2_ph0123 cpu_instr_0_ph0123 \
@@ -116,10 +118,8 @@ main:
     mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123 \
     if_stop_ph0123 = cpu_merge_phase012_3 \
     :7:cpu_phase_0 \
-    :4:cpu_tempreg_0 :3:cpu_phase_0_ph012 \
-    :12:cpu_instr_0_ph012 \
+    :4:cpu_tempreg_0 :19:cpu_phase_0_ph012 \
     :4:cpu_sp_0 \
-    :4:cpu_tempreg_0_ph012 \
     :15:cpu_phase_0_ph3 \
     mem_rw_ph012 :4:mem_value_0 \
     :8:mem_address_0_ph012 \
@@ -566,14 +566,14 @@ cpu_merge_phase012_3:
     alias cpu_pc_5_ph012 i23
     alias cpu_pc_6_ph012 i24
     alias cpu_pc_7_ph012 i25
-    alias cpu_sp_0_ph012 i26
-    alias cpu_sp_1_ph012 i27
-    alias cpu_sp_2_ph012 i28
-    alias cpu_sp_3_ph012 i29
-    alias cpu_tempreg_0_ph012 i30
-    alias cpu_tempreg_1_ph012 i31
-    alias cpu_tempreg_2_ph012 i32
-    alias cpu_tempreg_3_ph012 i33
+    alias cpu_tempreg_0_ph012 i26
+    alias cpu_tempreg_1_ph012 i27
+    alias cpu_tempreg_2_ph012 i28
+    alias cpu_tempreg_3_ph012 i29
+    alias cpu_sp_0_ph012 i30
+    alias cpu_sp_1_ph012 i31
+    alias cpu_sp_2_ph012 i32
+    alias cpu_sp_3_ph012 i33
     alias cpu_phase_0_ph3 i34
     alias cpu_phase_1_ph3 i35
     alias cpu_phase_2_ph3 i36
@@ -656,13 +656,13 @@ cpu_phase4:
     alias cpu_instr_1 i1
     alias cpu_instr_2 i2
     alias cpu_instr_3 i3
-    alias cpu_flag_c i4
-    alias cpu_flag_z i5
-    alias cpu_flag_n i6
-    alias cpu_acc_0 i7
-    alias cpu_acc_1 i8
-    alias cpu_acc_2 i9
-    alias cpu_acc_3 i10
+    alias cpu_acc_0 i4
+    alias cpu_acc_1 i5
+    alias cpu_acc_2 i6
+    alias cpu_acc_3 i7
+    alias cpu_flag_c i8
+    alias cpu_flag_z i9
+    alias cpu_flag_n i10
     alias mem_value_0 i11
     alias mem_value_1 i12
     alias mem_value_2 i13
