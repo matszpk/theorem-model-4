@@ -279,10 +279,33 @@ impl Circuit {
             u8::try_from(self.subcircuits.len())?,
         ];
         file.write_all(main_data.as_slice())?;
-        for c in &self.subcircuits {
-            let sc_pos = u16::try_from(c.location)?.to_le_bytes();
-            let sc_data = [sc_pos[0], sc_pos[1], c.input_len, c.output_len];
-            file.write_all(sc_data.as_slice())?;
+        for (i, c) in self.subcircuits.iter().enumerate() {
+            if i == 0 {
+                let sc_pos = u16::try_from(c.location)?.to_le_bytes();
+                let sc_data = [sc_pos[0], sc_pos[1]];
+                file.write_all(sc_data.as_slice())?;
+            } else {
+                let sc_pos = c.location - self.subcircuits[0].location;
+                if sc_pos < 128 {
+                    let sc_pos = sc_pos.try_into().unwrap();
+                    let sc_data = [sc_pos];
+                    file.write_all(sc_data.as_slice())?;
+                } else {
+                    let sc_data = [
+                        u8::try_from(sc_pos & 0x7f)? | 0x80,
+                        u8::try_from(sc_pos >> 7)?,
+                    ];
+                    file.write_all(sc_data.as_slice())?;
+                }
+            }
+
+            if c.input_len <= 8 && c.output_len <= 8 {
+                let sc_data = [c.input_len - 1 | ((c.output_len - 1) << 3)];
+                file.write_all(sc_data.as_slice())?;
+            } else {
+                let sc_data = [c.input_len | 0x80, c.output_len];
+                file.write_all(sc_data.as_slice())?;
+            }
         }
         file.write_all(&self.circuit)?;
         Ok(())

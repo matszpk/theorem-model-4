@@ -397,12 +397,14 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                         output: outputs,
                         subcircuit,
                     } => {
-                        let input_count: u8 = inputs.iter().map(|input|
-                            match input {
+                        let input_count: u8 = inputs
+                            .iter()
+                            .map(|input| match input {
                                 Input::Single(_) => 1,
-                                Input::Repeat(count,_) => *count
-                            }).sum();
-                        
+                                Input::Repeat(count, _) => *count,
+                            })
+                            .sum();
+
                         if subcircuit.as_str() == "nand" {
                             if input_count != 2 {
                                 return Err(ConvertError::WrongInputNumberInSubcircuit(
