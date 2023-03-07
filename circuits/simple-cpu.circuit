@@ -371,10 +371,10 @@ cpu_phase3:
     # otherwise - then load from memory (set mem_address).
     
     cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit \
-        cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
+        :4:cpu_instr_0
     
-    if_psh = and_4 cpu_instr_0_n cpu_instr_1 cpu_instr_2 cpu_instr_3
-    if_sta = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
+    if_psh = and_4 cpu_instr_0_n :3:cpu_instr_1
+    if_sta = and_4 cpu_instr_0 :3:cpu_instr_1_n
     if_sta_psh = or if_sta if_psh
     if_not_sta_psh = nand if_sta_psh if_sta_psh
     
@@ -391,20 +391,20 @@ cpu_phase3:
     if_jump = or_4 if_bcc_jump if_bne_jump if_bpl_jump if_jump
     
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
-    if_pul = and_4 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
+    if_pul = and_4 :4:cpu_instr_0
     
-    if_sp_zero_n = or_4 cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
+    if_sp_zero_n = or_4 :4:cpu_sp_0
     if_sp_zero = nand if_sp_zero_n if_sp_zero_n
     
     cpu_sp_0_tmp cpu_sp_1_tmp cpu_sp_2_tmp cpu_sp_3_tmp ign = carry_inc_4bit \
-        if_psh cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
+        if_psh :4:cpu_sp_0
     cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec = dec_4bit \
-        cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3
+        :4:cpu_sp_0
     
     # calculating mem_address - SP if PSH,PUL else tmpreg|(mem_value<<4)
     mem_address_0_tmp mem_address_1_tmp mem_address_2_tmp mem_address_3_tmp = ite_4bit \
-        if_psh cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 \
-        cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3
+        if_psh :4:cpu_sp_0 \
+        :4:cpu_tempreg_0
     
     if_psh_pul = or if_psh if_pul
     
@@ -417,25 +417,24 @@ cpu_phase3:
     o2 = copy if_not_sta_psh
     
     # cpu_pc_X_ph3
-    o3 o4 o5 o6 = ite_4bit if_jump cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
-        cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3
-    o7 o8 o9 o10 = ite_4bit if_jump mem_value_0 mem_value_1 mem_value_2 mem_value_3 \
-        cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7
+    o3 o4 o5 o6 = ite_4bit if_jump :4:cpu_tempreg_0 \
+        :4:cpu_pc_0
+    o7 o8 o9 o10 = ite_4bit if_jump :4:mem_value_0 \
+        :4:cpu_pc_4
     
     # cpu_sp_X_ph3
-    o11 o12 o13 o14 = ite_4bit if_pul cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec \
-        cpu_sp_0_tmp cpu_sp_1_tmp cpu_sp_2_tmp cpu_sp_3_tmp
+    o11 o12 o13 o14 = ite_4bit if_pul :4:cpu_sp_0_dec \
+        :4:cpu_sp_0_tmp
     
     # mem_rw_ph3
     o15 = copy if_sta_psh
     # mem_value_X_ph3
-    o16 o17 o18 o19 = copy_4bit cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3
+    o16 o17 o18 o19 = copy_4bit :4:cpu_acc_0
     
     # mem_address_X_ph3
-    o20 o21 o22 o23 = ite_4bit if_pul cpu_sp_0_dec cpu_sp_1_dec cpu_sp_2_dec cpu_sp_3_dec \
-        mem_address_0_tmp mem_address_1_tmp mem_address_2_tmp mem_address_3_tmp
-    o24 o25 o26 o27 = ite_4bit if_psh_pul zero zero zero zero mem_value_0 mem_value_1 \
-        mem_value_2 mem_value_3
+    o20 o21 o22 o23 = ite_4bit if_pul :4:cpu_sp_0_dec \
+        :4:mem_address_0_tmp
+    o24 o25 o26 o27 = ite_4bit if_psh_pul zero zero zero zero :4:mem_value_0
     
     # if_stop
     o28 = and if_sp_zero if_pul
@@ -526,35 +525,35 @@ cpu_merge_phase012_3:
     o1 = ite if_phase_3 cpu_phase_1_ph3 cpu_phase_1_ph012
     o2 = ite if_phase_3 cpu_phase_2_ph3 cpu_phase_2_ph012
     # cpu_instr_X_ph0123
-    o3 o4 o5 o6 = ite_4bit if_phase_3 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
-        cpu_instr_0_ph012 cpu_instr_1_ph012 cpu_instr_2_ph012 cpu_instr_3_ph012
+    o3 o4 o5 o6 = ite_4bit if_phase_3 :4:cpu_instr_0 \
+        :4:cpu_instr_0_ph012
     # cpu_pc_X_ph0123
-    o7 o8 o9 o10 = ite_4bit if_phase_3 cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 \
-        cpu_pc_0_ph012 cpu_pc_1_ph012 cpu_pc_2_ph012 cpu_pc_3_ph012
-    o11 o12 o13 o14 = ite_4bit if_phase_3 cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 \
-        cpu_pc_4_ph012 cpu_pc_5_ph012 cpu_pc_6_ph012 cpu_pc_7_ph012
+    o7 o8 o9 o10 = ite_4bit if_phase_3 :4:cpu_pc_0_ph3 \
+        :4:cpu_pc_0_ph012
+    o11 o12 o13 o14 = ite_4bit if_phase_3 :4:cpu_pc_4_ph3 \
+        :4:cpu_pc_4_ph012
     # cpu_sp_X_ph0123
-    o15 o16 o17 o18 = ite_4bit if_phase_3 cpu_sp_0_ph3 cpu_sp_1_ph3 cpu_sp_2_ph3 cpu_sp_3_ph3 \
-        cpu_sp_0_ph012 cpu_sp_1_ph012 cpu_sp_2_ph012 cpu_sp_3_ph012
+    o15 o16 o17 o18 = ite_4bit if_phase_3 :4:cpu_sp_0_ph3 \
+        :4:cpu_sp_0_ph012
     # cpu_tempreg_X_ph0123
     o19 o20 o21 o22 = ite_4bit if_phase_3 \
-        cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
-        cpu_tempreg_0_ph012 cpu_tempreg_1_ph012 cpu_tempreg_2_ph012 cpu_tempreg_3_ph012
+        :4:cpu_tempreg_0 \
+        :4:cpu_tempreg_0_ph012
     # mem_rw_ph0123
     o23 = ite if_phase_3 mem_rw_ph3 mem_rw_ph012
     
     # mem_value_X_ph0123
     o24 o25 o26 o27 = ite_4bit if_phase_3 \
-        mem_value_0_ph3 mem_value_1_ph3 mem_value_2_ph3 mem_value_3_ph3 \
-        mem_value_0_ph012 mem_value_1_ph012 mem_value_2_ph012 mem_value_3_ph012
+        :4:mem_value_0_ph3 \
+        :4:mem_value_0_ph012
     
     # mem_address_X_ph0123
     o28 o29 o30 o31 = ite_4bit \
-        if_phase_3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
-        mem_address_0_ph012 mem_address_1_ph012 mem_address_2_ph012 mem_address_3_ph012
+        if_phase_3 :4:mem_address_0_ph3 \
+        :4:mem_address_0_ph012
     o32 o33 o34 o35 = ite_4bit \
-        if_phase_3 mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 \
-        mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 mem_address_7_ph012
+        if_phase_3 :4:mem_address_4_ph3 \
+        :4:mem_address_4_ph012
     o36 = ite if_phase_3 if_stop_ph3 zero
 
 cpu_phase4:
