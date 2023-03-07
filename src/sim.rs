@@ -155,7 +155,7 @@ impl Circuit {
                                     let ii = self.circuit[step_index] as usize;
                                     step_index += 1;
                                     for j in 0..rep_count {
-                                        let v = get_bit(&step_mem[..], ii + j);
+                                        let v = get_bit(&step_mem[..], (ii + j) & 127);
                                         set_bit(&mut sc_input[..], i + j, v);
                                     }
                                     i += rep_count;
