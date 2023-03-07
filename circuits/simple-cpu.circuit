@@ -195,6 +195,9 @@ ite_4bit:
     o1 = ite i0 i2 i6
     o2 = ite i0 i3 i7
     o3 = ite i0 i4 i8
+ite_8bit:
+    o0 o1 o2 o3 = ite_4bit i0 :4:i1 :4:i9
+    o4 o5 o6 o7 = ite_4bit i0 :4:i5 :4:i13
 copy_4bit:
     empty 4
 copy_8bit:
@@ -346,21 +349,17 @@ cpu_phase012:
     alias cpu_phase_2_ph1 cpu_phase_2_ph0
     
     # increment if not CLC, ROL or ROR.
-    cpu_pc_0_ph1 cpu_pc_1_ph1 cpu_pc_2_ph1 cpu_pc_3_ph1 = ite_4bit if_clc_rol_ror_psh_pul \
-        :4:cpu_pc_0 \
-        :4:cpu_pc_0_ph0
-    cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 = ite_4bit if_clc_rol_ror_psh_pul \
-        :4:cpu_pc_4 \
-        :4:cpu_pc_4_ph0
+    cpu_pc_0_ph1 cpu_pc_1_ph1 cpu_pc_2_ph1 cpu_pc_3_ph1 \
+    cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 = ite_8bit if_clc_rol_ror_psh_pul \
+        :8:cpu_pc_0 \
+        :8:cpu_pc_0_ph0
     
     # merge phase0 and phase1
     # mem_address and mem_rw are same
-    cpu_pc_0_ph01 cpu_pc_1_ph01 cpu_pc_2_ph01 cpu_pc_3_ph01 = ite_4bit cpu_phase_0 \
-        :4:cpu_pc_0_ph1 \
-        :4:cpu_pc_0_ph0
-    cpu_pc_4_ph01 cpu_pc_5_ph01 cpu_pc_6_ph01 cpu_pc_7_ph01 = ite_4bit cpu_phase_0 \
-        :4:cpu_pc_4_ph1 \
-        :4:cpu_pc_4_ph0
+    cpu_pc_0_ph01 cpu_pc_1_ph01 cpu_pc_2_ph01 cpu_pc_3_ph01 \
+    cpu_pc_4_ph01 cpu_pc_5_ph01 cpu_pc_6_ph01 cpu_pc_7_ph01 = ite_8bit cpu_phase_0 \
+        :8:cpu_pc_0_ph1 \
+        :8:cpu_pc_0_ph0
     cpu_phase_0_ph01 = ite cpu_phase_0 cpu_phase_0_ph1 cpu_phase_0_ph0
     cpu_phase_1_ph01 = ite cpu_phase_0 cpu_phase_1_ph1 cpu_phase_1_ph0
     alias cpu_phase_2_ph01 cpu_phase_2_ph1
@@ -416,11 +415,8 @@ cpu_phase012:
     o3 o4 o5 o6 = ite_4bit if_phase_2 :4:cpu_instr_0 \
         :4:cpu_instr_0_ph01
     # cpu_pc_X_ph012
-    o7 o8 o9 o10 = ite_4bit if_phase_2 :4:cpu_pc_0_ph2 \
-        :4:cpu_pc_0_ph01
-    # cpu_pc_X_ph012
-    o11 o12 o13 o14 = ite_4bit if_phase_2 :4:cpu_pc_4_ph2 \
-        :4:cpu_pc_4_ph01
+    o7 o8 o9 o10 o11 o12 o13 o14 = ite_8bit if_phase_2 :8:cpu_pc_0_ph2 \
+        :8:cpu_pc_0_ph01
     # cpu_pc_tempreg_X_ph012
     o15 o16 o17 o18 = ite_4bit if_phase_2 \
         :4:cpu_tempreg_0_ph2 \
@@ -523,10 +519,8 @@ cpu_phase3:
     o2 = copy if_not_sta_psh
     
     # cpu_pc_X_ph3
-    o3 o4 o5 o6 = ite_4bit if_jump :4:cpu_tempreg_0 \
-        :4:cpu_pc_0
-    o7 o8 o9 o10 = ite_4bit if_jump :4:mem_value_0 \
-        :4:cpu_pc_4
+    o3 o4 o5 o6 o7 o8 o9 o10 = ite_8bit if_jump :8:cpu_tempreg_0 \
+        :8:cpu_pc_0
     
     # cpu_sp_X_ph3
     o11 o12 o13 o14 = ite_4bit if_pul :4:cpu_sp_0_dec \
@@ -634,10 +628,8 @@ cpu_merge_phase012_3:
     o3 o4 o5 o6 = ite_4bit if_phase_3 :4:cpu_instr_0 \
         :4:cpu_instr_0_ph012
     # cpu_pc_X_ph0123
-    o7 o8 o9 o10 = ite_4bit if_phase_3 :4:cpu_pc_0_ph3 \
-        :4:cpu_pc_0_ph012
-    o11 o12 o13 o14 = ite_4bit if_phase_3 :4:cpu_pc_4_ph3 \
-        :4:cpu_pc_4_ph012
+    o7 o8 o9 o10 o11 o12 o13 o14 = ite_8bit if_phase_3 :8:cpu_pc_0_ph3 \
+        :8:cpu_pc_0_ph012
     # cpu_sp_X_ph0123
     o15 o16 o17 o18 = ite_4bit if_phase_3 :4:cpu_sp_0_ph3 \
         :4:cpu_sp_0_ph012
@@ -654,12 +646,9 @@ cpu_merge_phase012_3:
         :4:mem_value_0_ph012
     
     # mem_address_X_ph0123
-    o28 o29 o30 o31 = ite_4bit \
-        if_phase_3 :4:mem_address_0_ph3 \
-        :4:mem_address_0_ph012
-    o32 o33 o34 o35 = ite_4bit \
-        if_phase_3 :4:mem_address_4_ph3 \
-        :4:mem_address_4_ph012
+    o28 o29 o30 o31 o32 o33 o34 o35 = ite_8bit \
+        if_phase_3 :8:mem_address_0_ph3 \
+        :8:mem_address_0_ph012
     o36 = ite if_phase_3 if_stop_ph3 zero
 
 cpu_phase4:
@@ -900,10 +889,8 @@ cpu_merge_phase0123_4:
     o3 o4 o5 o6 = ite_4bit if_phase4 :4:cpu_instr_0 \
         :4:cpu_instr_0_ph0123
     # cpu_pc_X
-    o7 o8 o9 o10 = ite_4bit if_phase4 :4:cpu_pc_0 \
-        :4:cpu_pc_0_ph0123
-    o11 o12 o13 o14 = ite_4bit if_phase4 :4:cpu_pc_4\
-        :4:cpu_pc_4_ph0123
+    o7 o8 o9 o10 o11 o12 o13 o14 = ite_8bit if_phase4 :8:cpu_pc_0 \
+        :8:cpu_pc_0_ph0123
     # cpu_acc_X
     o15 o16 o17 o18 = ite_4bit if_phase4 :4:cpu_acc_0_t_all \
         :4:cpu_acc_0_ph0123
@@ -923,9 +910,7 @@ cpu_merge_phase0123_4:
     # mem_rw
     o34 = ite if_phase4 zero mem_rw_ph0123
     # mem_address
-    o35 o36 o37 o38 = ite_4bit if_phase4 zero zero zero zero \
-        :4:mem_address_0_ph0123
-    o39 o40 o41 o42 = ite_4bit if_phase4 zero zero zero zero \
-        :4:mem_address_4_ph0123
+    o35 o36 o37 o38 o39 o40 o41 o42 = ite_8bit if_phase4 zero zero zero zero zero zero zero zero \
+        :8:mem_address_0_ph0123
     o43 = copy zero
     o44 = ite if_phase4 zero if_stop_ph0123
