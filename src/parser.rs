@@ -53,6 +53,19 @@ fn identifier(input: &str) -> VIResult {
     )(input)
 }
 
+fn parse_input(input: &str) -> VOIResult<Input> {
+    context(
+        "input",
+        alt((
+            map(identifier, |x| Input::Single(x.to_string())),
+            map(
+                preceded(bc::tag("rep:"), pair(cc::u8, identifier)),
+                |(count, base)| Input::Repeat(count, base.to_string()),
+            ),
+        )),
+    )(input)
+}
+
 pub fn empty_or_comment(input: &str) -> VOIResult<()> {
     value(
         (),
@@ -85,6 +98,20 @@ pub fn parse_names(input: &str) -> VOIResult<Vec<String>> {
     )(input)
 }
 
+pub fn parse_inputs(input: &str) -> VOIResult<Vec<Input>> {
+    map(
+        pair(
+            preceded(cc::space0, parse_input),
+            many0(preceded(cc::space1, parse_input)),
+        ),
+        |(x, vec)| {
+            let mut out = vec![x];
+            out.extend(vec.into_iter());
+            out
+        },
+    )(input)
+}
+
 pub fn parse_statement(input: &str) -> VOIResult<Statement> {
     context(
         "statement",
@@ -107,15 +134,12 @@ pub fn parse_statement(input: &str) -> VOIResult<Statement> {
                     tuple((
                         parse_names,
                         preceded(tuple((cc::space0, cc::char('='), cc::space0)), identifier),
-                        cut(parse_names),
+                        cut(parse_inputs),
                     )),
                     |(output, subcircuit, input)| Statement::Statement {
                         output,
                         subcircuit: subcircuit.to_string(),
-                        input: input
-                            .iter()
-                            .map(|x| Input::Single(x.clone()))
-                            .collect::<Vec<_>>(),
+                        input,
                     },
                 ),
                 map(
