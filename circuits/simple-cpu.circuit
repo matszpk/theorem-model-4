@@ -130,15 +130,10 @@ main:
     o0 o1 o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 o22 \
     o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 o34 o35 o36 o37 o38 o39 o40 o41 o42 o43 o44 \
     = cpu_merge_phase0123_4 :7:cpu_phase_0_ph0123 \
-    :24:cpu_phase_2 \
+    :28:cpu_phase_2 \
     :8:cpu_pc_0_ph0123 \
     :7:cpu_acc_0_t_all \
-    :4:cpu_sp_0_ph0123 \
-    :4:cpu_tempreg_0 \
-    :4:cpu_tempreg_0_ph0123 \
-    :4:mem_value_0_ph0123 \
-    mem_rw_ph0123 :8:mem_address_0_ph0123 \
-    if_stop_ph0123
+    :22:cpu_sp_0_ph0123
 
 copy:
     empty 1
@@ -834,38 +829,38 @@ cpu_merge_phase0123_4:
     alias cpu_sp_1 i28
     alias cpu_sp_2 i29
     alias cpu_sp_3 i30
-    alias cpu_pc_0_ph0123 i31
-    alias cpu_pc_1_ph0123 i32
-    alias cpu_pc_2_ph0123 i33
-    alias cpu_pc_3_ph0123 i34
-    alias cpu_pc_4_ph0123 i35
-    alias cpu_pc_5_ph0123 i36
-    alias cpu_pc_6_ph0123 i37
-    alias cpu_pc_7_ph0123 i38
-    alias cpu_acc_0_t_all i39
-    alias cpu_acc_1_t_all i40
-    alias cpu_acc_2_t_all i41
-    alias cpu_acc_3_t_all i42
-    alias cpu_flag_c_t_all i43
-    alias cpu_flag_z_t_all i44
-    alias cpu_flag_n_t_all i45
-    alias cpu_sp_0_ph0123 i46
-    alias cpu_sp_1_ph0123 i47
-    alias cpu_sp_2_ph0123 i48
-    alias cpu_sp_3_ph0123 i49
-    alias cpu_tempreg_0 i50
-    alias cpu_tempreg_1 i51
-    alias cpu_tempreg_2 i52
-    alias cpu_tempreg_3 i53
+    alias cpu_tempreg_0 i31
+    alias cpu_tempreg_1 i32
+    alias cpu_tempreg_2 i33
+    alias cpu_tempreg_3 i34
+    alias cpu_pc_0_ph0123 i35
+    alias cpu_pc_1_ph0123 i36
+    alias cpu_pc_2_ph0123 i37
+    alias cpu_pc_3_ph0123 i38
+    alias cpu_pc_4_ph0123 i39
+    alias cpu_pc_5_ph0123 i40
+    alias cpu_pc_6_ph0123 i41
+    alias cpu_pc_7_ph0123 i42
+    alias cpu_acc_0_t_all i43
+    alias cpu_acc_1_t_all i44
+    alias cpu_acc_2_t_all i45
+    alias cpu_acc_3_t_all i46
+    alias cpu_flag_c_t_all i47
+    alias cpu_flag_z_t_all i48
+    alias cpu_flag_n_t_all i49
+    alias cpu_sp_0_ph0123 i50
+    alias cpu_sp_1_ph0123 i51
+    alias cpu_sp_2_ph0123 i52
+    alias cpu_sp_3_ph0123 i43
     alias cpu_tempreg_0_ph0123 i54
     alias cpu_tempreg_1_ph0123 i55
     alias cpu_tempreg_2_ph0123 i56
     alias cpu_tempreg_3_ph0123 i57
-    alias mem_value_0_ph0123 i58
-    alias mem_value_1_ph0123 i59
-    alias mem_value_2_ph0123 i60
-    alias mem_value_3_ph0123 i61
-    alias mem_rw_ph0123 i62
+    alias mem_rw_ph0123 i58
+    alias mem_value_0_ph0123 i59
+    alias mem_value_1_ph0123 i60
+    alias mem_value_2_ph0123 i61
+    alias mem_value_3_ph0123 i62
     alias mem_address_0_ph0123 i63
     alias mem_address_1_ph0123 i64
     alias mem_address_2_ph0123 i65

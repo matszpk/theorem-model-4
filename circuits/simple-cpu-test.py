@@ -529,9 +529,10 @@ gen_testsuite("cpu_phase4_pul_1", "cpu_phase4", 15, 7, range(0, 1<<11), cpu_phas
                 cpu_phase4_pul_1_input_test_func)
 
 cpu_merge_phase0123_4_input_str = (('phase_0123',3),('instr_0123',4),
-                ('phase2',1),('instr',4),('pc',8),('acc_0123',4),('flags_0123',3),('sp',4),
+                ('phase2',1),('instr',4),('pc',8),('acc_0123',4),
+                ('flags_0123',3),('sp',4),('tempreg',4),
                 ('pc_0123',8),('acc_t_all',4),('flags_t_all',3),('sp_0123',4),
-                ('tempreg',4),('tempreg_0123',4),('mem_value_0123',4),('mem_rw_0123',1),
+                ('tempreg_0123',4),('mem_rw_0123',1),('mem_value_0123',4),
                 ('mem_address_0123',8),('stop_0123',1))
 cpu_merge_phase0123_4_output_str = (('phase',3),('instr',4),('pc',8),('acc',4),('flags',3),
                 ('sp',4), ('tempreg',4),('mem_value',4),('mem_rw',1),('mem_address',8),
