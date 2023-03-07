@@ -82,14 +82,14 @@ main:
     mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 if_stop_ph3 \
     = cpu_phase3 :4:cpu_instr_0 \
     :8:cpu_pc_0 \
-    :4:cpu_acc_0 cpu_flag_c cpu_flag_z cpu_flag_n \
+    :4:cpu_acc_0 :3:cpu_flag_c \
     :4:cpu_sp_0 :4:cpu_tempreg_0 \
     :4:mem_value_0
     
     # phase 4
     cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all cpu_flag_c_t_all \
     cpu_flag_z_t_all cpu_flag_n_t_all = cpu_phase4 \
-    :4:cpu_instr_0 cpu_flag_c cpu_flag_z cpu_flag_n \
+    :4:cpu_instr_0 :3:cpu_flag_c \
     :4:cpu_acc_0 :4:mem_value_0
     
     # copy to avoid unknown
@@ -136,10 +136,10 @@ main:
     :8:cpu_pc_0 \
     :8:cpu_pc_0_ph0123 \
     :4:cpu_acc_0 \
-    cpu_flag_c cpu_flag_z cpu_flag_n cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 \
+    :3:cpu_flag_c cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 \
     cpu_phase_2 :4:cpu_instr_0 \
     :4:cpu_acc_0_t_all \
-    cpu_flag_c_t_all cpu_flag_z_t_all cpu_flag_n_t_all \
+    :3:cpu_flag_c_t_all \
     :4:cpu_sp_0_ph0123 \
     :4:cpu_tempreg_0 \
     :4:cpu_tempreg_0_ph0123 \
@@ -492,7 +492,7 @@ cpu_phase3:
     if_bcc_bne = and_3 cpu_instr_1 cpu_instr_2_n cpu_instr_3
     if_bpl = and_4 cpu_instr_1_n cpu_instr_1_n cpu_instr_2 cpu_instr_3
     cpu_flag_c_n cpu_flag_z_n cpu_flag_n_n ign = not_4bit \
-        cpu_flag_c cpu_flag_z cpu_flag_n zero
+        :3:cpu_flag_c zero
     if_bcc_jump = and_3 if_bcc_bne cpu_instr_0_n cpu_flag_c_n
     if_bne_jump = and_3 if_bcc_bne cpu_instr_0 cpu_flag_z_n
     if_bpl_jump = and if_bpl cpu_flag_n_n
