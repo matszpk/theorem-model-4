@@ -356,10 +356,11 @@ gen_testsuite("cpu_phase3_pul_1", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_pha
 gen_testsuite("cpu_phase3_pul_1_2", "cpu_phase3", 34, 29, range(0, 1<<16), cpu_phase3,
                 cpu_phase3_pul_1_2_input_test_func)
 
-cpu_merge_phase012_3_input_str = (('phase',3),('instr',4),('tempreg',4),('phase_012',3),
-                ('instr_012',4),('pc_012',8),('tempreg_012',4),
-                ('mem_rw_012',1),('mem_address_012',8),('sp_012',4),
-                ('mem_value_012',4),('phase_3',3),('pc_3',8),('sp_3',4),
+cpu_merge_phase012_3_input_str = (('phase',3),('instr',4),
+                ('sp_012',4),('tempreg',4),('mem_value_012',4),
+                ('phase_012',3),('instr_012',4),('pc_012',8),('tempreg_012',4),
+                ('mem_rw_012',1),('mem_address_012',8),
+                ('phase_3',3),('pc_3',8),('sp_3',4),
                 ('mem_rw_3',1),('mem_value_3',4),('mem_address_3',8),
                 ('stop_3',1))
 cpu_merge_phase012_3_output_str = (('phase',3),('instr',4),('pc',8),('sp',4),('tempreg',4),

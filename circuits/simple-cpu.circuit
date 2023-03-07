@@ -104,7 +104,9 @@ main:
         = copy_8bit :8:cpu_sp_0
     
     # merge phase 3 with 0,1,2
-    # input: cpu_phase_X, cpu_instr_X, cpu_phase_ph012, cpu_instr_ph012, cpu_pc_ph012,
+    # input: cpu_phase_X, cpu_instr_X,
+    # cpu_sp, cpu_tempreg, mem_value,
+    # cpu_phase_ph012, cpu_instr_ph012, cpu_pc_ph012,
     # cpu_tempreg_ph012,mem_rw_ph012, mem_address_ph012,...,
     # 3:cpu_phase_0_ph3, :8:cpu_pc_0_ph3, :4:cpu_sp_0_ph3,
     # mem_rw_ph3, :4:mem_value_0_ph3, :8:mem_address_0_ph3, ..
@@ -118,9 +120,8 @@ main:
     mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123 \
     if_stop_ph0123 = cpu_merge_phase012_3 \
     :7:cpu_phase_0 \
-    :4:cpu_tempreg_0 :28:cpu_phase_0_ph012 \
-    :4:cpu_sp_0 \
-    :4:mem_value_0 \
+    :12:cpu_sp_0 \
+    :28:cpu_phase_0_ph012 \
     :29:cpu_phase_0_ph3
     
     # input: :3:cpu_phase_0_ph0123 :4:cpu_instr_0_ph0123,...
@@ -545,46 +546,46 @@ cpu_merge_phase012_3:
     alias cpu_instr_1 i4
     alias cpu_instr_2 i5
     alias cpu_instr_3 i6
-    alias cpu_tempreg_0 i7
-    alias cpu_tempreg_1 i8
-    alias cpu_tempreg_2 i9
-    alias cpu_tempreg_3 i10
-    alias cpu_phase_0_ph012 i11
-    alias cpu_phase_1_ph012 i12
-    alias cpu_phase_2_ph012 i13
-    alias cpu_instr_0_ph012 i14
-    alias cpu_instr_1_ph012 i15
-    alias cpu_instr_2_ph012 i16
-    alias cpu_instr_3_ph012 i17
-    alias cpu_pc_0_ph012 i18
-    alias cpu_pc_1_ph012 i19
-    alias cpu_pc_2_ph012 i20
-    alias cpu_pc_3_ph012 i21
-    alias cpu_pc_4_ph012 i22
-    alias cpu_pc_5_ph012 i23
-    alias cpu_pc_6_ph012 i24
-    alias cpu_pc_7_ph012 i25
-    alias cpu_tempreg_0_ph012 i26
-    alias cpu_tempreg_1_ph012 i27
-    alias cpu_tempreg_2_ph012 i28
-    alias cpu_tempreg_3_ph012 i29
-    alias mem_rw_ph012 i30
-    alias mem_address_0_ph012 i31
-    alias mem_address_1_ph012 i32
-    alias mem_address_2_ph012 i33
-    alias mem_address_3_ph012 i34
-    alias mem_address_4_ph012 i35
-    alias mem_address_5_ph012 i36
-    alias mem_address_6_ph012 i37
-    alias mem_address_7_ph012 i38
-    alias cpu_sp_0_ph012 i39
-    alias cpu_sp_1_ph012 i40
-    alias cpu_sp_2_ph012 i41
-    alias cpu_sp_3_ph012 i42
-    alias mem_value_0_ph012 i43
-    alias mem_value_1_ph012 i44
-    alias mem_value_2_ph012 i45
-    alias mem_value_3_ph012 i46
+    alias cpu_sp_0_ph012 i7
+    alias cpu_sp_1_ph012 i8
+    alias cpu_sp_2_ph012 i9
+    alias cpu_sp_3_ph012 i10
+    alias cpu_tempreg_0 i11
+    alias cpu_tempreg_1 i12
+    alias cpu_tempreg_2 i13
+    alias cpu_tempreg_3 i14
+    alias mem_value_0_ph012 i15
+    alias mem_value_1_ph012 i16
+    alias mem_value_2_ph012 i17
+    alias mem_value_3_ph012 i18
+    alias cpu_phase_0_ph012 i19
+    alias cpu_phase_1_ph012 i20
+    alias cpu_phase_2_ph012 i21
+    alias cpu_instr_0_ph012 i22
+    alias cpu_instr_1_ph012 i23
+    alias cpu_instr_2_ph012 i24
+    alias cpu_instr_3_ph012 i25
+    alias cpu_pc_0_ph012 i26
+    alias cpu_pc_1_ph012 i27
+    alias cpu_pc_2_ph012 i28
+    alias cpu_pc_3_ph012 i29
+    alias cpu_pc_4_ph012 i30
+    alias cpu_pc_5_ph012 i31
+    alias cpu_pc_6_ph012 i32
+    alias cpu_pc_7_ph012 i33
+    alias cpu_tempreg_0_ph012 i34
+    alias cpu_tempreg_1_ph012 i35
+    alias cpu_tempreg_2_ph012 i36
+    alias cpu_tempreg_3_ph012 i37
+    alias mem_rw_ph012 i38
+    alias mem_address_0_ph012 i39
+    alias mem_address_1_ph012 i40
+    alias mem_address_2_ph012 i41
+    alias mem_address_3_ph012 i42
+    alias mem_address_4_ph012 i43
+    alias mem_address_5_ph012 i44
+    alias mem_address_6_ph012 i45
+    alias mem_address_7_ph012 i46
     alias cpu_phase_0_ph3 i47
     alias cpu_phase_1_ph3 i48
     alias cpu_phase_2_ph3 i49
