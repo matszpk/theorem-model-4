@@ -114,42 +114,34 @@ def cpu_phase012_1_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':0,'instr':case&0xf,'pc':(case>>4)&0xff,
                  'tempreg':(case>>12)&3,'mem_value':(case>>14)&3})
-
 def cpu_phase012_1_2_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':0,'instr':case&0xf,'pc':(case>>4)&0xff,
                  'tempreg':((case>>12)&3)<<2,'mem_value':((case>>14)&3)<<2})
-
 def cpu_phase012_2_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':1,'instr':case&0x3,'pc':(case>>2)&0xff,
                  'tempreg':(case>>10)&3,'mem_value':(case>>12)&0xf})
-
 def cpu_phase012_2_2_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':1,'instr':(case&0x3)<<2,'pc':(case>>2)&0xff,
                  'tempreg':((case>>10)&3)<<2,'mem_value':(case>>12)&0xf})
-
 def cpu_phase012_2_3_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':1,'instr':9,'pc':case&0xff,
                  'tempreg':(case>>8)&0xf,'mem_value':(case>>12)&0xf})
-
 def cpu_phase012_3_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':2,'instr':case&0xf,'pc':(case>>4)&0xff,
                  'tempreg':(case>>12)&3,'mem_value':(case>>14)&3})
-
 def cpu_phase012_3_2_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':2,'instr':case&0xf,'pc':(case>>4)&0xff,
                  'tempreg':((case>>12)&3)<<2,'mem_value':((case>>14)&3)<<2})
-
 def cpu_phase012_3_3_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':2,'instr':case&0xf,'pc':(case>>4)&0xff,
                  'tempreg':11,'mem_value':(case>>12)&0xf})
-
 def cpu_phase012_3_4_input_test_func(case):
     return bin_comp(cpu_phase012_input_str,
         {'phase':2,'instr':case&0xf,'pc':(case>>4)&0xff,
