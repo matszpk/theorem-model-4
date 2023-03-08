@@ -9,8 +9,8 @@ use clap::{Parser, Subcommand};
 
 use nom::error::convert_error;
 
-use std::fs::read_to_string;
-use std::io::{self, Read};
+use std::fs::{read_to_string, File};
+use std::io::{self, BufRead, BufReader, Read};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -204,28 +204,19 @@ fn main() -> ExitCode {
             }
         }
         Commands::Test(r) => {
-            let input = divide_lines(&if let Some(testsuite) = r.testsuite {
-                read_to_string(testsuite).unwrap()
+            let input = if let Some(testsuite) = r.testsuite {
+                Box::new(BufReader::new(File::open(testsuite).unwrap())) as Box<dyn BufRead>
             } else {
-                let mut out = String::new();
-                io::stdin().read_to_string(&mut out).unwrap();
-                out
+                Box::new(BufReader::new(io::stdin())) as Box<dyn BufRead>
+            };
+            let tc_iter = input.lines().map(|x| {
+                let l = x.unwrap();
+                let mut l = l.clone();
+                l.push('\n');
+                parse_test_case(&l).unwrap().1
             });
-            match parse_test_suite(&input) {
-                Ok((_, test_suite)) => {
-                    if !run_test_suite(&circuit, test_suite, r.trace) {
-                        return ExitCode::FAILURE;
-                    }
-                }
-                Err(e) => {
-                    match e {
-                        nom::Err::Error(e) | nom::Err::Failure(e) => {
-                            eprintln!("Error: {}", convert_error(input.as_str(), e))
-                        }
-                        e => eprintln!("Error: {}", e),
-                    }
-                    return ExitCode::FAILURE;
-                }
+            if !run_test_suite(&circuit, tc_iter, r.trace) {
+                return ExitCode::FAILURE;
             }
         }
         Commands::Dump(r) => {
