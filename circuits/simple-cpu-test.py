@@ -632,3 +632,51 @@ gen_testsuite("cpu_merge_phase0123_4_2", "cpu_merge_phase0123_4", 72, 45, range(
                 cpu_merge_phase0123_4, cpu_merge_phase0123_4_2_input_test_func)
 gen_testsuite("cpu_merge_phase0123_4_3", "cpu_merge_phase0123_4", 72, 45, range(0, 2),
                 cpu_merge_phase0123_4, cpu_merge_phase0123_4_3_input_test_func)
+
+cpu_phase4_input_str = (('phase',3),('instr',4),('pc',8),('acc',4),('flags',3),
+                    ('sp',4),('tempreg'),('mem_value',4))
+cpu_phase4_output_str = (('phase',3),('instr',4),('pc',8),('acc',4),('flags',3),
+                    ('sp',4),('tempreg'),('mem_value',4),('mem_rw',1),
+                    ('mem_address',8),('create',1),('stop',1))
+
+def cpu_main(data):
+    v = bin_decomp(cpu_merge_phase0123_4_input_str, data)
+    phase, instr, pc = v['phase'], v['instr'], v['pc']
+    acc, flags, sp = v['acc'], v['flags'], v['sp']
+    tempreg, mem_value = v['tempreg'], v['mem_value']
+    out = 0
+    new_phase, new_instr, new_pc = phase, instr, pc
+    new_acc, new_flags, new_sp = acc, flags, sp
+    new_tempreg, new_mem_value = tempreg, mem_value
+    new_mem_rw, new_mem_address = 0, 0
+    new_create, new_stop = 0, 0
+    if phase <= 2:
+        newv = bin_decomp(cpu_phase012_output_str,
+            cpu_phase012(bin_comp(cpu_phase012_input_str, {
+                'phase': phase, 'instr': instr,'pc': pc, 'tempreg': tempreg,
+                'mem_value': mem_value
+        })))
+        new_phase, new_instr, new_pc = newv['phase'], newv['instr'], newv['pc']
+        new_tempreg, new_mem_rw = newv['tempreg'], newv['mem_rw']
+        new_mem_address = newv['mem_address']
+    elif phase == 3:
+        newv = bin_decomp(cpu_phase3_output_str,
+            cpu_phase3(bin_comp(cpu_phase3_input_str, {
+                'instr': instr, 'pc': pc, 'acc': acc, 'flags': flags, 'sp': sp,
+                'tempreg': tempreg, 'mem_value': mem_value
+        })))
+        new_phase, new_pc, new_sp = newv['phase'], newv['pc'], newv['sp']
+        new_mem_rw, new_mem_value = newv['mem_rw'], newv['mem_value']
+        new_mem_address, new_stop = newv['mem_address'], newv['stop']
+    elif phase == 4:
+        newv = bin_decomp(cpu_phase5_output_str,
+            cpu_phase4(bin_comp(cpu_phase4_input_str, {
+                'instr': instr, 'acc': acc, 'flags': flags, 'mem_value': mem_value
+        })))
+        new_acc, new_flags = newv['acc'], newv['flags']
+    return bincomp(cpu_phase4_input_str, {
+        'phase': new_phase, 'instr': new_instr, 'pc': new_pc, 'acc': new_acc,
+        'flags': new_flags, 'sp': new_sp, 'tempreg': new_tempreg, 'mem_value': new_mem_value,
+        'mem_rw': new_mem_rw, 'mem_address': new_mem_address, 'create': new_create,
+        'stop': new_stop
+    })
