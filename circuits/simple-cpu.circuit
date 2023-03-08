@@ -84,24 +84,17 @@ main:
     
     # phase 4
     # input: cpu_instr, acc, flag
-    # TODO: change order of input
     cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all cpu_flag_c_t_all \
     cpu_flag_z_t_all cpu_flag_n_t_all = cpu_phase4 \
     :4:cpu_instr_0 :7:cpu_acc_0 \
     :4:mem_value_0
     
     # copy to avoid unknown
-    cpu_phase_2 = copy cpu_phase_2
-    cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 = copy_4bit \
-        :4:cpu_instr_0
+    cpu_phase_0 cpu_phase_1 cpu_phase_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
     cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
-        = copy_8bit :8:cpu_pc_0
-    # acc and flags
-    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_flag_c cpu_flag_z cpu_flag_n ign \
-        = copy_8bit :8:cpu_acc_0
-    # sp and after tempreg
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_flag_c cpu_flag_z cpu_flag_n \
     cpu_sp_0 cpu_sp_1 cpu_sp_2 cpu_sp_3 cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
-        = copy_8bit :8:cpu_sp_0
+    mem_value_0 mem_value_1 mem_value_2 mem_value_3 = copy_34bit :34:cpu_phase_0
     
     # merge phase 3 with 0,1,2
     # input: cpu_phase_X, cpu_instr_X,
@@ -194,6 +187,8 @@ copy_4bit:
     empty 4
 copy_8bit:
     empty 8
+copy_34bit:
+    empty 34
 not_4bit:
     o0 = nand i0 i0
     o1 = nand i1 i1
