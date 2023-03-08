@@ -209,12 +209,21 @@ fn main() -> ExitCode {
             } else {
                 Box::new(BufReader::new(io::stdin())) as Box<dyn BufRead>
             };
-            let tc_iter = input.lines().map(|x| {
-                let l = x.unwrap();
-                let mut l = l.clone();
-                l.push('\n');
-                parse_test_case(&l).unwrap().1
-            });
+            let tc_iter = input
+                .lines()
+                .filter_map(|x| {
+                    let l = x.unwrap();
+                    if !l.is_empty() && l.as_bytes()[0] != b'#' {
+                        Some(l)
+                    } else {
+                        None
+                    }
+                })
+                .map(|l| {
+                    let mut l = l.clone();
+                    l.push('\n');
+                    parse_test_case(&l).unwrap().1
+                });
             if !run_test_suite(&circuit, tc_iter, r.trace) {
                 return ExitCode::FAILURE;
             }
