@@ -10,7 +10,7 @@ use clap::{Parser, Subcommand};
 use nom::error::convert_error;
 
 use std::fs::{read_to_string, File};
-use std::io::{self, BufRead, BufReader, Read};
+use std::io::{self, BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
