@@ -25,7 +25,7 @@ for i in range(0,2):
     # main loop
     loop = ml.pc
     # mul_t2>>1, c
-    ml.clc()
+    #ml.clc()
     ml.lda(mul_t2+3)
     ml.ror()
     ml.sta(mul_t2+3)
@@ -49,7 +49,7 @@ for i in range(0,2):
         ml.sta(mul_c+i)
     skip_add = ml.pc
     # shift mul_t1
-    ml.clc()
+    #ml.clc()
     for i in range(0,8):
         ml.lda(mul_t1+i)
         ml.rol()
