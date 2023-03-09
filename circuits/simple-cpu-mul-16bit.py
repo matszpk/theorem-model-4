@@ -6,15 +6,14 @@ ml = Memory()
 mul_a = 0xf0
 mul_b = 0xf4
 mul_c = 0xf8
-mul_t1 = 0xe0
-mul_t2 = 0xe8
+mul_t1 = 0xe4
+mul_t2 = 0xec
 
 skip_add = 0
 for i in range(0,2):
     ml.set_pc(0x0)
     start = ml.pc
     # copy mul_a to mul_t1
-    ml.lda(start)    # zero
     for i in range(0,4):
         ml.lda(mul_a+i)
         ml.sta(mul_t1+i)
@@ -58,11 +57,13 @@ for i in range(0,2):
     # check t2
     ml.lda(mul_t2)
     ml.ior(mul_t2+1)
+    ml.ior(mul_t2+2)
+    ml.ior(mul_t2+3)
     ml.bne(loop)
     ml.pul()
 
 ml.set_pc(mul_a)
-ml.word16(5521)
-ml.word16(18721)
+ml.word16(26821)
+ml.word16(48716)
 
 stdout.buffer.write(ml.dump())
