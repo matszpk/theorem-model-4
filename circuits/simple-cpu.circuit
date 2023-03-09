@@ -465,7 +465,6 @@ cpu_phase3:
     if_psh = and_4 cpu_instr_0_n :3:cpu_instr_1
     if_sta = and_4 cpu_instr_0 :3:cpu_instr_1_n
     if_sta_psh = or if_sta if_psh
-    if_not_sta_psh = nand if_sta_psh if_sta_psh
     
     if_jump = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2 cpu_instr_3
     if_bcc_bne = and_3 cpu_instr_1 cpu_instr_2_n cpu_instr_3
@@ -478,6 +477,8 @@ cpu_phase3:
     
     # join it: if_bcc_jump or if_bne_jump or if_bpl_jump or if_jump
     if_jump = or_4 if_bcc_jump if_bne_jump if_bpl_jump if_jump
+    if_sta_psh_jump = or_4 if_sta_psh if_bcc_bne if_bpl if_jump
+    if_not_sta_psh_jump = nand if_sta_psh_jump if_sta_psh_jump
     
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
     if_pul = and_4 :4:cpu_instr_0
@@ -503,7 +504,7 @@ cpu_phase3:
     # cpu_phase_1_ph3
     o1 = copy zero
     # cpu_phase_2_ph3
-    o2 = copy if_not_sta_psh
+    o2 = copy if_not_sta_psh_jump
     
     # cpu_pc_X_ph3
     o3 o4 o5 o6 o7 o8 o9 o10 = ite_8bit if_jump :8:cpu_tempreg_0 \

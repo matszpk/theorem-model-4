@@ -201,7 +201,8 @@ def cpu_phase3(data):
         new_mem_address = next_sp
     
     next_phase = 4
-    if instr==instr_sta or instr==instr_psh:
+    if instr==instr_sta or instr==instr_psh or instr==instr_jmp or \
+        instr==instr_bcc or instr==instr_bne or instr==instr_bpl:
         next_phase = 0
     
     return bin_comp(cpu_phase3_output_str,
