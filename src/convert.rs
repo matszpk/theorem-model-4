@@ -69,6 +69,21 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                 .0
         };
 
+        let filter_input = |input: &Input| -> bool {
+            match input {
+                Input::Single(input) => {
+                    input.starts_with("i")
+                        && input.len() >= 2
+                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                }
+                Input::Repeat(_, input) => {
+                    input.starts_with("i")
+                        && input.len() >= 2
+                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                }
+            }
+        };
+
         for sc in &parsed {
             // check repeat count
             if let Some(stmt) = sc
@@ -94,20 +109,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
 
             // check whether all subcircuits have any inputs
             if !sc.statements.iter().any(|stmt| match stmt {
-                Statement::Statement { input: inputs, .. } => {
-                    inputs.iter().any(|input| match input {
-                        Input::Single(input) => {
-                            input.starts_with("i")
-                                && input.len() >= 2
-                                && input.chars().skip(1).all(|c| c.is_digit(10))
-                        }
-                        Input::Repeat(_, input) => {
-                            input.starts_with("i")
-                                && input.len() >= 2
-                                && input.chars().skip(1).all(|c| c.is_digit(10))
-                        }
-                    })
-                }
+                Statement::Statement { input: inputs, .. } => inputs.iter().any(filter_input),
                 Statement::Alias { name: input, .. } => {
                     input.starts_with("i")
                         && input.len() >= 2
@@ -165,18 +167,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                     .map(|stmt| match stmt {
                         Statement::Statement { input: inputs, .. } => inputs
                             .iter()
-                            .filter(|input| match input {
-                                Input::Single(input) => {
-                                    input.starts_with("i")
-                                        && input.len() >= 2
-                                        && input.chars().skip(1).all(|c| c.is_digit(10))
-                                }
-                                Input::Repeat(_, input) => {
-                                    input.starts_with("i")
-                                        && input.len() >= 2
-                                        && input.chars().skip(1).all(|c| c.is_digit(10))
-                                }
-                            })
+                            .filter(|input| filter_input(*input))
                             .map(|input| match input {
                                 Input::Single(input) => input[1..].parse::<u8>(),
                                 Input::Repeat(_, input) => input[1..].parse::<u8>(),
@@ -241,18 +232,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                     .map(|stmt| match stmt {
                         Statement::Statement { input: inputs, .. } => inputs
                             .iter()
-                            .filter(|input| match input {
-                                Input::Single(input) => {
-                                    input.starts_with("i")
-                                        && input.len() >= 2
-                                        && input.chars().skip(1).all(|c| c.is_digit(10))
-                                }
-                                Input::Repeat(_, input) => {
-                                    input.starts_with("i")
-                                        && input.len() >= 2
-                                        && input.chars().skip(1).all(|c| c.is_digit(10))
-                                }
-                            })
+                            .filter(|input| filter_input(*input))
                             .map(|input| match input {
                                 Input::Single(input) => {
                                     let b = input[1..].parse::<u8>().unwrap();
