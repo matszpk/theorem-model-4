@@ -76,6 +76,11 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                         && input.len() >= 2
                         && input.chars().skip(1).all(|c| c.is_digit(10))
                 }
+                Input::RepeatInc(_, input) => {
+                    input.starts_with("i")
+                        && input.len() >= 2
+                        && input.chars().skip(1).all(|c| c.is_digit(10))
+                }
                 Input::Repeat(_, input) => {
                     input.starts_with("i")
                         && input.len() >= 2
@@ -91,8 +96,10 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                 .iter()
                 .filter(|stmt| match stmt {
                     Statement::Statement { input: inputs, .. } => inputs.iter().any(|input| {
-                        if let Input::Repeat(count, _) = input {
-                            *count >= 128
+                        if let Input::RepeatInc(count, _) = input {
+                            *count >= 64
+                        } else if let Input::Repeat(count, _) = input {
+                            *count >= 64
                         } else {
                             false
                         }
@@ -170,6 +177,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                             .filter(|input| filter_input(*input))
                             .map(|input| match input {
                                 Input::Single(input) => input[1..].parse::<u8>(),
+                                Input::RepeatInc(_, input) => input[1..].parse::<u8>(),
                                 Input::Repeat(_, input) => input[1..].parse::<u8>(),
                             })
                             .collect::<Vec<_>>(),
@@ -238,9 +246,13 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                     let b = input[1..].parse::<u8>().unwrap();
                                     b..b + 1
                                 }
-                                Input::Repeat(count, input) => {
+                                Input::RepeatInc(count, input) => {
                                     let base = input[1..].parse::<u8>().unwrap();
                                     base..base + count
+                                }
+                                Input::Repeat(_, input) => {
+                                    let base = input[1..].parse::<u8>().unwrap();
+                                    base..base + 1
                                 }
                             })
                             .flatten()
@@ -381,6 +393,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                             .iter()
                             .map(|input| match input {
                                 Input::Single(_) => 1,
+                                Input::RepeatInc(count, _) => *count,
                                 Input::Repeat(count, _) => *count,
                             })
                             .sum();
@@ -432,9 +445,21 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                         ));
                                     }
                                 }
-                                Input::Repeat(count, input) => {
+                                Input::RepeatInc(count, input) => {
                                     if let Some(var) = var_map.get(input.as_str()) {
                                         body.push(count + 128);
+                                        body.push(*var);
+                                    } else {
+                                        return Err(ConvertError::VariableUnvailableInSubcircuit(
+                                            input.clone(),
+                                            stmt.clone(),
+                                            sc.name.clone(),
+                                        ));
+                                    }
+                                }
+                                Input::Repeat(count, input) => {
+                                    if let Some(var) = var_map.get(input.as_str()) {
+                                        body.push(count + 192);
                                         body.push(*var);
                                     } else {
                                         return Err(ConvertError::VariableUnvailableInSubcircuit(
