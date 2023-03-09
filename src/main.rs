@@ -250,7 +250,10 @@ fn main() -> ExitCode {
                 set_bit(&mut initial_state[..], i, c == '1');
             }
             let initial_state = &initial_state[0..((pm.state_len() + 7) >> 3)];
-            pm.run(initial_state, r.trace, r.circuit_trace);
+            println!(
+                "Step count: {}",
+                pm.run(initial_state, r.trace, r.circuit_trace)
+            );
 
             if r.dump {
                 for (i, chunk) in pm.memory.chunks(16).enumerate() {

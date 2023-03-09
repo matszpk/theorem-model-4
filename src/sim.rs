@@ -349,7 +349,7 @@ impl PrimalMachine {
 
     // input: [state, mem_value]
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
-    pub fn run(&mut self, initial_state: &[u8], trace: bool, circuit_trace: bool) {
+    pub fn run(&mut self, initial_state: &[u8], trace: bool, circuit_trace: bool) -> u64 {
         let input_len = self.circuit.input_len as usize;
         let output_len = self.circuit.output_len as usize;
         let cell_len = 1 << self.cell_len_bits;
@@ -358,6 +358,7 @@ impl PrimalMachine {
         let state_len = input_len - cell_len;
         assert_eq!(initial_state.len(), (state_len + 7) >> 3);
 
+        let mut step_count = 0u64;
         let mut stop = false;
         let mut input = vec![0; ((input_len + 7) >> 3) as usize];
         for i in 0..state_len {
@@ -418,6 +419,7 @@ impl PrimalMachine {
                 }
             }
             stop = get_bit(&output, output_len - 1);
+            step_count += 1;
         }
         if trace {
             println!(
@@ -427,6 +429,7 @@ impl PrimalMachine {
                     .collect::<String>()
             );
         }
+        step_count
     }
 }
 
