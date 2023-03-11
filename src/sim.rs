@@ -319,14 +319,14 @@ pub struct PrimalMachine {
     address_len: u32,   // in bits
     pub memory: Vec<u8>,
     pub extra_memories: Vec<Vec<u8>>,
-    machine: Option<Box<SecondMachine>>,
+    pub machine: Option<Box<SecondMachine>>,
 }
 
 pub struct SecondMachine {
     cell_len_bits: u32, // in bits
     address_len: u32,   // in bits
     pub memory: Vec<u8>,
-    machine: Option<Box<SecondMachine>>,
+    pub machine: Option<Box<SecondMachine>>,
 }
 
 impl PrimalMachine {

@@ -261,16 +261,39 @@ fn main() -> ExitCode {
             );
 
             if r.dump {
-                for (i, chunk) in pm.memory.chunks(16).enumerate() {
-                    println!(
-                        "{:016x} {}",
-                        i * 16,
-                        chunk
-                            .iter()
-                            .map(|x| format!("{x:02x}"))
-                            .collect::<Vec<_>>()
-                            .join(" ")
-                    );
+                let mut memory = &pm.memory;
+                let mut sm_opt: Option<&Box<SecondMachine>> = None;
+                let mut nesting_index = 0;
+                loop {
+                    if sm_opt.is_none() {
+                        println!("Primal memory");
+                    } else {
+                        println!("Second memory {nesting_index}");
+                    }
+                    for (i, chunk) in memory.chunks(16).enumerate() {
+                        println!(
+                            "{:016x} {}",
+                            i * 16,
+                            chunk
+                                .iter()
+                                .map(|x| format!("{x:02x}"))
+                                .collect::<Vec<_>>()
+                                .join(" ")
+                        );
+                    }
+                    if let Some(ref sm) = sm_opt {
+                        sm_opt = sm.machine.as_ref();
+                    } else {
+                        sm_opt = pm.machine.as_ref();
+                    }
+                    // get memory from second machine
+                    if let Some(ref sm) = sm_opt {
+                        memory = &sm.memory;
+                    } else {
+                        break;
+                    }
+
+                    nesting_index += 1;
                 }
             }
         }
