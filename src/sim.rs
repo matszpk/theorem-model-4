@@ -378,7 +378,7 @@ impl PrimalMachine {
                 for i in 0..mach_address_len {
                     mach_cell_addr |= usize::from(get_bit(&self.memory, addr_addr + i)) << i;
                 }
-                machine.get_cell_mem(mach_cell_addr << mach_cell_len_bits, f)
+                machine.get_cell_mem(mach_cell_addr, f)
             } else {
                 for (i, x) in (index..index + (1usize << self.cell_len_bits)).enumerate() {
                     f(i, get_bit(&self.memory, x));
@@ -410,7 +410,7 @@ impl PrimalMachine {
                 for i in 0..mach_address_len {
                     mach_cell_addr |= usize::from(get_bit(&self.memory, addr_addr + i)) << i;
                 }
-                machine.set_cell_mem(mach_cell_addr << mach_cell_len_bits, f)
+                machine.set_cell_mem(mach_cell_addr, f)
             } else {
                 for (i, x) in (index..index + (1usize << self.cell_len_bits)).enumerate() {
                     set_bit(&mut self.memory, x, f(i));
@@ -574,7 +574,7 @@ impl SecondMachine {
                 for i in 0..mach_address_len {
                     mach_cell_addr |= usize::from(get_bit(&self.memory, addr_addr + i)) << i;
                 }
-                machine.get_cell_mem(mach_cell_addr << mach_cell_len_bits, f)
+                machine.get_cell_mem(mach_cell_addr, f)
             } else {
                 for (i, x) in (index..index + (1usize << self.cell_len_bits)).enumerate() {
                     f(i, get_bit(&self.memory, x));
@@ -606,7 +606,7 @@ impl SecondMachine {
                 for i in 0..mach_address_len {
                     mach_cell_addr |= usize::from(get_bit(&self.memory, addr_addr + i)) << i;
                 }
-                machine.set_cell_mem(mach_cell_addr << mach_cell_len_bits, f)
+                machine.set_cell_mem(mach_cell_addr, f)
             } else {
                 for (i, x) in (index..index + (1usize << self.cell_len_bits)).enumerate() {
                     set_bit(&mut self.memory, x, f(i));
