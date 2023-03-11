@@ -456,10 +456,6 @@ impl PrimalMachine {
                 set_bit(&mut input, i, get_bit(&output, i));
             }
 
-            if get_bit(&output, output_len - 2) {
-                self.create(trace);
-            }
-
             stop = get_bit(&output, output_len - 1);
             // memory access
             // address
@@ -488,6 +484,11 @@ impl PrimalMachine {
                     println!("Read {:#016x} {:#016x}", address, value);
                 }
             }
+
+            if get_bit(&output, output_len - 2) {
+                self.create(trace);
+            }
+
             step_count += 1;
         }
         if trace {
