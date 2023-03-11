@@ -1,0 +1,239 @@
+main:
+    # simple circuit
+    alias cycle_0 i0
+    alias cycle_1 i1
+    alias cycle_2 i2
+    alias mem_value_0 i3
+    alias mem_value_1 i4
+    alias mem_value_2 i5
+    alias mem_value_3 i6
+    
+    one = nand zero zero
+    # cycle = 0 - set address len
+    alias cycle_0_cy0 one
+    alias cycle_1_cy0 zero
+    alias cycle_2_cy0 zero
+    # address_len = 8bit
+    alias mem_value_0_cy0 zero
+    alias mem_value_1_cy0 zero
+    alias mem_value_2_cy0 zero
+    alias mem_value_3_cy0 one
+    alias mem_rw_cy0 one
+    alias mem_address_0_cy0 zero
+    alias mem_address_1_cy0 one
+    alias mem_address_2_cy0 one
+    alias mem_address_3_cy0 one
+    alias create_cy0 zero
+    alias stop_cy0 zero
+    
+    # cycle = 1 - set cell len bits
+    alias cycle_0_cy1 zero
+    alias cycle_1_cy1 one
+    alias cycle_2_cy1 zero
+    # cell_len_bits = 3 = length 8bit
+    alias mem_value_0_cy1 one
+    alias mem_value_1_cy1 one
+    alias mem_value_2_cy1 zero
+    alias mem_value_3_cy1 zero
+    alias mem_rw_cy1 one
+    alias mem_address_0_cy1 one
+    alias mem_address_1_cy1 one
+    alias mem_address_2_cy1 one
+    alias mem_address_3_cy1 one
+    alias create_cy1 one
+    alias stop_cy1 zero
+    
+    # cycle = 2 - set sec machine address
+    alias cycle_0_cy2 one
+    alias cycle_1_cy2 one
+    alias cycle_2_cy2 zero
+    # address = 0x16
+    alias mem_value_0_cy2 zero
+    alias mem_value_1_cy2 one
+    alias mem_value_2_cy2 one
+    alias mem_value_3_cy2 zero
+    alias mem_rw_cy2 one
+    alias mem_address_0_cy2 zero
+    alias mem_address_1_cy2 one
+    alias mem_address_2_cy2 one
+    alias mem_address_3_cy2 one
+    alias create_cy2 zero
+    alias stop_cy2 zero
+    
+    # cycle = 3 - set sec machine address
+    alias cycle_0_cy3 zero
+    alias cycle_1_cy3 zero
+    alias cycle_2_cy3 one
+    # address = 0x16
+    alias mem_value_0_cy3 one
+    alias mem_value_1_cy3 zero
+    alias mem_value_2_cy3 zero
+    alias mem_value_3_cy3 zero
+    alias mem_rw_cy3 one
+    alias mem_address_0_cy3 one
+    alias mem_address_1_cy3 one
+    alias mem_address_2_cy3 one
+    alias mem_address_3_cy3 one
+    alias create_cy3 zero
+    alias stop_cy3 zero
+    
+    # cycle = 4 - read machine value lo
+    alias cycle_0_cy4 one
+    alias cycle_1_cy4 zero
+    alias cycle_2_cy4 one
+    alias mem_value_0_cy4 zero
+    alias mem_value_1_cy4 zero
+    alias mem_value_2_cy4 zero
+    alias mem_value_3_cy4 zero
+    alias mem_rw_cy4 zero
+    alias mem_address_0_cy4 zero
+    alias mem_address_1_cy4 zero
+    alias mem_address_2_cy4 one
+    alias mem_address_3_cy4 one
+    alias create_cy4 zero
+    alias stop_cy4 zero
+    
+    # cycle = 5 - write into primal memory lo
+    alias cycle_0_cy5 zero
+    alias cycle_1_cy5 one
+    alias cycle_2_cy5 one
+    alias mem_value_0_cy5 mem_value_0
+    alias mem_value_1_cy5 mem_value_1
+    alias mem_value_2_cy5 mem_value_2
+    alias mem_value_3_cy5 mem_value_3
+    alias mem_rw_cy5 one
+    alias mem_address_0_cy5 zero
+    alias mem_address_1_cy5 zero
+    alias mem_address_2_cy5 one
+    alias mem_address_3_cy5 zero
+    alias create_cy5 zero
+    alias stop_cy5 zero
+    
+    # cycle = 6 - read machine value hi
+    alias cycle_0_cy6 one
+    alias cycle_1_cy6 one
+    alias cycle_2_cy6 one
+    alias mem_value_0_cy6 zero
+    alias mem_value_1_cy6 zero
+    alias mem_value_2_cy6 zero
+    alias mem_value_3_cy6 zero
+    alias mem_rw_cy6 zero
+    alias mem_address_0_cy6 one
+    alias mem_address_1_cy6 zero
+    alias mem_address_2_cy6 one
+    alias mem_address_3_cy6 one
+    alias create_cy6 zero
+    alias stop_cy6 zero
+    
+    # cycle = 7 - write into primal memory hi
+    alias cycle_0_cy7 zero
+    alias cycle_1_cy7 zero
+    alias cycle_2_cy7 zero
+    alias mem_value_0_cy7 mem_value_0
+    alias mem_value_1_cy7 mem_value_1
+    alias mem_value_2_cy7 mem_value_2
+    alias mem_value_3_cy7 mem_value_3
+    alias mem_rw_cy7 one
+    alias mem_address_0_cy7 one
+    alias mem_address_1_cy7 zero
+    alias mem_address_2_cy7 one
+    alias mem_address_3_cy7 zero
+    alias create_cy7 zero
+    alias stop_cy7 one
+    
+    # merge values from cycle0 and cycle1
+    cycle_0_cy01 cycle_1_cy01 cycle_2_cy01 mem_value_0_cy01 mem_value_1_cy01 mem_value_2_cy01 \
+    mem_value_3_cy01 mem_rw_cy01 mem_address_0_cy01 mem_address_1_cy01 mem_address_2_cy01 \
+    mem_address_3_cy01 create_cy01 stop_cy01 = ite_14bit cycle_0 \
+    cycle_0_cy1 cycle_1_cy1 cycle_2_cy1 mem_value_0_cy1 mem_value_1_cy1 mem_value_2_cy1 \
+    mem_value_3_cy1 mem_rw_cy1 mem_address_0_cy1 mem_address_1_cy1 mem_address_2_cy1 \
+    mem_address_3_cy1 create_cy1 stop_cy1 \
+    cycle_0_cy0 cycle_1_cy0 cycle_2_cy0 mem_value_0_cy0 mem_value_1_cy0 mem_value_2_cy0 \
+    mem_value_3_cy0 mem_rw_cy0 mem_address_0_cy0 mem_address_1_cy0 mem_address_2_cy0 \
+    mem_address_3_cy0 create_cy0 stop_cy0
+    
+    # merge values from cycle2 and cycle3
+    cycle_0_cy23 cycle_1_cy23 cycle_2_cy23 mem_value_0_cy23 mem_value_1_cy23 mem_value_2_cy23 \
+    mem_value_3_cy23 mem_rw_cy23 mem_address_0_cy23 mem_address_1_cy23 mem_address_2_cy23 \
+    mem_address_3_cy23 create_cy23 stop_cy23 = ite_14bit cycle_0 \
+    cycle_0_cy3 cycle_1_cy3 cycle_2_cy3 mem_value_0_cy3 mem_value_1_cy3 mem_value_2_cy3 \
+    mem_value_3_cy3 mem_rw_cy3 mem_address_0_cy3 mem_address_1_cy3 mem_address_2_cy3 \
+    mem_address_3_cy3 create_cy3 stop_cy3 \
+    cycle_0_cy2 cycle_1_cy2 cycle_2_cy2 mem_value_0_cy2 mem_value_1_cy2 mem_value_2_cy2 \
+    mem_value_3_cy2 mem_rw_cy2 mem_address_0_cy2 mem_address_1_cy2 mem_address_2_cy2 \
+    mem_address_3_cy2 create_cy2 stop_cy2
+    
+    # merge values from cycle4 and cycle5
+    cycle_0_cy45 cycle_1_cy45 cycle_2_cy45 mem_value_0_cy45 mem_value_1_cy45 mem_value_2_cy45 \
+    mem_value_3_cy45 mem_rw_cy45 mem_address_0_cy45 mem_address_1_cy45 mem_address_2_cy45 \
+    mem_address_3_cy45 create_cy45 stop_cy45 = ite_14bit cycle_0 \
+    cycle_0_cy5 cycle_1_cy5 cycle_2_cy5 mem_value_0_cy5 mem_value_1_cy5 mem_value_2_cy5 \
+    mem_value_3_cy5 mem_rw_cy5 mem_address_0_cy5 mem_address_1_cy5 mem_address_2_cy5 \
+    mem_address_3_cy5 create_cy5 stop_cy5 \
+    cycle_0_cy4 cycle_1_cy4 cycle_2_cy4 mem_value_0_cy4 mem_value_1_cy4 mem_value_2_cy4 \
+    mem_value_3_cy4 mem_rw_cy4 mem_address_0_cy4 mem_address_1_cy4 mem_address_2_cy4 \
+    mem_address_3_cy4 create_cy4 stop_cy4
+    
+    # merge values from cycle6 and cycle7
+    cycle_0_cy67 cycle_1_cy67 cycle_2_cy67 mem_value_0_cy67 mem_value_1_cy67 mem_value_2_cy67 \
+    mem_value_3_cy67 mem_rw_cy67 mem_address_0_cy67 mem_address_1_cy67 mem_address_2_cy67 \
+    mem_address_3_cy67 create_cy67 stop_cy67 = ite_14bit cycle_0 \
+    cycle_0_cy7 cycle_1_cy7 cycle_2_cy7 mem_value_0_cy7 mem_value_1_cy7 mem_value_2_cy7 \
+    mem_value_3_cy7 mem_rw_cy7 mem_address_0_cy7 mem_address_1_cy7 mem_address_2_cy7 \
+    mem_address_3_cy7 create_cy7 stop_cy7 \
+    cycle_0_cy6 cycle_1_cy6 cycle_2_cy6 mem_value_0_cy6 mem_value_1_cy6 mem_value_2_cy6 \
+    mem_value_3_cy6 mem_rw_cy6 mem_address_0_cy6 mem_address_1_cy6 mem_address_2_cy6 \
+    mem_address_3_cy6 create_cy6 stop_cy6
+    
+    # merge values from cycle0, cycle1, cycle2 and cycle3
+    cycle_0_cy0123 cycle_1_cy0123 cycle_2_cy0123 mem_value_0_cy0123 mem_value_1_cy0123 \
+    mem_value_2_cy0123 mem_value_3_cy0123 mem_rw_cy0123 mem_address_0_cy0123 \
+    mem_address_1_cy0123 mem_address_2_cy0123 mem_address_3_cy0123 create_cy0123 stop_cy0123 \
+    = ite_14bit cycle_1 \
+    cycle_0_cy23 cycle_1_cy23 cycle_2_cy23 mem_value_0_cy23 mem_value_1_cy23 mem_value_2_cy23 \
+    mem_value_3_cy23 mem_rw_cy23 mem_address_0_cy23 mem_address_1_cy23 mem_address_2_cy23 \
+    mem_address_3_cy23 create_cy23 stop_cy23 \
+    cycle_0_cy01 cycle_1_cy01 cycle_2_cy01 mem_value_0_cy01 mem_value_1_cy01 mem_value_2_cy01 \
+    mem_value_3_cy01 mem_rw_cy01 mem_address_0_cy01 mem_address_1_cy01 mem_address_2_cy01 \
+    mem_address_3_cy01 create_cy01 stop_cy01
+    
+    # merge values from cycle4, cycle5, cycle6 and cycle7
+    cycle_0_cy4567 cycle_1_cy4567 cycle_2_cy4567 mem_value_0_cy4567 mem_value_1_cy4567 \
+    mem_value_2_cy4567 mem_value_3_cy4567 mem_rw_cy4567 mem_address_0_cy4567 \
+    mem_address_1_cy4567 mem_address_2_cy4567 mem_address_3_cy4567 create_cy4567 stop_cy4567 \
+    = ite_14bit cycle_1 \
+    cycle_0_cy67 cycle_1_cy67 cycle_2_cy67 mem_value_0_cy67 mem_value_1_cy67 mem_value_2_cy67 \
+    mem_value_3_cy67 mem_rw_cy67 mem_address_0_cy67 mem_address_1_cy67 mem_address_2_cy67 \
+    mem_address_3_cy67 create_cy67 stop_cy67 \
+    cycle_0_cy45 cycle_1_cy45 cycle_2_cy45 mem_value_0_cy45 mem_value_1_cy45 mem_value_2_cy45 \
+    mem_value_3_cy45 mem_rw_cy45 mem_address_0_cy45 mem_address_1_cy45 mem_address_2_cy45 \
+    mem_address_3_cy45 create_cy45 stop_cy45
+    
+    # merge values from all cycles
+    o0 o1 o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 o12 o13 = ite_14bit cycle_2 \
+    cycle_0_cy4567 cycle_1_cy4567 cycle_2_cy4567 mem_value_0_cy4567 mem_value_1_cy4567 \
+    mem_value_2_cy4567 mem_value_3_cy4567 mem_rw_cy4567 mem_address_0_cy4567 \
+    mem_address_1_cy4567 mem_address_2_cy4567 mem_address_3_cy4567 create_cy4567 \
+    stop_cy4567 \
+    cycle_0_cy0123 cycle_1_cy0123 cycle_2_cy0123 mem_value_0_cy0123 mem_value_1_cy0123 \
+    mem_value_2_cy0123 mem_value_3_cy0123 mem_rw_cy0123 mem_address_0_cy0123 \
+    mem_address_1_cy0123 mem_address_2_cy0123 mem_address_3_cy0123 create_cy0123 \
+    stop_cy0123
+    
+# if i0 then i1 else i2
+ite:
+    n0 = nand i0 i0
+    t0 = nand i0 i1
+    t1 = nand n0 i2
+    o0 = nand t0 t1
+ite_4bit:
+    o0 = ite i0 i1 i5
+    o1 = ite i0 i2 i6
+    o2 = ite i0 i3 i7
+    o3 = ite i0 i4 i8
+ite_14bit:
+    o0 o1 o2 o3 = ite_4bit i0 i1 i2 i3 i4 i15 i16 i17 i18
+    o4 o5 o6 o7 = ite_4bit i0 i5 i6 i7 i8 i19 i20 i21 i22
+    o8 o9 o10 o11 = ite_4bit i0 i9 i10 i11 i12 i23 i24 i25 i26
+    o12 = ite i0 i13 i27
+    o13 = ite i0 i14 i28
