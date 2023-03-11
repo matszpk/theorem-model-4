@@ -318,6 +318,15 @@ pub struct PrimalMachine {
     cell_len_bits: u32, // in bits
     address_len: u32,   // in bits
     pub memory: Vec<u8>,
+    pub extra_memories: Vec<Vec<u8>>,
+    machine: Option<Box<SecondMachine>>,
+}
+
+pub struct SecondMachine {
+    cell_len_bits: u32, // in bits
+    address_len: u32,   // in bits
+    pub memory: Vec<u8>,
+    machine: Option<Box<SecondMachine>>,
 }
 
 impl PrimalMachine {
@@ -341,6 +350,8 @@ impl PrimalMachine {
             cell_len_bits,
             address_len,
             memory: vec![0; mem_len],
+            extra_memories: vec![],
+            machine: None,
         }
     }
 
@@ -380,6 +391,12 @@ impl PrimalMachine {
             for i in 0..state_len {
                 set_bit(&mut input, i, get_bit(&output, i));
             }
+
+            if get_bit(&output, output_len - 2) {
+                self.create(trace);
+            }
+
+            stop = get_bit(&output, output_len - 1);
             // memory access
             // address
             let mut address = 0;
@@ -419,7 +436,6 @@ impl PrimalMachine {
                     println!("Read {:#016x} {:#016x}", address, value);
                 }
             }
-            stop = get_bit(&output, output_len - 1);
             step_count += 1;
         }
         if trace {
@@ -431,6 +447,76 @@ impl PrimalMachine {
             );
         }
         step_count
+    }
+
+    pub fn create(&mut self, trace: bool) {
+        if let Some(machine) = &mut self.machine {
+            machine.create(self.extra_memories.pop().unwrap(), trace);
+        } else {
+            // create here
+            let cell_len_bits = self.cell_len_bits as usize;
+            let address_len = self.address_len as usize;
+            let mut new_address_len: u32 = 0;
+            let mut new_cell_len_bits: u32 = 0;
+
+            let addr = (1 << (address_len + cell_len_bits)) - (address_len << 1);
+            for i in 0..address_len {
+                new_address_len |= u32::from(get_bit(&self.memory, addr + i)) << i;
+            }
+            let addr = (1 << (address_len + cell_len_bits)) - address_len;
+            for i in 0..address_len {
+                new_cell_len_bits |= u32::from(get_bit(&self.memory, addr + i)) << i;
+            }
+            self.machine = Some(Box::new(SecondMachine::new(
+                new_address_len,
+                new_cell_len_bits,
+                self.extra_memories.pop().unwrap(),
+            )));
+        }
+    }
+}
+
+impl SecondMachine {
+    pub fn new(address_len: u32, cell_len_bits: u32, initial_memory: Vec<u8>) -> Self {
+        assert!(cell_len_bits + address_len < usize::BITS + 3);
+        let mem_len = if cell_len_bits + address_len >= 3 {
+            1 << (cell_len_bits + address_len - 3)
+        } else {
+            1
+        };
+        assert_eq!(initial_memory.len(), mem_len);
+        Self {
+            cell_len_bits,
+            address_len,
+            memory: initial_memory,
+            machine: None,
+        }
+    }
+
+    pub fn create(&mut self, initial_memory: Vec<u8>, trace: bool) {
+        if let Some(machine) = &mut self.machine {
+            machine.create(initial_memory, trace);
+        } else {
+            // create here
+            let cell_len_bits = self.cell_len_bits as usize;
+            let address_len = self.address_len as usize;
+            let mut new_address_len: u32 = 0;
+            let mut new_cell_len_bits: u32 = 0;
+
+            let addr = (1 << (address_len + cell_len_bits)) - (address_len << 1);
+            for i in 0..address_len {
+                new_address_len |= u32::from(get_bit(&self.memory, addr + i)) << i;
+            }
+            let addr = (1 << (address_len + cell_len_bits)) - address_len;
+            for i in 0..address_len {
+                new_cell_len_bits |= u32::from(get_bit(&self.memory, addr + i)) << i;
+            }
+            self.machine = Some(Box::new(SecondMachine::new(
+                new_address_len,
+                new_cell_len_bits,
+                initial_memory,
+            )));
+        }
     }
 }
 
