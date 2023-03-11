@@ -503,7 +503,7 @@ impl PrimalMachine {
 
     pub fn create(&mut self, trace: bool) {
         if let Some(machine) = &mut self.machine {
-            machine.create(self.extra_memories.pop().unwrap(), trace);
+            machine.create(self.extra_memories.pop(), trace);
         } else {
             // create here
             let cell_len_bits = self.cell_len_bits as usize;
@@ -532,25 +532,24 @@ impl PrimalMachine {
             self.machine = Some(Box::new(SecondMachine::new(
                 new_address_len,
                 new_cell_len_bits,
-                self.extra_memories.pop().unwrap(),
+                self.extra_memories.pop(),
             )));
         }
     }
 }
 
 impl SecondMachine {
-    pub fn new(address_len: u32, cell_len_bits: u32, initial_memory: Vec<u8>) -> Self {
+    pub fn new(address_len: u32, cell_len_bits: u32, initial_memory: Option<Vec<u8>>) -> Self {
         assert!(cell_len_bits + address_len < usize::BITS + 3);
         let mem_len = if cell_len_bits + address_len >= 3 {
             1 << (cell_len_bits + address_len - 3)
         } else {
             1
         };
-        assert_eq!(initial_memory.len(), mem_len);
         Self {
             cell_len_bits,
             address_len,
-            memory: initial_memory,
+            memory: initial_memory.unwrap_or(vec![0u8; mem_len]),
             machine: None,
         }
     }
@@ -619,7 +618,7 @@ impl SecondMachine {
         }
     }
 
-    pub fn create(&mut self, initial_memory: Vec<u8>, trace: bool) {
+    pub fn create(&mut self, initial_memory: Option<Vec<u8>>, trace: bool) {
         if let Some(machine) = &mut self.machine {
             machine.create(initial_memory, trace);
         } else {
