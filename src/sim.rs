@@ -365,9 +365,13 @@ impl PrimalMachine {
             let address_len = self.address_len as usize;
             let mach_cell_len_bits = machine.cell_len_bits as usize;
             let mach_address_len = machine.address_len as usize;
-            let cell_addr =
-                1 << (address_len + cell_len_bits) - mach_address_len - (1 << mach_cell_len_bits);
-            let addr_addr = 1 << (address_len + cell_len_bits) - mach_address_len;
+            let align_mach_address_len =
+                (mach_address_len + (1 << cell_len_bits) - 1) & ((1 << cell_len_bits) - 1);
+            let cell_addr = 1
+                << (address_len + cell_len_bits)
+                    - align_mach_address_len
+                    - (1 << mach_cell_len_bits);
+            let addr_addr = 1 << (address_len + cell_len_bits) - align_mach_address_len;
             if (cell_addr..addr_addr).contains(&index) {
                 let mut mach_cell_addr = 0usize;
                 for i in 0..mach_address_len {
@@ -388,9 +392,13 @@ impl PrimalMachine {
             let address_len = self.address_len as usize;
             let mach_cell_len_bits = machine.cell_len_bits as usize;
             let mach_address_len = machine.address_len as usize;
-            let cell_addr =
-                1 << (address_len + cell_len_bits) - mach_address_len - (1 << mach_cell_len_bits);
-            let addr_addr = 1 << (address_len + cell_len_bits) - mach_address_len;
+            let align_mach_address_len =
+                (mach_address_len + (1 << cell_len_bits) - 1) & ((1 << cell_len_bits) - 1);
+            let cell_addr = 1
+                << (address_len + cell_len_bits)
+                    - align_mach_address_len
+                    - (1 << mach_cell_len_bits);
+            let addr_addr = 1 << (address_len + cell_len_bits) - align_mach_address_len;
             if (cell_addr..addr_addr).contains(&index) {
                 let mut mach_cell_addr = 0usize;
                 for i in 0..mach_address_len {
@@ -555,9 +563,13 @@ impl SecondMachine {
             let address_len = self.address_len as usize;
             let mach_cell_len_bits = machine.cell_len_bits as usize;
             let mach_address_len = machine.address_len as usize;
-            let cell_addr =
-                1 << (address_len + cell_len_bits) - mach_address_len - (1 << mach_cell_len_bits);
-            let addr_addr = 1 << (address_len + cell_len_bits) - mach_address_len;
+            let align_mach_address_len =
+                (mach_address_len + (1 << cell_len_bits) - 1) & ((1 << cell_len_bits) - 1);
+            let cell_addr = 1
+                << (address_len + cell_len_bits)
+                    - align_mach_address_len
+                    - (1 << mach_cell_len_bits);
+            let addr_addr = 1 << (address_len + cell_len_bits) - align_mach_address_len;
             if (cell_addr..addr_addr).contains(&index) {
                 let mut mach_cell_addr = 0usize;
                 for i in 0..mach_address_len {
@@ -578,9 +590,13 @@ impl SecondMachine {
             let address_len = self.address_len as usize;
             let mach_cell_len_bits = machine.cell_len_bits as usize;
             let mach_address_len = machine.address_len as usize;
-            let cell_addr =
-                1 << (address_len + cell_len_bits) - mach_address_len - (1 << mach_cell_len_bits);
-            let addr_addr = 1 << (address_len + cell_len_bits) - mach_address_len;
+            let align_mach_address_len =
+                (mach_address_len + (1 << cell_len_bits) - 1) & ((1 << cell_len_bits) - 1);
+            let cell_addr = 1
+                << (address_len + cell_len_bits)
+                    - align_mach_address_len
+                    - (1 << mach_cell_len_bits);
+            let addr_addr = 1 << (address_len + cell_len_bits) - align_mach_address_len;
             if (cell_addr..addr_addr).contains(&index) {
                 let mut mach_cell_addr = 0usize;
                 for i in 0..mach_address_len {
