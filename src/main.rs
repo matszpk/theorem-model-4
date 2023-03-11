@@ -67,7 +67,7 @@ struct RunMachineArgs {
     #[clap(help = "Initial state")]
     initial_state: String,
     #[clap(help = "Initial memory file")]
-    memory: PathBuf,
+    memory: Vec<PathBuf>,
     #[clap(short, long, help = "Set trace mode")]
     trace: bool,
     #[clap(short, long, help = "Set circuit trace mode")]
@@ -236,14 +236,19 @@ fn main() -> ExitCode {
         }
         Commands::RunMachine(r) => {
             let mut pm = PrimalMachine::new(circuit.circuit, r.cell_len_bits as u32);
-            let mem = match std::fs::read(r.memory) {
-                Ok(mem) => mem,
-                Err(e) => {
-                    eprintln!("Error reading memory: {:?}", e);
-                    return ExitCode::FAILURE;
-                }
-            };
-            pm.memory.copy_from_slice(mem.as_slice());
+            let mut memories = vec![];
+            for memory in &r.memory {
+                memories.push(match std::fs::read(memory) {
+                    Ok(mem) => mem,
+                    Err(e) => {
+                        eprintln!("Error reading memory: {:?}", e);
+                        return ExitCode::FAILURE;
+                    }
+                });
+            }
+            pm.memory
+                .copy_from_slice(memories.pop().unwrap().as_slice());
+            pm.extra_memories = memories;
             let mut initial_state: [u8; 128 >> 3] =
                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             for (i, c) in r.initial_state.chars().enumerate() {
