@@ -359,6 +359,55 @@ impl PrimalMachine {
         self.circuit.input_len as usize - (1 << self.cell_len_bits)
     }
 
+    fn get_bit_mem(&self, index: usize) -> bool {
+        if let Some(machine) = &self.machine {
+            let cell_len_bits = self.cell_len_bits as usize;
+            let address_len = self.address_len as usize;
+            let mach_cell_len_bits = machine.cell_len_bits as usize;
+            let mach_address_len = machine.address_len as usize;
+            let cell_addr =
+                1 << (address_len + cell_len_bits) - mach_address_len - (1 << mach_cell_len_bits);
+            let addr_addr = 1 << (address_len + cell_len_bits) - mach_address_len;
+            if (cell_addr..addr_addr).contains(&index) {
+                let mut mach_cell_addr = 0usize;
+                for i in 0..mach_address_len {
+                    mach_cell_addr |= usize::from(get_bit(&self.memory, addr_addr + i)) << i;
+                }
+                machine.get_bit_mem((mach_cell_addr << mach_cell_len_bits) + index - cell_addr)
+            } else {
+                get_bit(&self.memory, index)
+            }
+        } else {
+            get_bit(&self.memory, index)
+        }
+    }
+
+    fn set_bit_mem(&mut self, index: usize, v: bool) {
+        if let Some(machine) = &mut self.machine {
+            let cell_len_bits = self.cell_len_bits as usize;
+            let address_len = self.address_len as usize;
+            let mach_cell_len_bits = machine.cell_len_bits as usize;
+            let mach_address_len = machine.address_len as usize;
+            let cell_addr =
+                1 << (address_len + cell_len_bits) - mach_address_len - (1 << mach_cell_len_bits);
+            let addr_addr = 1 << (address_len + cell_len_bits) - mach_address_len;
+            if (cell_addr..addr_addr).contains(&index) {
+                let mut mach_cell_addr = 0usize;
+                for i in 0..mach_address_len {
+                    mach_cell_addr |= usize::from(get_bit(&self.memory, addr_addr + i)) << i;
+                }
+                machine.set_bit_mem(
+                    (mach_cell_addr << mach_cell_len_bits) + index - cell_addr,
+                    v,
+                )
+            } else {
+                set_bit(&mut self.memory, index, v)
+            }
+        } else {
+            set_bit(&mut self.memory, index, v)
+        }
+    }
+
     // input: [state, mem_value]
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
     pub fn run(&mut self, initial_state: &[u8], trace: bool, circuit_trace: bool) -> u64 {
@@ -414,8 +463,7 @@ impl PrimalMachine {
                 }
                 // write
                 for i in 0..cell_len {
-                    set_bit(
-                        &mut self.memory,
+                    self.set_bit_mem(
                         (address << self.cell_len_bits) + i,
                         get_bit(&output, state_len + i),
                     );
@@ -425,7 +473,7 @@ impl PrimalMachine {
                     set_bit(
                         &mut input,
                         state_len + i,
-                        get_bit(&self.memory, (address << self.cell_len_bits) + i),
+                        self.get_bit_mem((address << self.cell_len_bits) + i),
                     );
                 }
                 if trace {
@@ -467,6 +515,14 @@ impl PrimalMachine {
             for i in 0..address_len {
                 new_cell_len_bits |= u32::from(get_bit(&self.memory, addr + i)) << i;
             }
+
+            if trace {
+                println!(
+                    "Create machine with address_len {} and cell_len_bits {}",
+                    new_address_len, new_cell_len_bits
+                );
+            }
+
             self.machine = Some(Box::new(SecondMachine::new(
                 new_address_len,
                 new_cell_len_bits,
@@ -493,6 +549,55 @@ impl SecondMachine {
         }
     }
 
+    fn get_bit_mem(&self, index: usize) -> bool {
+        if let Some(machine) = &self.machine {
+            let cell_len_bits = self.cell_len_bits as usize;
+            let address_len = self.address_len as usize;
+            let mach_cell_len_bits = machine.cell_len_bits as usize;
+            let mach_address_len = machine.address_len as usize;
+            let cell_addr =
+                1 << (address_len + cell_len_bits) - mach_address_len - (1 << mach_cell_len_bits);
+            let addr_addr = 1 << (address_len + cell_len_bits) - mach_address_len;
+            if (cell_addr..addr_addr).contains(&index) {
+                let mut mach_cell_addr = 0usize;
+                for i in 0..mach_address_len {
+                    mach_cell_addr |= usize::from(get_bit(&self.memory, addr_addr + i)) << i;
+                }
+                machine.get_bit_mem((mach_cell_addr << mach_cell_len_bits) + index - cell_addr)
+            } else {
+                get_bit(&self.memory, index)
+            }
+        } else {
+            get_bit(&self.memory, index)
+        }
+    }
+
+    fn set_bit_mem(&mut self, index: usize, v: bool) {
+        if let Some(machine) = &mut self.machine {
+            let cell_len_bits = self.cell_len_bits as usize;
+            let address_len = self.address_len as usize;
+            let mach_cell_len_bits = machine.cell_len_bits as usize;
+            let mach_address_len = machine.address_len as usize;
+            let cell_addr =
+                1 << (address_len + cell_len_bits) - mach_address_len - (1 << mach_cell_len_bits);
+            let addr_addr = 1 << (address_len + cell_len_bits) - mach_address_len;
+            if (cell_addr..addr_addr).contains(&index) {
+                let mut mach_cell_addr = 0usize;
+                for i in 0..mach_address_len {
+                    mach_cell_addr |= usize::from(get_bit(&self.memory, addr_addr + i)) << i;
+                }
+                machine.set_bit_mem(
+                    (mach_cell_addr << mach_cell_len_bits) + index - cell_addr,
+                    v,
+                )
+            } else {
+                set_bit(&mut self.memory, index, v)
+            }
+        } else {
+            set_bit(&mut self.memory, index, v)
+        }
+    }
+
     pub fn create(&mut self, initial_memory: Vec<u8>, trace: bool) {
         if let Some(machine) = &mut self.machine {
             machine.create(initial_memory, trace);
@@ -511,6 +616,14 @@ impl SecondMachine {
             for i in 0..address_len {
                 new_cell_len_bits |= u32::from(get_bit(&self.memory, addr + i)) << i;
             }
+
+            if trace {
+                println!(
+                    "Create machine with address_len {} and cell_len_bits {}",
+                    new_address_len, new_cell_len_bits
+                );
+            }
+
             self.machine = Some(Box::new(SecondMachine::new(
                 new_address_len,
                 new_cell_len_bits,
