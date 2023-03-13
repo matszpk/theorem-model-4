@@ -1,5 +1,5 @@
 # Simple 4-bit CPU
-# cell_len_bits: 4, address_len: 8
+# cell_len_bits: 4, address_len: 8+3 (membanks)
 # Registers:
 #  A - accumlator (4-bit)
 #  S - stack pointer (4-bit)
@@ -50,14 +50,17 @@ main:
     alias cpu_flag_c i19
     alias cpu_flag_z i20
     alias cpu_flag_n i21
-    alias cpu_tempreg_0 i22
-    alias cpu_tempreg_1 i23
-    alias cpu_tempreg_2 i24
-    alias cpu_tempreg_3 i25
-    alias mem_value_0 i26
-    alias mem_value_1 i27
-    alias mem_value_2 i28
-    alias mem_value_3 i29
+    alias cpu_membank_0 i22
+    alias cpu_membank_1 i23
+    alias cpu_membank_2 i24
+    alias cpu_tempreg_0 i25
+    alias cpu_tempreg_1 i26
+    alias cpu_tempreg_2 i27
+    alias cpu_tempreg_3 i28
+    alias mem_value_0 i29
+    alias mem_value_1 i30
+    alias mem_value_2 i31
+    alias mem_value_3 i32
     
     # phase 0,1,2
     # input: cpu_phase_X, cpu_instr_X, cpu_pc_X, cpu_tempreg_X, mem_value_X
@@ -83,16 +86,18 @@ main:
     # phase 4
     # input: cpu_instr, acc, flag
     cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all cpu_flag_c_t_all \
-    cpu_flag_z_t_all cpu_flag_n_t_all if_create_ph4 if_stop_ph4 = cpu_phase4 \
-    :4:cpu_instr_0 :7:cpu_acc_0 \
+    cpu_flag_z_t_all cpu_flag_n_t_all cpu_membank_0_ph4 cpu_membank_1_ph4 cpu_membank_2_ph4 \
+    if_create_ph4 if_stop_ph4 = cpu_phase4 \
+    :4:cpu_instr_0 :10:cpu_acc_0 \
     :4:mem_value_0
     
     # copy to avoid unknown
     cpu_phase_0 cpu_phase_1 cpu_phase_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
     cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
     cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_flag_c cpu_flag_z cpu_flag_n \
+    cpu_membank_0 cpu_membank_1 cpu_membank_2 \
     cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
-    mem_value_0 mem_value_1 mem_value_2 mem_value_3 = copy_30bit :30:cpu_phase_0
+    mem_value_0 mem_value_1 mem_value_2 mem_value_3 = copy_33bit :33:cpu_phase_0
     
     # merge phase 3 with 0,1,2
     # input: cpu_phase_X, cpu_instr_X,
@@ -119,12 +124,12 @@ main:
     # :4:cpu_acc_0, :3:cpu_flag_c, :4:cpu_sp_0
     # :4:cpu_acc_0_t_all, :3:cpu_flag_c_t_all 
     o0 o1 o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 o22 \
-    o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 o34 o35 o36 o37 o38 o39 o40 \
-    = cpu_merge_phase0123_4 :7:cpu_phase_0_ph0123 \
-    :24:cpu_phase_2 \
+    o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 o34 o35 o36 o37 o38 o39 o40 o41 o42 o43 \
+    o44 o45 o46 = cpu_merge_phase0123_4 :7:cpu_phase_0_ph0123 \
+    :27:cpu_phase_2 \
     :8:cpu_pc_0_ph0123 \
-    :9:cpu_acc_0_t_all \
-    :17:cpu_tempreg_0_ph0123
+    :12:cpu_acc_0_t_all \
+    :17:cpu_tempreg_0_ph0123 \
 
 copy:
     empty 1
@@ -185,8 +190,8 @@ copy_4bit:
     empty 4
 copy_8bit:
     empty 8
-copy_30bit:
-    empty 30
+copy_33bit:
+    empty 33
 not_4bit:
     o0 = nand i0 i0
     o1 = nand i1 i1
@@ -607,10 +612,13 @@ cpu_phase4:
     alias cpu_flag_c i8
     alias cpu_flag_z i9
     alias cpu_flag_n i10
-    alias mem_value_0 i11
-    alias mem_value_1 i12
-    alias mem_value_2 i13
-    alias mem_value_3 i14
+    alias cpu_membank_0 i11
+    alias cpu_membank_1 i12
+    alias cpu_membank_2 i13
+    alias mem_value_0 i14
+    alias mem_value_1 i15
+    alias mem_value_2 i16
+    alias mem_value_3 i17
     
     # 0 - LDA - load into accumulator
     # F - PUL - pull, if SP=0 then STOP
@@ -621,8 +629,8 @@ cpu_phase4:
     alias cpu_acc_3_t0 mem_value_3
     alias cpu_flag_c_t0 cpu_flag_c
     
-    cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n ign = not_4bit \
-        cpu_instr_1 cpu_instr_2 cpu_instr_3 zero
+    cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit \
+        :4:cpu_instr_0
     
     if_lda = and_3 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
     if_pul = and_3 :3:cpu_instr_1
@@ -716,13 +724,18 @@ cpu_phase4:
         :4:cpu_acc_0_t67
     cpu_flag_c_t678 = ite if_pul cpu_flag_c cpu_flag_c_t67
     
-    # SPC - special command
-    
     # A - BCC - branch if C=0 - done in phase 3
     # B - BNE - branch if Z=0 - done in phase 3
     # C - BPL - branch if N=0 - done in phase 3
     # D - JMP - done in phase 3
-    # E - PSH - push - done in phase 3
+    
+    # F -  SPC - special command
+    if_spc = and_4 cpu_instr_0_n :3:cpu_instr_1
+    mem_value_0_n mem_value_1_n mem_value_2_n mem_value_3_n = not_4bit \
+        :4:mem_value_0
+    if_createx = and_4 :4:mem_value_0_n
+    if_stopx = and_4 mem_value_0 mem_value_1_n mem_value_2_n mem_value_3_n
+    if_chbank = and if_spc mem_value_3
     
     if_clc_sec = and_3 :3:cpu_instr_0
     
@@ -742,10 +755,13 @@ cpu_phase4:
     o5 = ite if_clc_sec cpu_flag_z if_zero
     # cpu_flag_n_t_all
     o6 = ite if_clc_sec cpu_flag_n cpu_acc_3_t_all
+    o7 = ite if_chbank mem_value_0 cpu_membank_0
+    o8 = ite if_chbank mem_value_1 cpu_membank_1
+    o9 = ite if_chbank mem_value_2 cpu_membank_2
     # create
-    o7 = or zero zero
+    o10 = and if_createx if_spc
     # stop
-    o8 = or zero zero
+    o11 = and if_stopx if_spc
 
 cpu_merge_phase0123_4:
     alias cpu_phase_0_ph0123 i0
@@ -775,44 +791,50 @@ cpu_merge_phase0123_4:
     alias cpu_flag_c_ph0123 i24
     alias cpu_flag_z_ph0123 i25
     alias cpu_flag_n_ph0123 i26
-    alias cpu_tempreg_0 i27
-    alias cpu_tempreg_1 i28
-    alias cpu_tempreg_2 i29
-    alias cpu_tempreg_3 i30
-    alias cpu_pc_0_ph0123 i31
-    alias cpu_pc_1_ph0123 i32
-    alias cpu_pc_2_ph0123 i33
-    alias cpu_pc_3_ph0123 i34
-    alias cpu_pc_4_ph0123 i35
-    alias cpu_pc_5_ph0123 i36
-    alias cpu_pc_6_ph0123 i37
-    alias cpu_pc_7_ph0123 i38
-    alias cpu_acc_0_t_all i39
-    alias cpu_acc_1_t_all i40
-    alias cpu_acc_2_t_all i41
-    alias cpu_acc_3_t_all i42
-    alias cpu_flag_c_t_all i43
-    alias cpu_flag_z_t_all i44
-    alias cpu_flag_n_t_all i45
-    alias if_create_ph0123 i46
-    alias if_stop_ph0123 i47
-    alias cpu_tempreg_0_ph0123 i48
-    alias cpu_tempreg_1_ph0123 i49
-    alias cpu_tempreg_2_ph0123 i50
-    alias cpu_tempreg_3_ph0123 i51
-    alias mem_rw_ph0123 i52
-    alias mem_value_0_ph0123 i53
-    alias mem_value_1_ph0123 i54
-    alias mem_value_2_ph0123 i55
-    alias mem_value_3_ph0123 i56
-    alias mem_address_0_ph0123 i57
-    alias mem_address_1_ph0123 i58
-    alias mem_address_2_ph0123 i59
-    alias mem_address_3_ph0123 i60
-    alias mem_address_4_ph0123 i61
-    alias mem_address_5_ph0123 i62
-    alias mem_address_6_ph0123 i63
-    alias mem_address_7_ph0123 i64
+    alias cpu_membank_0_ph0123 i27
+    alias cpu_membank_1_ph0123 i28
+    alias cpu_membank_2_ph0123 i29
+    alias cpu_tempreg_0 i30
+    alias cpu_tempreg_1 i31
+    alias cpu_tempreg_2 i32
+    alias cpu_tempreg_3 i33
+    alias cpu_pc_0_ph0123 i34
+    alias cpu_pc_1_ph0123 i35
+    alias cpu_pc_2_ph0123 i36
+    alias cpu_pc_3_ph0123 i37
+    alias cpu_pc_4_ph0123 i38
+    alias cpu_pc_5_ph0123 i39
+    alias cpu_pc_6_ph0123 i40
+    alias cpu_pc_7_ph0123 i41
+    alias cpu_acc_0_t_all i42
+    alias cpu_acc_1_t_all i43
+    alias cpu_acc_2_t_all i44
+    alias cpu_acc_3_t_all i45
+    alias cpu_flag_c_t_all i46
+    alias cpu_flag_z_t_all i47
+    alias cpu_flag_n_t_all i48
+    alias cpu_membank_0_ph4 i49
+    alias cpu_membank_1_ph4 i50
+    alias cpu_membank_2_ph4 i51
+    alias if_create_ph0123 i52
+    alias if_stop_ph0123 i53
+    alias cpu_tempreg_0_ph0123 i54
+    alias cpu_tempreg_1_ph0123 i55
+    alias cpu_tempreg_2_ph0123 i56
+    alias cpu_tempreg_3_ph0123 i57
+    alias mem_rw_ph0123 i58
+    alias mem_value_0_ph0123 i59
+    alias mem_value_1_ph0123 i60
+    alias mem_value_2_ph0123 i61
+    alias mem_value_3_ph0123 i62
+    alias mem_address_0_ph0123 i63
+    alias mem_address_1_ph0123 i64
+    alias mem_address_2_ph0123 i65
+    alias mem_address_3_ph0123 i66
+    alias mem_address_4_ph0123 i67
+    alias mem_address_5_ph0123 i68
+    alias mem_address_6_ph0123 i69
+    alias mem_address_7_ph0123 i70
     
     alias if_phase4 cpu_phase_2
     
@@ -833,15 +855,21 @@ cpu_merge_phase0123_4:
     o19 = ite if_phase4 cpu_flag_c_t_all cpu_flag_c_ph0123
     o20 = ite if_phase4 cpu_flag_z_t_all cpu_flag_z_ph0123
     o21 = ite if_phase4 cpu_flag_n_t_all cpu_flag_n_ph0123
-    o22 o23 o24 o25 = ite_4bit if_phase4 :4:cpu_tempreg_0 \
+    o22 = ite if_phase4 cpu_membank_0_ph4 cpu_membank_0_ph0123
+    o23 = ite if_phase4 cpu_membank_1_ph4 cpu_membank_1_ph0123
+    o24 = ite if_phase4 cpu_membank_2_ph4 cpu_membank_2_ph0123
+    o25 o26 o27 o28 = ite_4bit if_phase4 :4:cpu_tempreg_0 \
         :4:cpu_tempreg_0_ph0123
     # mem_value_X
-    o26 o27 o28 o29 = ite_4bit if_phase4 .4:zero \
+    o29 o30 o31 o32 = ite_4bit if_phase4 .4:zero \
         :4:mem_value_0_ph0123
     # mem_rw
-    o30 = ite if_phase4 zero mem_rw_ph0123
+    o33 = ite if_phase4 zero mem_rw_ph0123
     # mem_address
-    o31 o32 o33 o34 o35 o36 o37 o38 = ite_8bit if_phase4 .8:zero \
+    o34 o35 o36 o37 o38 o39 o40 o41 = ite_8bit if_phase4 .8:zero \
         :8:mem_address_0_ph0123
-    o39 = ite if_phase4 zero if_create_ph0123
-    o40 = ite if_phase4 zero if_stop_ph0123
+    o42 = copy cpu_membank_0_ph0123
+    o43 = copy cpu_membank_1_ph0123
+    o44 = copy cpu_membank_2_ph0123
+    o45 = ite if_phase4 zero if_create_ph0123
+    o46 = ite if_phase4 zero if_stop_ph0123
