@@ -551,6 +551,10 @@ cpu_exec:
     cpu_acc_4_t45 cpu_acc_5_t45 cpu_acc_6_t45 cpu_acc_7_t45 = ite_8bit cpu_instr_0 \
         :8:cpu_acc_0_t5 :8:cpu_acc_0_t4
     
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+    cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 = copy_8bit :8:cpu_acc_0
+    cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 = copy_4bit :4:cpu_instr_0
+    
     # 6 - XOR
     cpu_acc_0_t6 cpu_acc_1_t6 cpu_acc_2_t6 cpu_acc_3_t6 = xor_4bit :4:cpu_acc_0 :4:mem_value_0
     cpu_acc_4_t6 cpu_acc_5_t6 cpu_acc_6_t6 cpu_acc_7_t6 = xor_4bit :4:cpu_acc_4 :4:mem_value_4
@@ -563,6 +567,8 @@ cpu_exec:
     cpu_acc_4_t67 cpu_acc_5_t67 cpu_acc_6_t67 cpu_acc_7_t67 = ite_8bit cpu_instr_0 \
         :8:cpu_acc_0 :8:cpu_acc_0_t6
     cpu_flag_c_t67 = ite cpu_instr_0 cpu_flag_c_t7 cpu_flag_c
+    mem_value_0 = copy mem_value_0
+    cpu_flag_c cpu_flag_z cpu_flag_v cpu_flag_n = copy_4bit :4:cpu_flag_c
     
     cpu_acc_0_t4567 cpu_acc_1_t4567 cpu_acc_2_t4567 cpu_acc_3_t4567 \
     cpu_acc_4_t4567 cpu_acc_5_t4567 cpu_acc_6_t4567 cpu_acc_7_t4567 = ite_8bit cpu_instr_1 \
@@ -596,12 +602,24 @@ cpu_exec:
     alias cpu_acc_6_t9 cpu_acc_7
     alias cpu_acc_7_t9 cpu_flag_c
     
+    cpu_acc_0_t89 cpu_acc_1_t89 cpu_acc_2_t89 cpu_acc_3_t89 \
+    cpu_acc_4_t89 cpu_acc_5_t89 cpu_acc_6_t89 cpu_acc_7_t89 = ite_8bit cpu_instr_0 \
+        :7:cpu_acc_0_t9 cpu_acc_7_t9 cpu_acc_0_t8 :7:cpu_acc_1_t8
+    cpu_flag_c_t89 = ite cpu_instr_0 cpu_flag_c_t9 cpu_flag_c_t8
+    
     # E - SPC - BCC
-    #alias if_spc 
+    if_last_instr = and_3 :3:cpu_instr_1
+    cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
+    mem_value_0_n = nand mem_value_0 mem_value_0
+    
+    cpu_flag_c_tf = and if_last_instr cpu_instr_0
+    cpu_flag_c_tcdef = ite if_last_instr cpu_flag_c_tf cpu_flag_c
     
     # cpu_acc_X
     o0 o1 o2 o3 o4 o5 o6 o7 = copy_8bit .8:zero
     # cpu_flag_X
     o8 o9 o10 o11 = copy_4bit .4:zero
-    o12 = copy zero
-    o13 = copy zero
+    # create
+    o12 = and_3 if_last_instr cpu_instr_0_n mem_value_0_n
+    # stop
+    o13 = and_3 if_last_instr cpu_instr_0_n mem_value_0
