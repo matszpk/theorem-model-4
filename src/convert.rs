@@ -477,6 +477,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                 for var_name in &vars[var_pos] {
                                     var_map.remove(var_name);
                                 }
+                                vars[var_pos].clear();
                             }
                             if let Some(v) =
                                 var_map.insert(output.clone(), var_pos.try_into().unwrap())
