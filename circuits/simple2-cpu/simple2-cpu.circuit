@@ -186,8 +186,10 @@ main:
     
     ##
     # phase 3 - execute instruction
-    # new state: cpu_phase_X, cpu_acc_0, cpu_flag_X
+    # new state: cpu_phase_X, cpu_acc_0, cpu_flag_X, cpu_pc_X
     # new values: mem_value, mem_rw, mem_address, create, stop
+    
+    zero = copy zero
     
     alias cpu_phase_0_ph3 one
     alias cpu_phase_1_ph3 one
@@ -207,6 +209,18 @@ main:
     alias cpu_acc_1_ph3 one
     alias cpu_acc_2_ph3 one
     alias cpu_acc_3_ph3 one
+    alias cpu_pc_0_ph3 one
+    alias cpu_pc_1_ph3 one
+    alias cpu_pc_2_ph3 one
+    alias cpu_pc_3_ph3 one
+    alias cpu_pc_4_ph3 one
+    alias cpu_pc_5_ph3 one
+    alias cpu_pc_6_ph3 one
+    alias cpu_pc_7_ph3 one
+    alias cpu_pc_8_ph3 one
+    alias cpu_pc_9_ph3 one
+    alias cpu_pc_10_ph3 one
+    alias cpu_pc_11_ph3 one
     
     alias mem_value_0_ph3 mem_value_0
     alias mem_value_1_ph3 mem_value_1
@@ -230,6 +244,15 @@ main:
     alias mem_address_10_ph3 zero
     alias mem_address_11_ph3 zero
     
+    cpu_phase_0 cpu_phase_1 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
+    cpu_tmp_0 cpu_tmp_1 cpu_tmp_2 cpu_tmp_3 \
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 \
+    cpu_flag_c cpu_flag_z cpu_flag_v cpu_flag_n \
+    cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
+    cpu_pc_8 cpu_pc_9 cpu_pc_10 cpu_pc_11 \
+    mem_value_0 mem_value_1 mem_value_2 mem_value_3 \
+    mem_value_4 mem_value_5 mem_value_6 mem_value_7 = copy_42bit :42:cpu_phase_0
+    
     # merge phase2 and phase3
     cpu_phase_0_ph23 = ite cpu_phase_0 cpu_phase_0_ph3 cpu_phase_0_ph2
     cpu_phase_1_ph23 = ite cpu_phase_0 cpu_phase_1_ph3 cpu_phase_1_ph2
@@ -238,6 +261,11 @@ main:
         :8:cpu_acc_0_ph3 :8:cpu_acc_0
     cpu_flag_c_ph23 cpu_flag_z_ph23 cpu_flag_v_ph23 cpu_flag_n_ph23 = ite_4bit cpu_phase_0 \
         :4:cpu_flag_c_ph3 :4:cpu_flag_c
+    cpu_pc_0_ph23 cpu_pc_1_ph23 cpu_pc_2_ph23 cpu_pc_3_ph23 \
+    cpu_pc_4_ph23 cpu_pc_5_ph23 cpu_pc_6_ph23 cpu_pc_7_ph23 = \
+        ite_8bit cpu_phase_0 :8:cpu_pc_0_ph3 :8:cpu_pc_0
+    cpu_pc_8_ph23 cpu_pc_9_ph23 cpu_pc_10_ph23 cpu_pc_11_ph23 = \
+        ite_4bit cpu_phase_0 :4:cpu_pc_8_ph3 :4:cpu_pc_8
     mem_rw_ph23 = ite cpu_phase_0 mem_rw_ph3 mem_rw_ph2
     mem_value_0_ph23 mem_value_1_ph23 mem_value_2_ph23 mem_value_3_ph23 \
     mem_value_4_ph23 mem_value_5_ph23 mem_value_6_ph23 mem_value_7_ph23 = ite_8bit cpu_phase_0 \
@@ -248,14 +276,8 @@ main:
     mem_address_8_ph23 mem_address_9_ph23 mem_address_10_ph23 mem_address_11_ph23 = \
         ite_4bit cpu_phase_0 :4:mem_address_8_ph3 :4:mem_address_8_ph2
     
-    cpu_phase_0 cpu_phase_1 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
-    cpu_tmp_0 cpu_tmp_1 cpu_tmp_2 cpu_tmp_3 \
-    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 \
-    cpu_flag_c cpu_flag_z cpu_flag_v cpu_flag_n \
-    cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
-    cpu_pc_8 cpu_pc_9 cpu_pc_10 cpu_pc_11 \
-    mem_value_0 mem_value_1 mem_value_2 mem_value_3 \
-    mem_value_4 mem_value_5 mem_value_6 mem_value_7 = copy_42bit :42:cpu_phase_0
+    zero = copy zero
+    cpu_phase_1 = copy cpu_phase_1
     
     # merge all phases
     # cpu_phase_0, cpu_phase_1
@@ -270,9 +292,9 @@ main:
     # cpu_flag_X
     o18 o19 o20 o21 = ite_4bit cpu_phase_1 :4:cpu_flag_c_ph23 :4:cpu_flag_c
     # cpu_pc_X
-    o22 o23 o24 o25 o26 o27 o28 o29 = ite_8bit cpu_phase_1 :8:cpu_pc_0 :8:cpu_pc_0_ph01
-    o30 o31 o32 o33 = ite_4bit cpu_phase_1 :4:cpu_pc_8 :4:cpu_pc_8_ph01
-    o34 o35 o36 o37 o38 o39 o40 o41 = ite_8bit cpu_phase_1 :8:mem_value_0_ph23 :8:mem_value_0
+    o22 o23 o24 o25 o26 o27 o28 o29 = ite_8bit cpu_phase_1 :8:cpu_pc_0_ph23 :8:cpu_pc_0_ph01
+    o30 o31 o32 o33 = ite_4bit cpu_phase_1 :4:cpu_pc_8_ph23 :4:cpu_pc_8_ph01
+    o34 o35 o36 o37 o38 o39 o40 o41 = ite_8bit cpu_phase_1 :8:mem_value_0_ph23 .8:zero
     o42 = ite cpu_phase_1 mem_rw_ph23 zero
     o43 o44 o45 o46 o47 o48 o49 o50 = ite_8bit cpu_phase_1 :8:mem_address_0_ph23 \
         :8:mem_address_0_ph01
