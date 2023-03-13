@@ -622,13 +622,13 @@ cpu_exec_0:
         cpu_flag_c :4:cpu_acc_0 :4:mem_value_0
     cpu_acc_4_t3 cpu_acc_5_t3 cpu_acc_6_t3 cpu_acc_7_t3 cpu_flag_c_t3 = carry_suber_4bit \
         carry_0_t3 :4:cpu_acc_4 :4:mem_value_4
-    tmp0 = xor cpu_acc_7_t3 mem_value_7
-    tmp1 = xor cpu_acc_7 cpu_acc_7
+    tmp0 = xor cpu_acc_7 cpu_acc_7_t3
+    tmp1 = xor cpu_acc_7 mem_value_7
     cpu_flag_v_t3 = and tmp0 tmp1
     
     cpu_acc_0_t23 cpu_acc_1_t23 cpu_acc_2_t23 cpu_acc_3_t23 \
     cpu_acc_4_t23 cpu_acc_5_t23 cpu_acc_6_t23 cpu_acc_7_t23 = ite_8bit cpu_instr_0 \
-        :8:cpu_acc_0_t3 :8:cpu_acc_0_t2
+        :4:cpu_acc_0_t3 :4:cpu_acc_4_t3 :4:cpu_acc_0_t2 :4:cpu_acc_4_t2
     cpu_flag_c_t23 = ite cpu_instr_0 cpu_flag_c_t3 cpu_flag_c_t2
     cpu_flag_v_t23 = ite cpu_instr_0 cpu_flag_v_t3 cpu_flag_v_t2
     

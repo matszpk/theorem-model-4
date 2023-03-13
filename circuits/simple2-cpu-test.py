@@ -87,7 +87,7 @@ def cpu_phase01(data):
     v = bin_decomp(cpu_phase01_input_str, data)
     phase0, pc, mem_value = v['phase0'], v['pc'], v['mem_value']
     next_pc = (pc+1) & 0xfff
-    outv=dict()
+    outv = dict()
     if phase0==0:
         outv = {'phase':1, 'instr':mem_value&0xf, 'pc':next_pc, 'tmp':(mem_value>>4)&0xf,
                 'mem_address':pc}
@@ -106,3 +106,49 @@ def cpu_phase01_1_input_test_func(case):
 
 gen_testsuite("cpu_phase01_1", "cpu_phase01", 21, 34, range(0, 1<<16), cpu_phase01,
                 cpu_phase01_1_input_test_func)
+
+cpu_exec_0_input_str = (('instr',4),('acc',8),('flags',4),('mem_value',8))
+cpu_exec_0_output_str = (('acc',8),('flag_c',1),('flag_v',1))
+
+def cpu_exec_0(data):
+    v = bin_decomp(cpu_exec_0_input_str, data)
+    instr, acc, flags, mem_value = v['instr'], v['acc'], v['flags'], v['mem_value']
+    outv = dict()
+    if instr==instr_lda or instr==instr_sta:
+        outv = { 'acc':mem_value&0xff,
+                 'flag_c':int(flag_c(flags)), 'flag_v':int(flag_v(flags)) }
+    elif instr==instr_adc:
+        s = (acc + mem_value + (flags&1)) & 0x1ff
+        fc = (s>>8)&1
+        a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
+        fv = (a7&b7&(s7^1)) | ((a7^1)&(b7^1)&s7)
+        outv = { 'acc': s & 0xff, 'flag_c':fc, 'flag_v':fv }
+    elif instr==instr_sbc:
+        s = (acc + (mem_value^0xff) + (flags&1)) & 0x1ff
+        fc = (s>>8)&1
+        a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
+        fv = (a7&(b7^1)&(s7^1)) | ((a7^1)&b7&s7)
+        outv = { 'acc': s & 0xff, 'flag_c':fc, 'flag_v':fv }
+    elif instr==instr_and:
+        outv = { 'acc': (acc & mem_value) & 0xff, 
+                'flag_c':int(flag_c(flags)), 'flag_v':int(flag_v(flags)) }
+    elif instr==instr_or:
+        outv = { 'acc': (acc | mem_value) & 0xff, 
+                'flag_c':int(flag_c(flags)), 'flag_v':int(flag_v(flags)) }
+    elif instr==instr_xor:
+        outv = { 'acc': (acc ^ mem_value) & 0xff, 
+                'flag_c':int(flag_c(flags)), 'flag_v':int(flag_v(flags)) }
+    elif instr==instr_clc:
+        outv = { 'acc': acc, 'flag_c':0, 'flag_v':int(flag_v(flags)) }
+    else:
+        raise("Error panic")
+
+    return bin_comp(cpu_exec_0_output_str, outv)
+
+def cpu_exec_0_1_input_test_func(case):
+    return bin_comp(cpu_exec_0_input_str,
+        {'instr':case&0x7, 'acc':(case>>3)&0xff, 'flags':((case>>11)&0x1)|6,
+            'mem_value':(case>>12)&0xff})
+
+gen_testsuite("cpu_exec_0_1", "cpu_exec_0", 24, 10, range(0, 1<<20), cpu_exec_0,
+                cpu_exec_0_1_input_test_func)
