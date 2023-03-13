@@ -1,0 +1,847 @@
+# Simple 4-bit CPU
+# cell_len_bits: 4, address_len: 8
+# Registers:
+#  A - accumlator (4-bit)
+#  S - stack pointer (4-bit)
+#  F - flags (3 - N, 1 - Z 0 - C)
+#  PC - program counter (8-bit)
+# Instruction set:
+# 0 - LDA - load into accumulator
+# 1 - STA - store accumulator
+# 2 - ADC - add to accumulator (A + M + C)
+# 3 - SBC - subtract from accumulator (A - NOT(M) +C)
+# 4 - AND - perform bitwise AND on accumulator
+# 5 - OR - perform bitwise OR on accumulator
+# 6 - XOR - perform bitwise XOR on accumulator
+# 7 - CLC
+# 8 - ROL - rotate left 1 bit including C.
+# 9 - ROR - rotate right 1 bit including C.
+# A - BCC - branch if C=0
+# B - BNE - branch if Z=0
+# C - BPL - branch if N=0
+# D - JMP
+# E - SPC - special command:
+#   arg: 0 - create
+#   arg: 1 - stop
+#   arg: 8-F - memory bank 0-7
+# F - SEC - change memory
+main:
+    # input (phase):
+    alias cpu_phase_0 i0
+    alias cpu_phase_1 i1
+    alias cpu_phase_2 i2
+    alias cpu_instr_0 i3
+    alias cpu_instr_1 i4
+    alias cpu_instr_2 i5
+    alias cpu_instr_3 i6
+    # program counter
+    alias cpu_pc_0 i7
+    alias cpu_pc_1 i8
+    alias cpu_pc_2 i9
+    alias cpu_pc_3 i10
+    alias cpu_pc_4 i11
+    alias cpu_pc_5 i12
+    alias cpu_pc_6 i13
+    alias cpu_pc_7 i14
+    alias cpu_acc_0 i15
+    alias cpu_acc_1 i16
+    alias cpu_acc_2 i17
+    alias cpu_acc_3 i18
+    alias cpu_flag_c i19
+    alias cpu_flag_z i20
+    alias cpu_flag_n i21
+    alias cpu_tempreg_0 i22
+    alias cpu_tempreg_1 i23
+    alias cpu_tempreg_2 i24
+    alias cpu_tempreg_3 i25
+    alias mem_value_0 i26
+    alias mem_value_1 i27
+    alias mem_value_2 i28
+    alias mem_value_3 i29
+    
+    # phase 0,1,2
+    # input: cpu_phase_X, cpu_instr_X, cpu_pc_X, cpu_tempreg_X, mem_value_X
+    cpu_phase_0_ph012 cpu_phase_1_ph012 cpu_phase_2_ph012 cpu_instr_0_ph012 cpu_instr_1_ph012 \
+    cpu_instr_2_ph012 cpu_instr_3_ph012 cpu_pc_0_ph012 cpu_pc_1_ph012 cpu_pc_2_ph012 \
+    cpu_pc_3_ph012 cpu_pc_4_ph012 cpu_pc_5_ph012 cpu_pc_6_ph012 cpu_pc_7_ph012 \
+    cpu_tempreg_0_ph012 cpu_tempreg_1_ph012 cpu_tempreg_2_ph012 cpu_tempreg_3_ph012 \
+    mem_rw_ph012 mem_address_0_ph012 mem_address_1_ph012 mem_address_2_ph012 \
+    mem_address_3_ph012 mem_address_4_ph012 mem_address_5_ph012 mem_address_6_ph012 \
+    mem_address_7_ph012 = cpu_phase012 :15:cpu_phase_0 \
+        :8:cpu_tempreg_0
+    
+    # phase 3
+    # input: :4:cpu_instr_0 :8:cpu_pc_0 :4:cpu_acc_0 :3:cpu_flag_c :4:cpu_tempreg_0
+    # :4:mem_value_0
+    cpu_phase_0_ph3 cpu_phase_1_ph3 cpu_phase_2_ph3 cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 \
+    cpu_pc_3_ph3 cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 \
+    mem_rw_ph3 mem_value_0_ph3 mem_value_1_ph3 mem_value_2_ph3 \
+    mem_value_3_ph3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
+    mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 \
+    = cpu_phase3 :27:cpu_instr_0
+    
+    # phase 4
+    # input: cpu_instr, acc, flag
+    cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all cpu_flag_c_t_all \
+    cpu_flag_z_t_all cpu_flag_n_t_all if_create_ph4 if_stop_ph4 = cpu_phase4 \
+    :4:cpu_instr_0 :7:cpu_acc_0 \
+    :4:mem_value_0
+    
+    # copy to avoid unknown
+    cpu_phase_0 cpu_phase_1 cpu_phase_2 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
+    cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_flag_c cpu_flag_z cpu_flag_n \
+    cpu_tempreg_0 cpu_tempreg_1 cpu_tempreg_2 cpu_tempreg_3 \
+    mem_value_0 mem_value_1 mem_value_2 mem_value_3 = copy_30bit :30:cpu_phase_0
+    
+    # merge phase 3 with 0,1,2
+    # input: cpu_phase_X, cpu_instr_X,
+    # cpu_sp, cpu_tempreg, mem_value,
+    # cpu_phase_ph012, cpu_instr_ph012, cpu_pc_ph012,
+    # cpu_tempreg_ph012,mem_rw_ph012, mem_address_ph012,...,
+    # 3:cpu_phase_0_ph3, :8:cpu_pc_0_ph3, :4:cpu_sp_0_ph3,
+    # mem_rw_ph3, :4:mem_value_0_ph3, :8:mem_address_0_ph3, ..
+    cpu_phase_0_ph0123 cpu_phase_1_ph0123 cpu_phase_2_ph0123 cpu_instr_0_ph0123 \
+    cpu_instr_1_ph0123 cpu_instr_2_ph0123 cpu_instr_3_ph0123 cpu_pc_0_ph0123 cpu_pc_1_ph0123 \
+    cpu_pc_2_ph0123 cpu_pc_3_ph0123 cpu_pc_4_ph0123 cpu_pc_5_ph0123 cpu_pc_6_ph0123 \
+    cpu_pc_7_ph0123 cpu_tempreg_0_ph0123 cpu_tempreg_1_ph0123 cpu_tempreg_2_ph0123 \
+    cpu_tempreg_3_ph0123 \
+    mem_rw_ph0123 mem_value_0_ph0123 mem_value_1_ph0123 mem_value_2_ph0123 mem_value_3_ph0123 \
+    mem_address_0_ph0123 mem_address_1_ph0123 mem_address_2_ph0123 mem_address_3_ph0123 \
+    mem_address_4_ph0123 mem_address_5_ph0123 mem_address_6_ph0123 mem_address_7_ph0123 \
+    = cpu_merge_phase012_3 \
+    :7:cpu_phase_0 \
+    :8:cpu_tempreg_0 \
+    :28:cpu_phase_0_ph012 \
+    :24:cpu_phase_0_ph3
+    
+    # input: :3:cpu_phase_0_ph0123 :4:cpu_instr_0_ph0123,...
+    # :4:cpu_acc_0, :3:cpu_flag_c, :4:cpu_sp_0
+    # :4:cpu_acc_0_t_all, :3:cpu_flag_c_t_all 
+    o0 o1 o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 o22 \
+    o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 o34 o35 o36 o37 o38 o39 o40 \
+    = cpu_merge_phase0123_4 :7:cpu_phase_0_ph0123 \
+    :24:cpu_phase_2 \
+    :8:cpu_pc_0_ph0123 \
+    :9:cpu_acc_0_t_all \
+    :17:cpu_tempreg_0_ph0123
+
+copy:
+    empty 1
+xor:
+    n0 = nand i0 i0
+    n1 = nand i1 i1
+    t0 = nand i0 n1
+    t1 = nand n0 i1
+    o0 = nand t0 t1
+xor_4bit:
+    o0 = xor i0 i4
+    o1 = xor i1 i5
+    o2 = xor i2 i6
+    o3 = xor i3 i7
+and:
+    t = nand i0 i1
+    o0 = nand t t
+and_4bit:
+    o0 = and i0 i4
+    o1 = and i1 i5
+    o2 = and i2 i6
+    o3 = and i3 i7
+or:
+    t0 = nand i0 i0
+    t1 = nand i1 i1
+    o0 = nand t0 t1
+or_4bit:
+    o0 = or i0 i4
+    o1 = or i1 i5
+    o2 = or i2 i6
+    o3 = or i3 i7
+and_3:
+    t0 = and i0 i1
+    o0 = and t0 i2
+and_4:
+    t0 = and i0 i1
+    t1 = and i2 i3
+    o0 = and t0 t1
+or_4:
+    t0 = or i0 i1
+    t1 = or i2 i3
+    o0 = or t0 t1
+# if i0 then i1 else i2
+ite:
+    n0 = nand i0 i0
+    t0 = nand i0 i1
+    t1 = nand n0 i2
+    o0 = nand t0 t1
+ite_4bit:
+    o0 = ite i0 i1 i5
+    o1 = ite i0 i2 i6
+    o2 = ite i0 i3 i7
+    o3 = ite i0 i4 i8
+ite_8bit:
+    o0 o1 o2 o3 = ite_4bit i0 :4:i1 :4:i9
+    o4 o5 o6 o7 = ite_4bit i0 :4:i5 :4:i13
+copy_4bit:
+    empty 4
+copy_8bit:
+    empty 8
+copy_30bit:
+    empty 30
+not_4bit:
+    o0 = nand i0 i0
+    o1 = nand i1 i1
+    o2 = nand i2 i2
+    o3 = nand i3 i3
+full_adder:
+    s0 = xor i0 i1
+    a0 = and i0 i1
+    a1 = and s0 i2
+    o0 = xor s0 i2
+    o1 = or a0 a1
+half_adder:
+    o0 = xor i0 i1
+    o1 = and i0 i1
+half_suber:
+    x = xor i0 i1
+    o0 = nand x x
+    o1 = or i0 i1
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_adder_4bit:
+    s0 c0 = full_adder i1 i5 i0
+    s1 c1 = full_adder i2 i6 c0
+    s2 c2 = full_adder i3 i7 c1
+    s3 c3 = full_adder i4 i8 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+# 4-bit subtractor with carry
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_suber_4bit:
+    n0 n1 n2 n3 = not_4bit i5 i6 i7 i8
+    s0 c0 = full_adder i1 n0 i0
+    s1 c1 = full_adder i2 n1 c0
+    s2 c2 = full_adder i3 n2 c1
+    s3 c3 = full_adder i4 n3 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+carry_inc_4bit:
+    s0 c0 = half_adder i1 i0
+    s1 c1 = half_adder i2 c0
+    s2 c2 = half_adder i3 c1
+    s3 c3 = half_adder i4 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+dec_4bit:
+    d0 c0 = half_suber i0 zero
+    d1 c1 = half_suber i1 c0
+    d2 c2 = half_suber i2 c1
+    d3 c3 = half_suber i3 c2
+    o0 o1 o2 o3 = copy_4bit d0 d1 d2 d3
+inc_8bit:
+    one = nand zero zero
+    s0 s1 s2 s3 c0 = carry_inc_4bit one i0 i1 i2 i3
+    s4 s5 s6 s7 ign = carry_inc_4bit c0 i4 i5 i6 i7
+    o0 o1 o2 o3 = copy_4bit :4:s0
+    o4 o5 o6 o7 = copy_4bit :4:s4
+
+cpu_phase012:
+    # input (phase):
+    alias cpu_phase_0 i0
+    alias cpu_phase_1 i1
+    alias cpu_phase_2 i2
+    alias cpu_instr_0 i3
+    alias cpu_instr_1 i4
+    alias cpu_instr_2 i5
+    alias cpu_instr_3 i6
+    # program counter
+    alias cpu_pc_0 i7
+    alias cpu_pc_1 i8
+    alias cpu_pc_2 i9
+    alias cpu_pc_3 i10
+    alias cpu_pc_4 i11
+    alias cpu_pc_5 i12
+    alias cpu_pc_6 i13
+    alias cpu_pc_7 i14
+    alias cpu_tempreg_0 i15
+    alias cpu_tempreg_1 i16
+    alias cpu_tempreg_2 i17
+    alias cpu_tempreg_3 i18
+    alias mem_value_0 i19
+    alias mem_value_1 i20
+    alias mem_value_2 i21
+    alias mem_value_3 i22
+    
+    one = nand zero zero
+    
+    ########
+    # phase 0 - fetch instruction
+    
+    alias mem_address_0_ph0 cpu_pc_0
+    alias mem_address_1_ph0 cpu_pc_1
+    alias mem_address_2_ph0 cpu_pc_2
+    alias mem_address_3_ph0 cpu_pc_3
+    alias mem_address_4_ph0 cpu_pc_4
+    alias mem_address_5_ph0 cpu_pc_5
+    alias mem_address_6_ph0 cpu_pc_6
+    alias mem_address_7_ph0 cpu_pc_7
+    
+    alias mem_rw_ph0 zero
+    
+    cpu_pc_0_ph0 cpu_pc_1_ph0 cpu_pc_2_ph0 cpu_pc_3_ph0 \
+        cpu_pc_4_ph0 cpu_pc_5_ph0 cpu_pc_6_ph0 cpu_pc_7_ph0 = \
+        inc_8bit :8:cpu_pc_0
+    
+    # next cpu phase
+    alias cpu_phase_0_ph0 one
+    alias cpu_phase_1_ph0 zero
+    alias cpu_phase_2_ph0 zero
+    
+    ########
+    # phase 1 - fetch address nibble 0 only if not CLC, SEC, ROL, ROR
+    # if CLC, SEC, ROL, ROR then go to phase 3.
+    
+    # it doesn't matter if CLC, SEC, ROL, ROR
+    alias mem_address_0_ph1 mem_address_0_ph0
+    alias mem_address_1_ph1 mem_address_1_ph0
+    alias mem_address_2_ph1 mem_address_2_ph0
+    alias mem_address_3_ph1 mem_address_3_ph0
+    alias mem_address_4_ph1 mem_address_4_ph0
+    alias mem_address_5_ph1 mem_address_5_ph0
+    alias mem_address_6_ph1 mem_address_6_ph0
+    alias mem_address_7_ph1 mem_address_7_ph0
+    
+    alias mem_rw_ph1 mem_rw_ph0
+    
+    # move mem_value into cpu_instr_0_ph1
+    alias cpu_instr_0_ph1 mem_value_0
+    alias cpu_instr_1_ph1 mem_value_1
+    alias cpu_instr_2_ph1 mem_value_2
+    alias cpu_instr_3_ph1 mem_value_3
+    
+    alias mem_rw_ph0 zero
+    
+    # clc_rol_ror_sec
+    
+    cpu_instr_1_ph1_n = nand cpu_instr_1_ph1 cpu_instr_1_ph1
+    cpu_instr_2_ph1_n = nand cpu_instr_2_ph1 cpu_instr_2_ph1
+    tmp0 = and_3 cpu_instr_1_ph1_n cpu_instr_2_ph1_n cpu_instr_3_ph1
+    tmp1 = and_3 :3:cpu_instr_0_ph1
+    if_clc_sec_rol_ror = or tmp0 tmp1
+    
+    # next cpu phase
+    # if if_clc_sec_rol_ror then phase=3 else phase=2
+    alias cpu_phase_0_ph1 if_clc_sec_rol_ror
+    alias cpu_phase_1_ph1 one
+    # still one in third bit of phase
+    alias cpu_phase_2_ph1 cpu_phase_2_ph0
+    
+    # increment if not CLC, ROL or ROR.
+    cpu_pc_0_ph1 cpu_pc_1_ph1 cpu_pc_2_ph1 cpu_pc_3_ph1 \
+    cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 = ite_8bit if_clc_sec_rol_ror \
+        :8:cpu_pc_0 \
+        :8:cpu_pc_0_ph0
+    
+    # merge phase0 and phase1
+    # mem_address and mem_rw are same
+    cpu_pc_0_ph01 cpu_pc_1_ph01 cpu_pc_2_ph01 cpu_pc_3_ph01 \
+    cpu_pc_4_ph01 cpu_pc_5_ph01 cpu_pc_6_ph01 cpu_pc_7_ph01 = ite_8bit cpu_phase_0 \
+        :8:cpu_pc_0_ph1 \
+        :8:cpu_pc_0_ph0
+    cpu_phase_0_ph01 = ite cpu_phase_0 cpu_phase_0_ph1 cpu_phase_0_ph0
+    cpu_phase_1_ph01 = ite cpu_phase_0 cpu_phase_1_ph1 cpu_phase_1_ph0
+    alias cpu_phase_2_ph01 cpu_phase_2_ph1
+    cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01 = ite_4bit \
+        cpu_phase_0 :4:cpu_instr_0_ph1 \
+        :4:cpu_instr_0
+    alias mem_rw_ph01 mem_rw_ph1
+    alias mem_address_0_ph01 mem_address_0_ph1
+    alias mem_address_1_ph01 mem_address_1_ph1
+    alias mem_address_2_ph01 mem_address_2_ph1
+    alias mem_address_3_ph01 mem_address_3_ph1
+    alias mem_address_4_ph01 mem_address_4_ph1
+    alias mem_address_5_ph01 mem_address_5_ph1
+    alias mem_address_6_ph01 mem_address_6_ph1
+    alias mem_address_7_ph01 mem_address_7_ph1
+    
+    ########
+    # phase 2 - fetch address nibble 1 
+    # only if not CLC, PSH, PUL, ROL, ROR.
+    
+    # move mem_value into cpu_tempreg_0 - first nibble of address argument
+    alias cpu_tempreg_0_ph2 mem_value_0
+    alias cpu_tempreg_1_ph2 mem_value_1
+    alias cpu_tempreg_2_ph2 mem_value_2
+    alias cpu_tempreg_3_ph2 mem_value_3
+    
+    # this same operation like in phase 1 - increment PC.
+    alias cpu_pc_0_ph2 cpu_pc_0_ph0
+    alias cpu_pc_1_ph2 cpu_pc_1_ph0
+    alias cpu_pc_2_ph2 cpu_pc_2_ph0
+    alias cpu_pc_3_ph2 cpu_pc_3_ph0
+    alias cpu_pc_4_ph2 cpu_pc_4_ph0
+    alias cpu_pc_5_ph2 cpu_pc_5_ph0
+    alias cpu_pc_6_ph2 cpu_pc_6_ph0
+    alias cpu_pc_7_ph2 cpu_pc_7_ph0
+    
+    alias cpu_phase_0_ph2 one
+    alias cpu_phase_1_ph2 one
+    
+    # merge phase0, phase1 and phase2
+    
+    cpu_phase_0_n = nand cpu_phase_0 cpu_phase_0
+    cpu_phase_2_n = nand cpu_phase_2 cpu_phase_2
+    if_phase_2 = and_3 cpu_phase_0_n cpu_phase_1 cpu_phase_2_n
+    
+    # cpu_phase_0_ph012
+    o0 = ite if_phase_2 cpu_phase_0_ph2 cpu_phase_0_ph01
+    # cpu_phase_1_ph012
+    o1 = ite if_phase_2 cpu_phase_1_ph2 cpu_phase_1_ph01
+    # cpu_phase_2_ph012
+    o2 = copy cpu_phase_2_ph01
+    # cpu_instr_X_ph012
+    o3 o4 o5 o6 = ite_4bit if_phase_2 :4:cpu_instr_0 \
+        :4:cpu_instr_0_ph01
+    # cpu_pc_X_ph012
+    o7 o8 o9 o10 o11 o12 o13 o14 = ite_8bit if_phase_2 :8:cpu_pc_0_ph2 \
+        :8:cpu_pc_0_ph01
+    # cpu_pc_tempreg_X_ph012
+    o15 o16 o17 o18 = ite_4bit if_phase_2 \
+        :4:cpu_tempreg_0_ph2 \
+        :4:cpu_tempreg_0
+    
+    # mem_rw_ph012
+    o19 = copy mem_rw_ph01
+    # mem_address_X_ph012
+    o20 o21 o22 o23 o24 o25 o26 o27 = copy_8bit \
+        :8:mem_address_0_ph01
+
+cpu_phase3:
+    alias cpu_instr_0 i0
+    alias cpu_instr_1 i1
+    alias cpu_instr_2 i2
+    alias cpu_instr_3 i3
+    # program counter
+    alias cpu_pc_0 i4
+    alias cpu_pc_1 i5
+    alias cpu_pc_2 i6
+    alias cpu_pc_3 i7
+    alias cpu_pc_4 i8
+    alias cpu_pc_5 i9
+    alias cpu_pc_6 i10
+    alias cpu_pc_7 i11
+    alias cpu_acc_0 i12
+    alias cpu_acc_1 i13
+    alias cpu_acc_2 i14
+    alias cpu_acc_3 i15
+    alias cpu_flag_c i16
+    alias cpu_flag_z i17
+    alias cpu_flag_n i18
+    alias cpu_tempreg_0 i19
+    alias cpu_tempreg_1 i20
+    alias cpu_tempreg_2 i21
+    alias cpu_tempreg_3 i22
+    alias mem_value_0 i23
+    alias mem_value_1 i24
+    alias mem_value_2 i25
+    alias mem_value_3 i26
+    
+    ########
+    # phase 3 - if not JMP then load/store to memory
+    # only if not CLC, PSH, PUL, ROL, ROR.
+    # if JMP, BCC, BNE or BPL then store address to PC and finish instruction.
+    # if STA - then store accumulator to memory and finish instruction.
+    # if PSH then store accumulator to stack and increment SP and finish instruction.
+    # if PUL then prepare mem_address for stack and decrement SP and go to phase 3.
+    # otherwise - then load from memory (set mem_address).
+    
+    cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit \
+        :4:cpu_instr_0
+    
+    if_psh = and_4 cpu_instr_0_n :3:cpu_instr_1
+    if_sta = and_4 cpu_instr_0 :3:cpu_instr_1_n
+    if_sta_psh = or if_sta if_psh
+    
+    if_jump = and_4 cpu_instr_0 cpu_instr_1_n cpu_instr_2 cpu_instr_3
+    if_bcc_bne = and_3 cpu_instr_1 cpu_instr_2_n cpu_instr_3
+    if_bpl = and_4 cpu_instr_1_n cpu_instr_1_n cpu_instr_2 cpu_instr_3
+    cpu_flag_c_n cpu_flag_z_n cpu_flag_n_n ign = not_4bit \
+        :3:cpu_flag_c zero
+    if_bcc_jump = and_3 if_bcc_bne cpu_instr_0_n cpu_flag_c_n
+    if_bne_jump = and_3 if_bcc_bne cpu_instr_0 cpu_flag_z_n
+    if_bpl_jump = and if_bpl cpu_flag_n_n
+    
+    # join it: if_bcc_jump or if_bne_jump or if_bpl_jump or if_jump
+    if_jump = or_4 if_bcc_jump if_bne_jump if_bpl_jump if_jump
+    if_sta_psh_jump = or_4 if_sta_psh if_bcc_bne if_bpl if_jump
+    if_not_sta_psh_jump = nand if_sta_psh_jump if_sta_psh_jump
+    
+    # zero phase - if PSH or STA, otherwise next is 4.
+    # cpu_phase_0_ph3
+    o0 = copy zero
+    # cpu_phase_1_ph3
+    o1 = copy zero
+    # cpu_phase_2_ph3
+    o2 = copy if_not_sta_psh_jump
+    
+    # cpu_pc_X_ph3
+    o3 o4 o5 o6 o7 o8 o9 o10 = ite_8bit if_jump :8:cpu_tempreg_0 \
+        :8:cpu_pc_0
+    
+    # mem_rw_ph3
+    o11 = copy if_sta_psh
+    # mem_value_X_ph3
+    o12 o13 o14 o15 = copy_4bit :4:cpu_acc_0
+    
+    # mem_address_X_ph3
+    o16 o17 o18 o19 = copy_4bit :4:cpu_tempreg_0
+    o20 o21 o22 o23 = copy_4bit :4:mem_value_0
+
+cpu_merge_phase012_3:
+    alias cpu_phase_0 i0
+    alias cpu_phase_1 i1
+    alias cpu_phase_2 i2
+    alias cpu_instr_0 i3
+    alias cpu_instr_1 i4
+    alias cpu_instr_2 i5
+    alias cpu_instr_3 i6
+    alias cpu_tempreg_0 i7
+    alias cpu_tempreg_1 i8
+    alias cpu_tempreg_2 i9
+    alias cpu_tempreg_3 i10
+    alias mem_value_0_ph012 i11
+    alias mem_value_1_ph012 i12
+    alias mem_value_2_ph012 i13
+    alias mem_value_3_ph012 i14
+    alias cpu_phase_0_ph012 i15
+    alias cpu_phase_1_ph012 i16
+    alias cpu_phase_2_ph012 i17
+    alias cpu_instr_0_ph012 i18
+    alias cpu_instr_1_ph012 i19
+    alias cpu_instr_2_ph012 i20
+    alias cpu_instr_3_ph012 i21
+    alias cpu_pc_0_ph012 i22
+    alias cpu_pc_1_ph012 i23
+    alias cpu_pc_2_ph012 i24
+    alias cpu_pc_3_ph012 i25
+    alias cpu_pc_4_ph012 i26
+    alias cpu_pc_5_ph012 i27
+    alias cpu_pc_6_ph012 i28
+    alias cpu_pc_7_ph012 i29
+    alias cpu_tempreg_0_ph012 i30
+    alias cpu_tempreg_1_ph012 i31
+    alias cpu_tempreg_2_ph012 i32
+    alias cpu_tempreg_3_ph012 i33
+    alias mem_rw_ph012 i34
+    alias mem_address_0_ph012 i35
+    alias mem_address_1_ph012 i36
+    alias mem_address_2_ph012 i37
+    alias mem_address_3_ph012 i38
+    alias mem_address_4_ph012 i39
+    alias mem_address_5_ph012 i40
+    alias mem_address_6_ph012 i41
+    alias mem_address_7_ph012 i42
+    alias cpu_phase_0_ph3 i43
+    alias cpu_phase_1_ph3 i44
+    alias cpu_phase_2_ph3 i45
+    alias cpu_pc_0_ph3 i46
+    alias cpu_pc_1_ph3 i47
+    alias cpu_pc_2_ph3 i48
+    alias cpu_pc_3_ph3 i49
+    alias cpu_pc_4_ph3 i50
+    alias cpu_pc_5_ph3 i51
+    alias cpu_pc_6_ph3 i52
+    alias cpu_pc_7_ph3 i53
+    alias mem_rw_ph3 i54
+    alias mem_value_0_ph3 i55
+    alias mem_value_1_ph3 i56
+    alias mem_value_2_ph3 i57
+    alias mem_value_3_ph3 i58
+    alias mem_address_0_ph3 i59
+    alias mem_address_1_ph3 i60
+    alias mem_address_2_ph3 i61
+    alias mem_address_3_ph3 i62
+    alias mem_address_4_ph3 i63
+    alias mem_address_5_ph3 i64
+    alias mem_address_6_ph3 i65
+    alias mem_address_7_ph3 i66
+    
+    cpu_phase_2_n = nand cpu_phase_2 cpu_phase_2
+    if_phase_3 = and_3 cpu_phase_0 cpu_phase_1 cpu_phase_2_n
+    # merge phase0, phase1, phase2 and phase3
+    # cpu_phase_X_ph0123
+    # o0 = ite if_phase_3 cpu_phase_0_ph3 cpu_phase_0_ph012
+    # o1 = ite if_phase_3 cpu_phase_1_ph3 cpu_phase_1_ph012
+    # o2 = ite if_phase_3 cpu_phase_2_ph3 cpu_phase_2_ph012
+    ign o0 o1 o2 = ite_4bit if_phase_3 :4:mem_address_7_ph012 :4:mem_value_3_ph012
+    # cpu_instr_X_ph0123
+    o3 o4 o5 o6 = ite_4bit if_phase_3 :4:cpu_instr_0 \
+        :4:cpu_instr_0_ph012
+    # cpu_pc_X_ph0123
+    o7 o8 o9 o10 o11 o12 o13 o14 = ite_8bit if_phase_3 :8:cpu_pc_0_ph3 \
+        :8:cpu_pc_0_ph012
+    # cpu_tempreg_X_ph0123
+    o15 o16 o17 o18 = ite_4bit if_phase_3 \
+        :4:cpu_tempreg_0 \
+        :4:cpu_tempreg_0_ph012
+    # mem_rw_ph0123
+    o19 = ite if_phase_3 mem_rw_ph3 mem_rw_ph012
+    
+    # mem_value_X_ph0123
+    o20 o21 o22 o23 = ite_4bit if_phase_3 \
+        :4:mem_value_0_ph3 \
+        :4:mem_value_0_ph012
+    
+    # mem_address_X_ph0123
+    o24 o25 o26 o27 o28 o29 o30 o31 = ite_8bit \
+        if_phase_3 :8:mem_address_0_ph3 \
+        :8:mem_address_0_ph012
+
+cpu_phase4:
+    alias cpu_instr_0 i0
+    alias cpu_instr_1 i1
+    alias cpu_instr_2 i2
+    alias cpu_instr_3 i3
+    alias cpu_acc_0 i4
+    alias cpu_acc_1 i5
+    alias cpu_acc_2 i6
+    alias cpu_acc_3 i7
+    alias cpu_flag_c i8
+    alias cpu_flag_z i9
+    alias cpu_flag_n i10
+    alias mem_value_0 i11
+    alias mem_value_1 i12
+    alias mem_value_2 i13
+    alias mem_value_3 i14
+    
+    # 0 - LDA - load into accumulator
+    # F - PUL - pull, if SP=0 then STOP
+    
+    alias cpu_acc_0_t0 mem_value_0
+    alias cpu_acc_1_t0 mem_value_1
+    alias cpu_acc_2_t0 mem_value_2
+    alias cpu_acc_3_t0 mem_value_3
+    alias cpu_flag_c_t0 cpu_flag_c
+    
+    cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n ign = not_4bit \
+        cpu_instr_1 cpu_instr_2 cpu_instr_3 zero
+    
+    if_lda = and_3 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
+    if_pul = and_3 :3:cpu_instr_1
+    if_lda_pul = or if_lda if_pul
+    
+    # 1 - STA - store accumulator - done in phase 3
+    
+    # 2 - ADC - add to accumulator (A + M + C)
+    
+    cpu_acc_0_t1 cpu_acc_1_t1 cpu_acc_2_t1 cpu_acc_3_t1 cpu_flag_c_t1 = carry_adder_4bit \
+        cpu_flag_c :4:cpu_acc_0 \
+        :4:mem_value_0
+    
+    # 3 - SBC - subtract from accumulator (A - NOT(M) +C)
+    
+    cpu_acc_0_t2 cpu_acc_1_t2 cpu_acc_2_t2 cpu_acc_3_t2 cpu_flag_c_t2 = carry_suber_4bit \
+        cpu_flag_c :4:cpu_acc_0 \
+        :4:mem_value_0
+    
+    cpu_acc_0_t12 cpu_acc_1_t12 cpu_acc_2_t12 cpu_acc_3_t12 = ite_4bit cpu_instr_0 \
+        :4:cpu_acc_0_t2 \
+        :4:cpu_acc_0_t1
+    cpu_flag_c_t12 = ite cpu_instr_0 cpu_flag_c_t2 cpu_flag_c_t1
+    
+    cpu_acc_0_t012 cpu_acc_1_t012 cpu_acc_2_t012 cpu_acc_3_t012 = ite_4bit if_lda_pul \
+        :4:cpu_acc_0_t0 \
+        :4:cpu_acc_0_t12
+    cpu_flag_c_t012 = ite if_lda_pul cpu_flag_c_t0 cpu_flag_c_t12
+    
+    # 4 - AND - perform bitwise AND on accumulator
+    
+    cpu_acc_0_t3 cpu_acc_1_t3 cpu_acc_2_t3 cpu_acc_3_t3 = and_4bit \
+        :4:cpu_acc_0 \
+        :4:mem_value_0
+    
+    # 5 - OR - perform bitwise OR on accumulator
+    
+    cpu_acc_0_t4 cpu_acc_1_t4 cpu_acc_2_t4 cpu_acc_3_t4 = or_4bit \
+        :4:cpu_acc_0 \
+        :4:mem_value_0
+    
+    cpu_acc_0_t34 cpu_acc_1_t34 cpu_acc_2_t34 cpu_acc_3_t34 = ite_4bit cpu_instr_0 \
+        :4:cpu_acc_0_t4 \
+        :4:cpu_acc_0_t3
+    
+    alias cpu_flag_c_34 cpu_flag_c
+    
+    # 6 - XOR - perform bitwise XOR on accumulator
+    
+    cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 = xor_4bit \
+        :4:cpu_acc_0 \
+        :4:mem_value_0
+    
+    # 7 - CLC
+    
+    cpu_acc_0_t345 cpu_acc_1_t345 cpu_acc_2_t345 cpu_acc_3_t345 = ite_4bit cpu_instr_1 \
+        :4:cpu_acc_0_t5 \
+        :4:cpu_acc_0_t34
+    cpu_flag_c_345 = ite cpu_instr_1 cpu_flag_c cpu_flag_c_34
+    
+    cpu_acc_0_t012345 cpu_acc_1_t012345 cpu_acc_2_t012345 cpu_acc_3_t012345 = ite_4bit \
+        cpu_instr_2 :4:cpu_acc_0_t345 \
+        :4:cpu_acc_0_t012
+    cpu_flag_c_t012345 = ite cpu_instr_2 cpu_flag_c_345 cpu_flag_c_t012
+    
+    # 8 - ROL - rotate left 1 bit including C.
+    
+    alias cpu_acc_0_t6 cpu_flag_c
+    alias cpu_acc_1_t6 cpu_acc_0
+    alias cpu_acc_2_t6 cpu_acc_1
+    alias cpu_acc_3_t6 cpu_acc_2
+    alias cpu_flag_c_t6 cpu_acc_3
+    
+    # 9 - ROR - rotate right 1 bit including C.
+    
+    alias cpu_flag_c_t7 cpu_acc_0
+    alias cpu_acc_0_t7 cpu_acc_1
+    alias cpu_acc_1_t7 cpu_acc_2
+    alias cpu_acc_2_t7 cpu_acc_3
+    alias cpu_acc_3_t7 cpu_flag_c
+    
+    zero = copy zero
+    
+    cpu_acc_0_t67 cpu_acc_1_t67 cpu_acc_2_t67 cpu_acc_3_t67 = ite_4bit cpu_instr_0 \
+        :3:cpu_acc_0_t7 cpu_acc_3_t7 \
+        cpu_acc_0_t6 :3:cpu_acc_1_t6
+    cpu_flag_c_t67 = ite cpu_instr_0 cpu_flag_c_t7 cpu_flag_c_t6
+    
+    cpu_acc_0_t678 cpu_acc_1_t678 cpu_acc_2_t678 cpu_acc_3_t678 = ite_4bit if_pul \
+        :4:cpu_acc_0_t0 \
+        :4:cpu_acc_0_t67
+    cpu_flag_c_t678 = ite if_pul cpu_flag_c cpu_flag_c_t67
+    
+    # SPC - special command
+    
+    # A - BCC - branch if C=0 - done in phase 3
+    # B - BNE - branch if Z=0 - done in phase 3
+    # C - BPL - branch if N=0 - done in phase 3
+    # D - JMP - done in phase 3
+    # E - PSH - push - done in phase 3
+    
+    if_clc_sec = and_3 :3:cpu_instr_0
+    
+    cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all = ite_4bit cpu_instr_3 \
+        :4:cpu_acc_0_t678 \
+        :4:cpu_acc_0_t012345
+    cpu_flag_c_t_all = ite cpu_instr_3 cpu_flag_c_t678 cpu_flag_c_t012345
+    
+    if_not_zero = or_4 :4:cpu_acc_0_t_all
+    if_zero = nand if_not_zero if_not_zero
+    
+    # cpu_acc_0_t_all cpu_acc_1_t_all cpu_acc_2_t_all cpu_acc_3_t_all
+    o0 o1 o2 o3 = copy_4bit :4:cpu_acc_0_t_all
+    o4 = ite if_clc_sec cpu_instr_3 cpu_flag_c_t_all
+    
+    # cpu_flag_z_t_all
+    o5 = ite if_clc_sec cpu_flag_z if_zero
+    # cpu_flag_n_t_all
+    o6 = ite if_clc_sec cpu_flag_n cpu_acc_3_t_all
+    # create
+    o7 = or zero zero
+    # stop
+    o8 = or zero zero
+
+cpu_merge_phase0123_4:
+    alias cpu_phase_0_ph0123 i0
+    alias cpu_phase_1_ph0123 i1
+    alias cpu_phase_2_ph0123 i2
+    alias cpu_instr_0_ph0123 i3
+    alias cpu_instr_1_ph0123 i4
+    alias cpu_instr_2_ph0123 i5
+    alias cpu_instr_3_ph0123 i6
+    alias cpu_phase_2 i7
+    alias cpu_instr_0 i8
+    alias cpu_instr_1 i9
+    alias cpu_instr_2 i10
+    alias cpu_instr_3 i11
+    alias cpu_pc_0 i12
+    alias cpu_pc_1 i13
+    alias cpu_pc_2 i14
+    alias cpu_pc_3 i15
+    alias cpu_pc_4 i16
+    alias cpu_pc_5 i17
+    alias cpu_pc_6 i18
+    alias cpu_pc_7 i19
+    alias cpu_acc_0_ph0123 i20
+    alias cpu_acc_1_ph0123 i21
+    alias cpu_acc_2_ph0123 i22
+    alias cpu_acc_3_ph0123 i23
+    alias cpu_flag_c_ph0123 i24
+    alias cpu_flag_z_ph0123 i25
+    alias cpu_flag_n_ph0123 i26
+    alias cpu_tempreg_0 i27
+    alias cpu_tempreg_1 i28
+    alias cpu_tempreg_2 i29
+    alias cpu_tempreg_3 i30
+    alias cpu_pc_0_ph0123 i31
+    alias cpu_pc_1_ph0123 i32
+    alias cpu_pc_2_ph0123 i33
+    alias cpu_pc_3_ph0123 i34
+    alias cpu_pc_4_ph0123 i35
+    alias cpu_pc_5_ph0123 i36
+    alias cpu_pc_6_ph0123 i37
+    alias cpu_pc_7_ph0123 i38
+    alias cpu_acc_0_t_all i39
+    alias cpu_acc_1_t_all i40
+    alias cpu_acc_2_t_all i41
+    alias cpu_acc_3_t_all i42
+    alias cpu_flag_c_t_all i43
+    alias cpu_flag_z_t_all i44
+    alias cpu_flag_n_t_all i45
+    alias if_create_ph0123 i46
+    alias if_stop_ph0123 i47
+    alias cpu_tempreg_0_ph0123 i48
+    alias cpu_tempreg_1_ph0123 i49
+    alias cpu_tempreg_2_ph0123 i50
+    alias cpu_tempreg_3_ph0123 i51
+    alias mem_rw_ph0123 i52
+    alias mem_value_0_ph0123 i53
+    alias mem_value_1_ph0123 i54
+    alias mem_value_2_ph0123 i55
+    alias mem_value_3_ph0123 i56
+    alias mem_address_0_ph0123 i57
+    alias mem_address_1_ph0123 i58
+    alias mem_address_2_ph0123 i59
+    alias mem_address_3_ph0123 i60
+    alias mem_address_4_ph0123 i61
+    alias mem_address_5_ph0123 i62
+    alias mem_address_6_ph0123 i63
+    alias mem_address_7_ph0123 i64
+    
+    alias if_phase4 cpu_phase_2
+    
+    # cpu_phase_X
+    o0 = ite if_phase4 zero cpu_phase_0_ph0123
+    o1 = ite if_phase4 zero cpu_phase_1_ph0123
+    o2 = ite if_phase4 zero cpu_phase_2_ph0123
+    # cpu_instr_X
+    o3 o4 o5 o6 = ite_4bit if_phase4 :4:cpu_instr_0 \
+        :4:cpu_instr_0_ph0123
+    # cpu_pc_X
+    o7 o8 o9 o10 o11 o12 o13 o14 = ite_8bit if_phase4 :8:cpu_pc_0 \
+        :8:cpu_pc_0_ph0123
+    # cpu_acc_X
+    o15 o16 o17 o18 = ite_4bit if_phase4 :4:cpu_acc_0_t_all \
+        :4:cpu_acc_0_ph0123
+    # cpu_flag_X
+    o19 = ite if_phase4 cpu_flag_c_t_all cpu_flag_c_ph0123
+    o20 = ite if_phase4 cpu_flag_z_t_all cpu_flag_z_ph0123
+    o21 = ite if_phase4 cpu_flag_n_t_all cpu_flag_n_ph0123
+    o22 o23 o24 o25 = ite_4bit if_phase4 :4:cpu_tempreg_0 \
+        :4:cpu_tempreg_0_ph0123
+    # mem_value_X
+    o26 o27 o28 o29 = ite_4bit if_phase4 .4:zero \
+        :4:mem_value_0_ph0123
+    # mem_rw
+    o30 = ite if_phase4 zero mem_rw_ph0123
+    # mem_address
+    o31 o32 o33 o34 o35 o36 o37 o38 = ite_8bit if_phase4 .8:zero \
+        :8:mem_address_0_ph0123
+    o39 = ite if_phase4 zero if_create_ph0123
+    o40 = ite if_phase4 zero if_stop_ph0123
