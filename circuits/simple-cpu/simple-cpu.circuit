@@ -299,8 +299,7 @@ cpu_phase012:
     
     ########
     # phase 1 - fetch address nibble 0 only if not CLC, PSH, PUL, ROL, ROR
-    # if CLC, ROL, ROR then go to phase 3.
-    # if PSH, PUL then go to phase 2.
+    # if CLC, PSH, PUL, ROL, ROR then go to phase 3.
     
     # it doesn't matter if CLC, PSH, PUL, ROL, ROR
     alias mem_address_0_ph1 mem_address_0_ph0
