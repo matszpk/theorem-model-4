@@ -45,3 +45,64 @@ gen_testsuite("carry_adder_4bit", "carry_adder_4bit", 9, 5, range(0, 1<<9), carr
 gen_testsuite("carry_suber_4bit", "carry_suber_4bit", 9, 5, range(0, 1<<9), carry_suber_4bit)
 gen_testsuite("dec_4bit", "dec_4bit", 4, 4, range(0, 1<<4), lambda x: (16+x-1)&0xf)
 gen_testsuite("inc_12bit", "inc_12bit", 12, 12, range(0, 1<<12), lambda x: (x+1)&0xfff)
+
+instr_lda=0
+instr_sta=1
+instr_adc=2
+instr_sbc=3
+instr_and=4
+instr_or=5
+instr_xor=6
+instr_clc=7
+instr_rol=8
+instr_ror=9
+instr_bcc=10
+instr_bne=11
+instr_bvc=12
+instr_bpl=13
+instr_spc=14
+instr_sec=15
+
+def flag_c(flags):
+    return flags&1 != 0
+def flag_z(flags):
+    return flags&2 != 0
+def flag_v(flags):
+    return flags&4 != 0
+def flag_n(flags):
+    return flags&8 != 0
+def set_flag_c(flags,c):
+    return (flags&~1)|(1 if c else 0)
+def set_flag_z(flags,z):
+    return (flags&~2)|(2 if z else 0)
+def set_flag_v(flags,n):
+    return (flags&~4)|(4 if n else 0)
+def set_flag_n(flags,n):
+    return (flags&~8)|(8 if n else 0)
+
+cpu_phase01_input_str = (('phase0',1),('pc',12),('mem_value',8))
+cpu_phase01_output_str = (('phase',2),('instr',4),('pc',12),('tmp',4),('mem_address',12))
+
+def cpu_phase01(data):
+    v = bin_decomp(cpu_phase01_input_str, data)
+    phase0, pc, mem_value = v['phase0'], v['pc'], v['mem_value']
+    next_pc = (pc+1) & 0xfff
+    outv=dict()
+    if phase0==0:
+        outv = {'phase':1, 'instr':mem_value&0xf, 'pc':next_pc, 'tmp':(mem_value>>4)&0xf,
+                'mem_address':pc}
+    else:
+        instr = mem_value&0xf
+        single_byte = instr==instr_clc or instr==instr_sec or \
+                instr==instr_rol or instr==instr_ror
+        outv = {'phase':2, 'instr':mem_value&0xf,
+                'pc':pc if single_byte else next_pc, 'tmp':(mem_value>>4)&0xf,
+                'mem_address':pc}
+    return bin_comp(cpu_phase01_output_str, outv)
+
+def cpu_phase01_1_input_test_func(case):
+    return bin_comp(cpu_phase01_input_str,
+        {'phase0':case&1,'pc':((case>>1)&0xff)*5,'mem_value':(case>>9)&0x7f})
+
+gen_testsuite("cpu_phase01_1", "cpu_phase01", 21, 34, range(0, 1<<16), cpu_phase01,
+                cpu_phase01_1_input_test_func)

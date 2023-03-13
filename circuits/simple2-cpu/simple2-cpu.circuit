@@ -307,16 +307,16 @@ cpu_phase01:
         not_4bit :4:cpu_instr_0_ph1
     if_rol_ror = and_3 cpu_instr_1_ph1_n cpu_instr_2_ph1_n cpu_instr_3_ph1
     if_clc_sec = and_3 :3:cpu_instr_0_ph1
-    if_not_single_byte_instr = nand if_rol_ror if_clc_sec
+    if_single_byte_instr = or if_rol_ror if_clc_sec
     
     alias cpu_phase_0_ph1 zero
     alias cpu_phase_1_ph1 one
     
     cpu_pc_0_ph1 cpu_pc_1_ph1 cpu_pc_2_ph1 cpu_pc_3_ph1 \
-    cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 = ite_8bit if_not_single_byte_instr \
-        :8:cpu_pc_0_ph0 :8:cpu_pc_0
-    cpu_pc_8_ph1 cpu_pc_9_ph1 cpu_pc_10_ph1 cpu_pc_11_ph1 = ite_4bit if_not_single_byte_instr \
-        :4:cpu_pc_8_ph0 :4:cpu_pc_8
+    cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 = ite_8bit if_single_byte_instr \
+        :8:cpu_pc_0 :8:cpu_pc_0_ph0
+    cpu_pc_8_ph1 cpu_pc_9_ph1 cpu_pc_10_ph1 cpu_pc_11_ph1 = ite_4bit if_single_byte_instr \
+        :4:cpu_pc_8 :4:cpu_pc_8_ph0
     
     alias mem_address_0_ph1 cpu_pc_0
     alias mem_address_1_ph1 cpu_pc_1
