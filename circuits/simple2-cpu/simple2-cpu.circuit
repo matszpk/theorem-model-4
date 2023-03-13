@@ -446,7 +446,7 @@ cpu_phase23:
     if_bvc = and_3 cpu_instr_0_n cpu_instr_0 cpu_flag_v_n
     if_bpl = and_3 cpu_instr_0 cpu_instr_0 cpu_flag_n_n
     if_do_branch_x = or_4 if_bcc if_bne if_bvc if_bpl
-    if_do_branch = nand if_do_branch_x if_do_branch_x
+    if_do_branch = and if_branch if_do_branch_x
     
     # if branch then skip to phase 3
     alias cpu_phase_ph2 if_branch_n
