@@ -223,6 +223,12 @@ main:
     cpu_phase_1 = copy cpu_phase_1
     zero = copy zero
     
+    cpu_phase_0_ph01 = copy cpu_phase_0_ph01
+    cpu_phase_1_ph01 = copy cpu_phase_1_ph01
+    cpu_pc_0_ph01 cpu_pc_1_ph01 cpu_pc_2_ph01 cpu_pc_3_ph01 \
+    cpu_pc_4_ph01 cpu_pc_5_ph01 cpu_pc_6_ph01 cpu_pc_7_ph01 = copy_8bit :8:cpu_pc_0_ph01
+    cpu_pc_8_ph01 cpu_pc_9_ph01 cpu_pc_10_ph01 cpu_pc_11_ph01 = copy_4bit :4:cpu_pc_8_ph01
+    
     # merge phase2 and phase3
     cpu_phase_0_ph23 = ite cpu_phase_0 cpu_phase_0_ph3 cpu_phase_0_ph2
     cpu_phase_1_ph23 = ite cpu_phase_0 cpu_phase_1_ph3 cpu_phase_1_ph2
@@ -250,6 +256,15 @@ main:
     
     zero = copy zero
     cpu_phase_1 = copy cpu_phase_1
+    
+    cpu_phase_0 cpu_phase_1 cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
+    cpu_tmp_0 cpu_tmp_1 cpu_tmp_2 cpu_tmp_3 \
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 \
+    cpu_flag_c cpu_flag_z cpu_flag_v cpu_flag_n \
+    cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 \
+    cpu_pc_8 cpu_pc_9 cpu_pc_10 cpu_pc_11 \
+    mem_value_0 mem_value_1 mem_value_2 mem_value_3 \
+    mem_value_4 mem_value_5 mem_value_6 mem_value_7 = copy_42bit :42:cpu_phase_0
     
     # merge all phases
     # cpu_phase_0, cpu_phase_1
