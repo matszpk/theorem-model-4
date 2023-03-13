@@ -499,7 +499,6 @@ cpu_exec:
     alias cpu_acc_7_t0 mem_value_7
     
     # 1 - STA
-    alias mem_rw_t1 one
     
     # 2 - ADC
     cpu_acc_0_t2 cpu_acc_1_t2 cpu_acc_2_t2 cpu_acc_3_t2 carry_0_t2 = carry_adder_4bit \
@@ -513,6 +512,43 @@ cpu_exec:
     cpu_acc_4_t3 cpu_acc_5_t3 cpu_acc_6_t3 cpu_acc_7_t3 cpu_flag_c_t3 = carry_suber_4bit \
         carry_0_t3 :4:cpu_acc_4 :4:mem_value_4
 
+    # 4 - AND
+    cpu_acc_0_t4 cpu_acc_1_t4 cpu_acc_2_t4 cpu_acc_3_t4 = and_4bit :4:cpu_acc_0 :4:mem_value_0
+    cpu_acc_4_t4 cpu_acc_5_t4 cpu_acc_6_t4 cpu_acc_7_t4 = and_4bit :4:cpu_acc_4 :4:mem_value_4
+    
+    # 5 - OR
+    cpu_acc_0_t5 cpu_acc_1_t5 cpu_acc_2_t5 cpu_acc_3_t5 = or_4bit :4:cpu_acc_0 :4:mem_value_0
+    cpu_acc_4_t5 cpu_acc_5_t5 cpu_acc_6_t5 cpu_acc_7_t5 = or_4bit :4:cpu_acc_4 :4:mem_value_4
+    
+    # 6 - XOR
+    cpu_acc_0_t6 cpu_acc_1_t6 cpu_acc_2_t6 cpu_acc_3_t6 = xor_4bit :4:cpu_acc_0 :4:mem_value_0
+    cpu_acc_4_t6 cpu_acc_5_t6 cpu_acc_6_t6 cpu_acc_7_t6 = xor_4bit :4:cpu_acc_4 :4:mem_value_4
+    
+    # 7 - CLC
+    alias cpu_flag_c_t7 zero
+    
+    # 8 - ROL
+    alias cpu_acc_0_t8 cpu_flag_c
+    alias cpu_acc_1_t8 cpu_acc_0
+    alias cpu_acc_2_t8 cpu_acc_1
+    alias cpu_acc_3_t8 cpu_acc_2
+    alias cpu_acc_4_t8 cpu_acc_3
+    alias cpu_acc_5_t8 cpu_acc_4
+    alias cpu_acc_6_t8 cpu_acc_5
+    alias cpu_acc_7_t8 cpu_acc_6
+    alias cpu_flag_c_t8 cpu_acc_7
+    
+    # 9 - ROR
+    alias cpu_flag_c_t9 cpu_acc_0
+    alias cpu_acc_0_t9 cpu_acc_1
+    alias cpu_acc_1_t9 cpu_acc_2
+    alias cpu_acc_2_t9 cpu_acc_3
+    alias cpu_acc_3_t9 cpu_acc_4
+    alias cpu_acc_4_t9 cpu_acc_5
+    alias cpu_acc_5_t9 cpu_acc_6
+    alias cpu_acc_6_t9 cpu_acc_7
+    alias cpu_acc_7_t9 cpu_flag_c
+    
     # cpu_acc_X
     o0 o1 o2 o3 o4 o5 o6 o7 = copy_8bit .8:zero
     # cpu_flag_X
