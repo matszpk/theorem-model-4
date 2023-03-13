@@ -191,8 +191,6 @@ main:
     # new state: cpu_phase_X, cpu_acc_X, cpu_flag_X, cpu_pc_X
     # new values: mem_value, mem_rw, mem_address, create, stop
     
-    zero = copy zero
-    
     alias cpu_phase_0_ph3 zero
     alias cpu_phase_1_ph3 zero
     
