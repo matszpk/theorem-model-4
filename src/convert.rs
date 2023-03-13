@@ -483,6 +483,11 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                                 var_map.insert(output.clone(), var_pos.try_into().unwrap())
                             {
                                 // if replaced by new
+                                for var_name in &vars[v as usize] {
+                                    if var_name != output {
+                                        var_map.remove(var_name);
+                                    }
+                                }
                                 vars[v as usize].clear();
                             }
 
@@ -495,12 +500,7 @@ impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
                             let var_pos = *var_pos as usize;
                             vars[var_pos].push(new_name.clone());
 
-                            if let Some(v) =
-                                var_map.insert(new_name.clone(), var_pos.try_into().unwrap())
-                            {
-                                // if replaced by new
-                                vars[v as usize].clear();
-                            }
+                            var_map.insert(new_name.clone(), var_pos.try_into().unwrap());
                         } else {
                             return Err(ConvertError::UnknownVariableInAlias(
                                 name.clone(),

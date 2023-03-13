@@ -1,0 +1,269 @@
+# main circuit for simulating 6502
+main:
+    # machine state
+    alias cpu_acc_0 i0
+    alias cpu_acc_1 i1
+    alias cpu_acc_2 i2
+    alias cpu_acc_3 i3
+    alias cpu_acc_4 i4
+    alias cpu_acc_5 i5
+    alias cpu_acc_6 i6
+    alias cpu_acc_7 i7
+    alias cpu_flag_c i8
+    alias cpu_flag_v i9
+    alias cpu_flag_z i10
+    alias cpu_flag_n i11
+    alias cpu_pcs_0 i12
+    alias cpu_pcs_1 i13
+    alias cpu_pcs_2 i14
+    alias cpu_pcs_3 i15
+    alias cpu_pcs_4 i16
+    alias cpu_pcs_5 i17
+    alias cpu_pcs_6 i18
+    alias cpu_pcs_7 i19
+    alias cpu_pcc_0 i20
+    alias cpu_pcc_1 i21
+    alias cpu_pcc_2 i22
+    alias cpu_pcc_3 i23
+    alias cpu_pcc_4 i24
+    alias cpu_pcc_5 i25
+    alias cpu_pcc_6 i26
+    alias cpu_pcc_7 i27
+    alias cpu_phase_0 i28
+    alias cpu_phase_1 i29
+    alias cpu_phase_2 i30
+    # memory value
+    alias memval_0 i31
+    alias memval_1 i32
+    alias memval_2 i33
+    alias memval_3 i34
+    alias memval_4 i35
+    alias memval_5 i36
+    alias memval_6 i37
+    alias memval_7 i38
+    
+    # phase0 - initialization - create machine
+    # phase1 - fetch subroutine code
+    # phase2 - fetch microcode instruction
+    # phase3 - load memory byte
+    # phase3_1 - execute instruction
+    #    phase1 -> phase2 -> phase3 -> phase4 -\-end-\
+    #       ^    \-<---------------------------/     |
+    #       \----------------------------------------/
+    
+    one = nand zero zero
+    
+    # phase0 - setup - 6502 machine
+    # cpu_acc_0_ph0
+    cpu_acc_0_n = nand cpu_acc_0 cpu_acc_0
+    alias cpu_acc_0_ph0 cpu_acc_0_n
+    alias cpu_acc_1_ph0 cpu_acc_1
+    alias cpu_acc_2_ph0 cpu_acc_2
+    alias cpu_acc_3_ph0 cpu_acc_3
+    alias cpu_acc_4_ph0 cpu_acc_4
+    alias cpu_acc_5_ph0 cpu_acc_5
+    alias cpu_acc_6_ph0 cpu_acc_6
+    alias cpu_acc_7_ph0 cpu_acc_7
+    alias cpu_flag_c_ph0 cpu_flag_c
+    alias cpu_flag_v_ph0 cpu_flag_v
+    alias cpu_flag_z_ph0 cpu_flag_z
+    alias cpu_flag_n_ph0 cpu_flag_n
+    alias cpu_pcs_0_ph0 cpu_pcs_0
+    alias cpu_pcs_1_ph0 cpu_pcs_1
+    alias cpu_pcs_2_ph0 cpu_pcs_2
+    alias cpu_pcs_3_ph0 cpu_pcs_3
+    alias cpu_pcs_4_ph0 cpu_pcs_4
+    alias cpu_pcs_5_ph0 cpu_pcs_5
+    alias cpu_pcs_6_ph0 cpu_pcs_6
+    alias cpu_pcs_7_ph0 cpu_pcs_7
+    alias cpu_pcc_0_ph0 cpu_pcc_0
+    alias cpu_pcc_1_ph0 cpu_pcc_1
+    alias cpu_pcc_2_ph0 cpu_pcc_2
+    alias cpu_pcc_3_ph0 cpu_pcc_3
+    alias cpu_pcc_4_ph0 cpu_pcc_4
+    alias cpu_pcc_5_ph0 cpu_pcc_5
+    alias cpu_pcc_6_ph0 cpu_pcc_6
+    alias cpu_pcc_7_ph0 cpu_pcc_7
+    alias mem_rw_ph0 one
+    # new_addr_len - 16bit (ph0_0)
+    # new_cell_len_bits - 3bit - 16bit len (ph0_1)
+    alias memval_0_ph0 cpu_acc_0
+    alias memval_1_ph0 cpu_acc_0
+    alias memval_2_ph0 zero
+    alias memval_3_ph0 cpu_acc_0_n
+    alias memval_4_ph0 zero
+    alias memval_5_ph0 zero
+    alias memval_6_ph0 zero
+    alias memval_7_ph0 zero
+    # mem_address - 0xfe (ph0_0), 0xff (ph0_1)
+    alias memaddr_0_ph0 cpu_acc_0
+    alias memaddr_1_ph0 one
+    alias memaddr_2_ph0 one
+    alias memaddr_3_ph0 one
+    alias memaddr_4_ph0 one
+    alias memaddr_5_ph0 one
+    alias memaddr_6_ph0 one
+    alias memaddr_7_ph0 one
+    # phase1 - if ph0_1
+    alias cpu_phase_0_ph0 cpu_acc_0
+    alias cpu_phase_1_ph0 zero
+    alias cpu_phase_2_ph0 zero
+    # create - if ph0_1
+    alias create_ph_0 cpu_acc_0
+    
+    # subroutine code:
+    # 00-0xf8 - routine address
+    # 
+    # 0xf8 - call if C is zero
+    # 0xf9 - call if C is one
+    # 0xfa - call if V is zero
+    # 0xfb - call if V is one
+    # 0xfc - call if Z is zero
+    # 0xfd - call if Z is one
+    # 0xfe - call if N is zero
+    # 0xff - call if N is one
+    # phase1 - fetch subroutine
+
+    alias cpu_acc_0_ph1 cpu_acc_0
+    alias cpu_acc_1_ph1 cpu_acc_1
+    alias cpu_acc_2_ph1 cpu_acc_2
+    alias cpu_acc_3_ph1 cpu_acc_3
+    alias cpu_acc_4_ph1 cpu_acc_4
+    alias cpu_acc_5_ph1 cpu_acc_5
+    alias cpu_acc_6_ph1 cpu_acc_6
+    alias cpu_acc_7_ph1 cpu_acc_7
+    alias cpu_flag_c_ph1 cpu_flag_c
+    alias cpu_flag_v_ph1 cpu_flag_v
+    alias cpu_flag_z_ph1 cpu_flag_z
+    alias cpu_flag_n_ph1 cpu_flag_n
+    cpu_pcs_0_ph1 cpu_pcs_1_ph1 cpu_pcs_2_ph1 cpu_pcs_3_ph1
+        cpu_pcs_4_ph1 cpu_pcs_5_ph1 cpu_pcs_6_ph1 cpu_pcs_7_ph1 = inc_8bit :8:cpu_pcs_0
+    
+    alias mem_rw_ph1 zero
+    alias memaddr_0_ph1 cpu_pcs_0
+    alias memaddr_1_ph1 cpu_pcs_1
+    alias memaddr_2_ph1 cpu_pcs_2
+    alias memaddr_3_ph1 cpu_pcs_3
+    alias memaddr_4_ph1 cpu_pcs_4
+    alias memaddr_5_ph1 cpu_pcs_5
+    alias memaddr_6_ph1 cpu_pcs_6
+    alias memaddr_7_ph1 cpu_pcs_7
+    
+    
+copy:
+    empty 1
+xor:
+    n0 = nand i0 i0
+    n1 = nand i1 i1
+    t0 = nand i0 n1
+    t1 = nand n0 i1
+    o0 = nand t0 t1
+xor_4bit:
+    o0 = xor i0 i4
+    o1 = xor i1 i5
+    o2 = xor i2 i6
+    o3 = xor i3 i7
+and:
+    t = nand i0 i1
+    o0 = nand t t
+and_4bit:
+    o0 = and i0 i4
+    o1 = and i1 i5
+    o2 = and i2 i6
+    o3 = and i3 i7
+or:
+    t0 = nand i0 i0
+    t1 = nand i1 i1
+    o0 = nand t0 t1
+or_4bit:
+    o0 = or i0 i4
+    o1 = or i1 i5
+    o2 = or i2 i6
+    o3 = or i3 i7
+and_3:
+    t0 = and i0 i1
+    o0 = and t0 i2
+and_4:
+    t0 = and i0 i1
+    t1 = and i2 i3
+    o0 = and t0 t1
+or_4:
+    t0 = or i0 i1
+    t1 = or i2 i3
+    o0 = or t0 t1
+# if i0 then i1 else i2
+ite:
+    n0 = nand i0 i0
+    t0 = nand i0 i1
+    t1 = nand n0 i2
+    o0 = nand t0 t1
+ite_4bit:
+    o0 = ite i0 i1 i5
+    o1 = ite i0 i2 i6
+    o2 = ite i0 i3 i7
+    o3 = ite i0 i4 i8
+ite_8bit:
+    o0 o1 o2 o3 = ite_4bit i0 :4:i1 :4:i9
+    o4 o5 o6 o7 = ite_4bit i0 :4:i5 :4:i13
+copy_4bit:
+    empty 4
+copy_8bit:
+    empty 8
+copy_34bit:
+    empty 34
+not_4bit:
+    o0 = nand i0 i0
+    o1 = nand i1 i1
+    o2 = nand i2 i2
+    o3 = nand i3 i3
+full_adder:
+    s0 = xor i0 i1
+    a0 = and i0 i1
+    a1 = and s0 i2
+    o0 = xor s0 i2
+    o1 = or a0 a1
+half_adder:
+    o0 = xor i0 i1
+    o1 = and i0 i1
+half_suber:
+    x = xor i0 i1
+    o0 = nand x x
+    o1 = or i0 i1
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_adder_4bit:
+    s0 c0 = full_adder i1 i5 i0
+    s1 c1 = full_adder i2 i6 c0
+    s2 c2 = full_adder i3 i7 c1
+    s3 c3 = full_adder i4 i8 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+# 4-bit subtractor with carry
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_suber_4bit:
+    n0 n1 n2 n3 = not_4bit i5 i6 i7 i8
+    s0 c0 = full_adder i1 n0 i0
+    s1 c1 = full_adder i2 n1 c0
+    s2 c2 = full_adder i3 n2 c1
+    s3 c3 = full_adder i4 n3 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+carry_inc_4bit:
+    s0 c0 = half_adder i1 i0
+    s1 c1 = half_adder i2 c0
+    s2 c2 = half_adder i3 c1
+    s3 c3 = half_adder i4 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+dec_4bit:
+    d0 c0 = half_suber i0 zero
+    d1 c1 = half_suber i1 c0
+    d2 c2 = half_suber i2 c1
+    d3 c3 = half_suber i3 c2
+    o0 o1 o2 o3 = copy_4bit d0 d1 d2 d3
+inc_8bit:
+    one = nand zero zero
+    s0 s1 s2 s3 c0 = carry_inc_4bit one i0 i1 i2 i3
+    s4 s5 s6 s7 ign = carry_inc_4bit c0 i4 i5 i6 i7
+    o0 o1 o2 o3 = copy_4bit :4:s0
+    o4 o5 o6 o7 = copy_4bit :4:s4
+
