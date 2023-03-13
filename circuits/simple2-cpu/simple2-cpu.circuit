@@ -20,7 +20,7 @@
 # B - BNE - branch if Z=0
 # C - BVC - branch if V=0
 # D - BPL - branch if N=0
-# E - SPC: mem: 0bxxxxxxx0 - stop, 0bxxxxxxx1 - create
+# E - SPC: mem: 0bxxxxxxx0 - create, 0bxxxxxxx1 - stop
 # F - SEC
 # phases:
 # 0 - instruction fetch
