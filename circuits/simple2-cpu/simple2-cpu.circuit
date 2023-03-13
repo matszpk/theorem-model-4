@@ -621,7 +621,6 @@ cpu_phase4:
     alias mem_value_3 i17
     
     # 0 - LDA - load into accumulator
-    # F - PUL - pull, if SP=0 then STOP
     
     alias cpu_acc_0_t0 mem_value_0
     alias cpu_acc_1_t0 mem_value_1
@@ -633,8 +632,6 @@ cpu_phase4:
         :4:cpu_instr_0
     
     if_lda = and_3 cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n
-    if_pul = and_3 :3:cpu_instr_1
-    if_lda_pul = or if_lda if_pul
     
     # 1 - STA - store accumulator - done in phase 3
     
@@ -655,10 +652,10 @@ cpu_phase4:
         :4:cpu_acc_0_t1
     cpu_flag_c_t12 = ite cpu_instr_0 cpu_flag_c_t2 cpu_flag_c_t1
     
-    cpu_acc_0_t012 cpu_acc_1_t012 cpu_acc_2_t012 cpu_acc_3_t012 = ite_4bit if_lda_pul \
+    cpu_acc_0_t012 cpu_acc_1_t012 cpu_acc_2_t012 cpu_acc_3_t012 = ite_4bit if_lda \
         :4:cpu_acc_0_t0 \
         :4:cpu_acc_0_t12
-    cpu_flag_c_t012 = ite if_lda_pul cpu_flag_c_t0 cpu_flag_c_t12
+    cpu_flag_c_t012 = ite if_lda cpu_flag_c_t0 cpu_flag_c_t12
     
     # 4 - AND - perform bitwise AND on accumulator
     
@@ -719,10 +716,11 @@ cpu_phase4:
         cpu_acc_0_t6 :3:cpu_acc_1_t6
     cpu_flag_c_t67 = ite cpu_instr_0 cpu_flag_c_t7 cpu_flag_c_t6
     
-    cpu_acc_0_t678 cpu_acc_1_t678 cpu_acc_2_t678 cpu_acc_3_t678 = ite_4bit if_pul \
-        :4:cpu_acc_0_t0 \
-        :4:cpu_acc_0_t67
-    cpu_flag_c_t678 = ite if_pul cpu_flag_c cpu_flag_c_t67
+    alias cpu_acc_0_t678 cpu_acc_0_t67
+    alias cpu_acc_1_t678 cpu_acc_1_t67
+    alias cpu_acc_2_t678 cpu_acc_2_t67
+    alias cpu_acc_3_t678 cpu_acc_3_t67
+    alias cpu_flag_c_t678 cpu_flag_c_t67
     
     # A - BCC - branch if C=0 - done in phase 3
     # B - BNE - branch if Z=0 - done in phase 3
