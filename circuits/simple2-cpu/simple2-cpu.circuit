@@ -419,8 +419,6 @@ cpu_phase23:
     cpu_pc_0_ph3 cpu_pc_1_ph3 cpu_pc_2_ph3 cpu_pc_3_ph3 \
     cpu_pc_4_ph3 cpu_pc_5_ph3 cpu_pc_6_ph3 cpu_pc_7_ph3 \
     cpu_pc_8_ph3 cpu_pc_9_ph3 cpu_pc_10_ph3 cpu_pc_11_ph3 \
-    mem_value_0_ph3 mem_value_1_ph3 mem_value_2_ph3 mem_value_3_ph3 \
-    mem_value_4_ph3 mem_value_5_ph3 mem_value_6_ph3 mem_value_7_ph3 \
     mem_rw_ph3 mem_address_0_ph3 mem_address_1_ph3 mem_address_2_ph3 mem_address_3_ph3 \
     mem_address_4_ph3 mem_address_5_ph3 mem_address_6_ph3 mem_address_7_ph3 \
     mem_address_8_ph3 mem_address_9_ph3 mem_address_10_ph3 mem_address_11_ph3 \
@@ -453,7 +451,7 @@ cpu_phase23:
     # mem_rw
     o26 = ite cpu_phase_0 mem_rw_ph3 mem_rw_ph2
     # mem_value_X
-    o27 o28 o29 o30 o31 o32 o33 o34 = ite_8bit cpu_phase_0 :8:mem_value_0_ph3 :8:cpu_acc_0
+    o27 o28 o29 o30 o31 o32 o33 o34 = copy_8bit :8:cpu_acc_0
     # mem_address_X
     o35 o36 o37 o38 o39 o40 o41 o42 = ite_8bit cpu_phase_0 \
         :8:mem_address_0_ph3 :8:mem_address_0_ph2
@@ -522,12 +520,10 @@ cpu_exec:
     # cpu_pc_X
     o12 o13 o14 o15 o16 o17 o18 o19 = copy_8bit .8:zero
     o20 o21 o22 o23 = copy_4bit .4:zero
-    # mem_value_X
-    o24 o25 o26 o27 o28 o29 o30 o31 = copy_8bit .8:zero
     # mem_rw
-    o32 = copy zero
+    o24 = copy zero
     # mem_address_X
-    o33 o34 o35 o36 o37 o38 o39 o40 = copy_8bit .8:zero
-    o41 o42 o43 o44 = copy_4bit .4:zero
-    o45 = copy zero
-    o46 = copy zero
+    o25 o26 o27 o28 o29 o30 o31 o32 = copy_8bit .8:zero
+    o33 o34 o35 o36 = copy_4bit .4:zero
+    o37 = copy zero
+    o38 = copy zero
