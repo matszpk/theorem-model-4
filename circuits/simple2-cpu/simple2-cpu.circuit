@@ -437,6 +437,29 @@ cpu_phase23:
     mem_address_8_ph2 mem_address_9_ph2 mem_address_10_ph2 mem_address_11_ph2 = \
         copy_4bit :4:cpu_tmp_0
     
+    if_branch_x = xor cpu_instr_1 cpu_instr_2
+    if_branch_n = nand if_branch_x cpu_instr_3
+    if_branch = nand if_branch_n if_branch_n
+    cpu_flag_c_n cpu_flag_z_n cpu_flag_v_n cpu_flag_n_n = not_4bit :4:cpu_flag_c
+    if_bcc = and_3 cpu_instr_0_n cpu_instr_0_n cpu_flag_c_n
+    if_bne = and_3 cpu_instr_0 cpu_instr_0_n cpu_flag_z_n
+    if_bvc = and_3 cpu_instr_0_n cpu_instr_0 cpu_flag_v_n
+    if_bpl = and_3 cpu_instr_0 cpu_instr_0 cpu_flag_n_n
+    if_do_branch_x = or_4 if_bcc if_bne if_bvc if_bpl
+    if_do_branch = nand if_do_branch_x if_do_branch_x
+    
+    # if branch then skip to phase 3
+    alias cpu_phase_ph2 if_branch_n
+    alias cpu_phase_ph2 if_branch_n
+    cpu_pc_0_ph2 cpu_pc_1_ph2 cpu_pc_2_ph2 cpu_pc_3_ph2 \
+    cpu_pc_4_ph2 cpu_pc_5_ph2 cpu_pc_6_ph2 cpu_pc_7_ph2 = ite_8bit if_do_branch \
+        :8:mem_address_0_ph2 :8:cpu_pc_0
+    cpu_pc_8_ph2 cpu_pc_9_ph2 cpu_pc_10_ph2 cpu_pc_11_ph2 = ite_4bit if_do_branch \
+        :4:mem_address_8_ph2 :4:cpu_pc_8
+        
+    cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
+    cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 = copy_8bit :8:cpu_acc_0
+    
     # merge phase2 and phase3
     # cpu_phase_X
     o0 = ite cpu_phase_0 cpu_phase_0_ph3 cpu_phase_0_ph2
@@ -446,8 +469,8 @@ cpu_phase23:
     # cpu_flag_X
     o10 o11 o12 o13 = ite_4bit cpu_phase_0 :4:cpu_flag_c_ph3 :4:cpu_flag_c
     # cpu_pc_X
-    o14 o15 o16 o17 o18 o19 o20 o21 = ite_8bit cpu_phase_0 :8:cpu_pc_0_ph3 :8:cpu_pc_0
-    o22 o23 o24 o25 = ite_4bit cpu_phase_0 :4:cpu_pc_8_ph3 :4:cpu_pc_8
+    o14 o15 o16 o17 o18 o19 o20 o21 = ite_8bit cpu_phase_0 :8:cpu_pc_0_ph3 :8:cpu_pc_0_ph2
+    o22 o23 o24 o25 = ite_4bit cpu_phase_0 :4:cpu_pc_8_ph3 :4:cpu_pc_8_ph2
     # mem_rw
     o26 = ite cpu_phase_0 zero mem_rw_ph2
     # mem_value_X
@@ -548,6 +571,9 @@ cpu_exec:
     alias cpu_acc_5_t9 cpu_acc_6
     alias cpu_acc_6_t9 cpu_acc_7
     alias cpu_acc_7_t9 cpu_flag_c
+    
+    # 10 - BCC
+    # ite_8bit cpu_flag_c :4:mem_
     
     # cpu_acc_X
     o0 o1 o2 o3 o4 o5 o6 o7 = copy_8bit .8:zero
