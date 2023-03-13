@@ -479,7 +479,6 @@ cpu_phase3:
     if_sta_psh_jump = or_4 if_sta_psh if_bcc_bne if_bpl if_jump
     if_not_sta_psh_jump = nand if_sta_psh_jump if_sta_psh_jump
     
-    cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
     if_pul = and_4 :4:cpu_instr_0
     
     if_sp_zero_n = or_4 :4:cpu_sp_0
