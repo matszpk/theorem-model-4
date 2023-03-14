@@ -537,19 +537,20 @@ cpu_exec:
     cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit :4:cpu_instr_0
     mem_value_0_n = nand mem_value_0 mem_value_0
     
-    cpu_flag_c_tf = and if_last_instr cpu_instr_0
-    cpu_flag_c_tcdef = ite if_last_instr cpu_flag_c_tf cpu_flag_c
+    one = nand zero zero
+    if_sec = and if_last_instr cpu_instr_0
+    cpu_flag_c_tcdef = ite if_sec one cpu_flag_c
     
-    cpu_acc_0_th1 cpu_acc_1_th1 cpu_acc_2_th1 cpu_acc_3_th1 \
-    cpu_acc_4_th1 cpu_acc_5_th1 cpu_acc_6_th1 cpu_acc_7_th1 = ite_8bit cpu_instr_2 \
-        :8:cpu_acc_0 :8:cpu_acc_0_t89
-    cpu_flag_c_th1 = ite cpu_instr_2 cpu_flag_c_tcdef cpu_flag_c_t89
     if_rol_ror = and cpu_instr_1_n cpu_instr_2_n
+    cpu_acc_0_th1 cpu_acc_1_th1 cpu_acc_2_th1 cpu_acc_3_th1 \
+    cpu_acc_4_th1 cpu_acc_5_th1 cpu_acc_6_th1 cpu_acc_7_th1 = ite_8bit if_rol_ror \
+        :8:cpu_acc_0_t89 :8:cpu_acc_0
+    cpu_flag_c_th1 = ite cpu_instr_2 cpu_flag_c_tcdef cpu_flag_c_t89
     cpu_acc_changed = or cpu_instr_3_n if_rol_ror
     
     cpu_acc_0_tall cpu_acc_1_tall cpu_acc_2_tall cpu_acc_3_tall \
     cpu_acc_4_tall cpu_acc_5_tall cpu_acc_6_tall cpu_acc_7_tall = ite_8bit \
-        cpu_instr_3 :8:cpu_acc_0 :8:cpu_acc_0_th0
+        cpu_instr_3 :8:cpu_acc_0_th1 :8:cpu_acc_0_th0
     
     if_nz0 = or_4 :4:cpu_acc_0_tall
     if_nz1 = or_4 :4:cpu_acc_4_tall

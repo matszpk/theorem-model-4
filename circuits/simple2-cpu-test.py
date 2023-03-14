@@ -75,8 +75,8 @@ def set_flag_c(flags,c):
     return (flags&~1)|(1 if c else 0)
 def set_flag_z(flags,z):
     return (flags&~2)|(2 if z else 0)
-def set_flag_v(flags,n):
-    return (flags&~4)|(4 if n else 0)
+def set_flag_v(flags,v):
+    return (flags&~4)|(4 if v else 0)
 def set_flag_n(flags,n):
     return (flags&~8)|(8 if n else 0)
 
@@ -152,3 +152,59 @@ def cpu_exec_0_1_input_test_func(case):
 
 gen_testsuite("cpu_exec_0_1", "cpu_exec_0", 24, 10, range(0, 1<<20), cpu_exec_0,
                 cpu_exec_0_1_input_test_func)
+
+cpu_exec_input_str = (('instr',4),('acc',8),('flags',4),('mem_value',8))
+cpu_exec_output_str = (('acc',8),('flags',4),('create',1),('stop',1))
+
+def cpu_exec(data):
+    v = bin_decomp(cpu_exec_input_str, data)
+    instr, acc, flags, mem_value = v['instr'], v['acc'], v['flags'], v['mem_value']
+    outv = dict()
+    
+    if instr<8:
+        outv = bin_decomp(cpu_exec_0_output_str, cpu_exec_0(data))
+        out_acc, fc, fv = outv['acc'], outv['flag_c'], outv['flag_v']
+        flags = set_flag_c(flags, fc!=0)
+        flags = set_flag_v(flags, fv!=0)
+        flags = set_flag_z(flags, out_acc==0)
+        flags = set_flag_n(flags, (out_acc&0x80)!=0)
+        outv = {'acc':out_acc, 'flags':flags, 'create':0,'stop':0}
+    elif instr==instr_rol:
+        out_acc = ((acc<<1) + (flags&1)) & 0xff
+        flags = set_flag_c(flags, (acc>>7)&1)
+        flags = set_flag_z(flags, out_acc==0)
+        flags = set_flag_n(flags, (out_acc&0x80)!=0)
+        outv = {'acc':out_acc, 'flags':flags, 'create':0,'stop':0}
+    elif instr==instr_ror:
+        out_acc = ((acc>>1) + ((flags&1)<<7)) & 0xff
+        flags = set_flag_c(flags, acc&1)
+        flags = set_flag_z(flags, out_acc==0)
+        flags = set_flag_n(flags, (out_acc&0x80)!=0)
+        outv = {'acc':out_acc, 'flags':flags, 'create':0,'stop':0}
+    elif instr==instr_sec:
+        outv = {'acc':acc, 'flags':set_flag_c(flags,True), 'create':0,'stop':0}
+    elif instr==instr_spc:
+        outv = {'acc':acc, 'flags':flags, 'create':(mem_value&1)^1,'stop':mem_value&1}
+    else:
+        raise("Error panic")
+    return bin_comp(cpu_exec_output_str, outv)
+
+def cpu_exec_t1_input_test_func(case):
+    return bin_comp(cpu_exec_input_str,
+        {'instr':case&0x7, 'acc':(case>>3)&0xff, 'flags':((case>>11)&0x1)|6,
+            'mem_value':(case>>12)&0xff})
+def cpu_exec_t2_input_test_func(case):
+    return bin_comp(cpu_exec_input_str,
+        {'instr':8+(case&1), 'acc':(case>>1)&0xff, 'flags':((case>>9)&0x1)|6,
+            'mem_value':(case>>10)&0xff})
+def cpu_exec_t3_input_test_func(case):
+    return bin_comp(cpu_exec_input_str,
+        {'instr':14+(case&1), 'acc':(case>>1)&0xff, 'flags':((case>>9)&0x1)|6,
+            'mem_value':(case>>10)&0xff})
+
+gen_testsuite("cpu_exec_t1", "cpu_exec", 24, 14, range(0, 1<<20), cpu_exec,
+                cpu_exec_t1_input_test_func)
+gen_testsuite("cpu_exec_t2", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
+                cpu_exec_t2_input_test_func)
+gen_testsuite("cpu_exec_t3", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
+                cpu_exec_t3_input_test_func)
