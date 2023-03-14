@@ -106,21 +106,19 @@ main:
     o1 = ite cpu_phase_1 cpu_phase_1_ph23 cpu_phase_1_ph01
     # cpu_instr_X cpu_tmp_X
     o2 o3 o4 o5 o6 o7 o8 o9 = ite_8bit cpu_phase_1 :8:cpu_instr_0 :8:cpu_instr_0_ph01
-    # cpu_acc_X
-    o10 o11 o12 o13 o14 o15 o16 o17 = ite_8bit cpu_phase_1 :8:cpu_acc_0_ph23 :8:cpu_acc_0
-    # cpu_flag_X
-    o18 o19 o20 o21 = ite_4bit cpu_phase_1 :4:cpu_flag_c_ph23 :4:cpu_flag_c
+    # cpu_acc_X, cpu_flag_X
+    o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 = ite_12bit cpu_phase_1 \
+        :12:cpu_acc_0_ph23 :12:cpu_acc_0
     # cpu_pc_X
-    o22 o23 o24 o25 o26 o27 o28 o29 = ite_8bit cpu_phase_1 :8:cpu_pc_0_ph23 :8:cpu_pc_0_ph01
-    o30 o31 o32 o33 = ite_4bit cpu_phase_1 :4:cpu_pc_8_ph23 :4:cpu_pc_8_ph01
+    o22 o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 = ite_12bit cpu_phase_1 \
+        :12:cpu_pc_0_ph23 :12:cpu_pc_0_ph01
     # mem_value_X
     o34 o35 o36 o37 o38 o39 o40 o41 = ite_8bit cpu_phase_1 :8:mem_value_0_ph23 .8:zero
     # mem_rw
     o42 = ite cpu_phase_1 mem_rw_ph23 zero
     # mem_address_X
-    o43 o44 o45 o46 o47 o48 o49 o50 = ite_8bit cpu_phase_1 :8:mem_address_0_ph23 \
-        :8:mem_address_0_ph01
-    o51 o52 o53 o54 = ite_4bit cpu_phase_1 :4:mem_address_8_ph23 :4:mem_address_8_ph01
+    o43 o44 o45 o46 o47 o48 o49 o50 o51 o52 o53 o54 = ite_12bit cpu_phase_1 \
+        :12:mem_address_0_ph23 :12:mem_address_0_ph01
     # create
     o55 = ite cpu_phase_1 create_ph23 zero
     # stop
@@ -181,6 +179,9 @@ ite_4bit:
 ite_8bit:
     o0 o1 o2 o3 = ite_4bit i0 :4:i1 :4:i9
     o4 o5 o6 o7 = ite_4bit i0 :4:i5 :4:i13
+ite_12bit:
+    o0 o1 o2 o3 o4 o5 o6 o7 = ite_8bit i0 :8:i1 :8:i13
+    o8 o9 o10 o11 = ite_4bit i0 :4:i9 :4:i21
 copy_4bit:
     empty 4
 copy_8bit:
@@ -298,10 +299,9 @@ cpu_phase01:
     alias cpu_phase_1_ph1 one
     
     cpu_pc_0_ph1 cpu_pc_1_ph1 cpu_pc_2_ph1 cpu_pc_3_ph1 \
-    cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 = ite_8bit if_single_byte_instr \
-        :8:cpu_pc_0 :8:cpu_pc_0_ph0
-    cpu_pc_8_ph1 cpu_pc_9_ph1 cpu_pc_10_ph1 cpu_pc_11_ph1 = ite_4bit if_single_byte_instr \
-        :4:cpu_pc_8 :4:cpu_pc_8_ph0
+    cpu_pc_4_ph1 cpu_pc_5_ph1 cpu_pc_6_ph1 cpu_pc_7_ph1 \
+    cpu_pc_8_ph1 cpu_pc_9_ph1 cpu_pc_10_ph1 cpu_pc_11_ph1 = ite_12bit if_single_byte_instr \
+        :12:cpu_pc_0 :12:cpu_pc_0_ph0
     
     alias mem_address_0_ph1 cpu_pc_0
     alias mem_address_1_ph1 cpu_pc_1
@@ -320,13 +320,11 @@ cpu_phase01:
     # cpu_phase_X
     o0 = ite cpu_phase_0 cpu_phase_0_ph1 cpu_phase_0_ph0
     o1 = ite cpu_phase_0 cpu_phase_1_ph1 cpu_phase_1_ph0
-    # cpu_instr_X
-    o2 o3 o4 o5 = copy_4bit :4:mem_value_0
-    # cpu_tmp_X
-    o6 o7 o8 o9 = copy_4bit :4:mem_value_4
+    # cpu_instr_X cpu_tmp_X
+    o2 o3 o4 o5 o6 o7 o8 o9 = copy_8bit :8:mem_value_0
     # cpu_pc_X
-    o10 o11 o12 o13 o14 o15 o16 o17 = ite_8bit cpu_phase_0 :8:cpu_pc_0_ph1 :8:cpu_pc_0_ph0
-    o18 o19 o20 o21 = ite_4bit cpu_phase_0 :4:cpu_pc_8_ph1 :4:cpu_pc_8_ph0
+    o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 = ite_12bit cpu_phase_0 \
+        :12:cpu_pc_0_ph1 :12:cpu_pc_0_ph0
     # mem_address_X
     o22 o23 o24 o25 o26 o27 o28 o29 = copy_8bit :8:cpu_pc_0
     o30 o31 o32 o33 = copy_4bit :4:cpu_pc_8
@@ -444,13 +442,12 @@ cpu_phase23:
     # cpu_phase_X
     o0 = ite cpu_phase_0 cpu_phase_0_ph3 cpu_phase_0_ph2
     o1 = ite cpu_phase_0 cpu_phase_1_ph3 cpu_phase_1_ph2
-    # cpu_acc_X
+    # cpu_acc_X cpu_flag_X
     o2 o3 o4 o5 o6 o7 o8 o9 = ite_8bit cpu_phase_0 :8:cpu_acc_0_ph3 :8:cpu_acc_0
-    # cpu_flag_X
     o10 o11 o12 o13 = ite_4bit cpu_phase_0 :4:cpu_flag_c_ph3 :4:cpu_flag_c
     # cpu_pc_X
-    o14 o15 o16 o17 o18 o19 o20 o21 = ite_8bit cpu_phase_0 :8:cpu_pc_0 :8:cpu_pc_0_ph2
-    o22 o23 o24 o25 = ite_4bit cpu_phase_0 :4:cpu_pc_8 :4:cpu_pc_8_ph2
+    o14 o15 o16 o17 o18 o19 o20 o21 o22 o23 o24 o25 = ite_12bit cpu_phase_0 \
+        :12:cpu_pc_0 :12:cpu_pc_0_ph2
     # mem_rw
     o26 = ite cpu_phase_0 zero mem_rw_ph2
     # mem_value_X
