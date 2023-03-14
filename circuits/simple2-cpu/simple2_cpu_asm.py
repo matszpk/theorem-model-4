@@ -55,6 +55,10 @@ class Memory:
         self.word16(instr_xor | instr_addr(addr))
     def clc(self):
         self.byte(instr_clc)
+    def rol(self):
+        self.byte(instr_rol)
+    def ror(self):
+        self.byte(instr_ror)
     def bcc(self, addr):
         self.word16(instr_bcc | instr_addr(addr))
     def bne(self, addr):
