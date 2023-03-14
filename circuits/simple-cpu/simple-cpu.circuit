@@ -9,7 +9,7 @@
 # 0 - LDA - load into accumulator
 # 1 - STA - store accumulator
 # 2 - ADC - add to accumulator (A + M + C)
-# 3 - SBC - subtract from accumulator (A - NOT(M) +C)
+# 3 - SBC - subtract from accumulator (A + NOT(M) +C)
 # 4 - AND - perform bitwise AND on accumulator
 # 5 - OR - perform bitwise OR on accumulator
 # 6 - XOR - perform bitwise XOR on accumulator
