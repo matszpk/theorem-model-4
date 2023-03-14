@@ -69,7 +69,7 @@ class Memory:
         self.word16(instr_bpl | instr_addr(addr))
     def spc(self, addr):
         self.word16(instr_spc | instr_addr(addr))
-    def sec(self, addr):
+    def sec(self):
         self.byte(instr_sec)
 
     def dump(self):
