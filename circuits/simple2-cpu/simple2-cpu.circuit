@@ -423,10 +423,12 @@ cpu_phase23:
     alias cpu_phase_0_ph3 zero
     alias cpu_phase_1_ph3 zero
     cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit :4:cpu_instr_0
+    
+    # phase 2
     # if sta
     if_sta = and_4 cpu_instr_0 :3:cpu_instr_1_n
+    if_sta_n = nand if_sta if_sta
     alias mem_rw_ph2 if_sta
-    
     mem_address_8_ph2 mem_address_9_ph2 mem_address_10_ph2 mem_address_11_ph2 = \
         copy_4bit :4:cpu_tmp_0
     
@@ -442,8 +444,8 @@ cpu_phase23:
     if_do_branch = and if_branch if_do_branch_x
     
     # if branch then skip to phase 3
-    cpu_phase_0_ph2 = or if_branch_n if_sta
-    cpu_phase_1_ph2 = or if_branch_n if_sta
+    cpu_phase_0_ph2 = and if_branch_n if_sta_n
+    alias cpu_phase_1_ph2 cpu_phase_0_ph2
     cpu_pc_0_ph2 cpu_pc_1_ph2 cpu_pc_2_ph2 cpu_pc_3_ph2 \
     cpu_pc_4_ph2 cpu_pc_5_ph2 cpu_pc_6_ph2 cpu_pc_7_ph2 = ite_8bit if_do_branch \
         :8:mem_address_0_ph2 :8:cpu_pc_0

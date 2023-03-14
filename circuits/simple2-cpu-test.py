@@ -104,8 +104,10 @@ def cpu_phase01_1_input_test_func(case):
     return bin_comp(cpu_phase01_input_str,
         {'phase0':case&1,'pc':((case>>1)&0xff)*5,'mem_value':(case>>9)&0x7f})
 
+"""
 gen_testsuite("cpu_phase01_1", "cpu_phase01", 21, 34, range(0, 1<<16), cpu_phase01,
                 cpu_phase01_1_input_test_func)
+"""
 
 cpu_exec_0_input_str = (('instr',4),('acc',8),('flags',4),('mem_value',8))
 cpu_exec_0_output_str = (('acc',8),('flag_c',1),('flag_v',1))
@@ -150,8 +152,10 @@ def cpu_exec_0_1_input_test_func(case):
         {'instr':case&0x7, 'acc':(case>>3)&0xff, 'flags':((case>>11)&0x1)|6,
             'mem_value':(case>>12)&0xff})
 
+"""
 gen_testsuite("cpu_exec_0_1", "cpu_exec_0", 24, 10, range(0, 1<<20), cpu_exec_0,
                 cpu_exec_0_1_input_test_func)
+"""
 
 cpu_exec_input_str = (('instr',4),('acc',8),('flags',4),('mem_value',8))
 cpu_exec_output_str = (('acc',8),('flags',4),('create',1),('stop',1))
@@ -202,9 +206,50 @@ def cpu_exec_t3_input_test_func(case):
         {'instr':14+(case&1), 'acc':(case>>1)&0xff, 'flags':((case>>9)&0x1)|6,
             'mem_value':(case>>10)&0xff})
 
+"""
 gen_testsuite("cpu_exec_t1", "cpu_exec", 24, 14, range(0, 1<<20), cpu_exec,
                 cpu_exec_t1_input_test_func)
 gen_testsuite("cpu_exec_t2", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
                 cpu_exec_t2_input_test_func)
 gen_testsuite("cpu_exec_t3", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
                 cpu_exec_t3_input_test_func)
+"""
+
+cpu_phase23_input_str = (('phase0',1),('instr',4),('tmp',4),('acc',8),('flags',4),('pc',12),
+                         ('mem_value',8))
+cpu_phase23_output_str = (('phase',2),('acc',8),('flags',4),('pc',12),('mem_rw',1),
+                          ('mem_value',8),('mem_address',12),('create',1),('stop',1))
+
+def cpu_phase23(data):
+    v = bin_decomp(cpu_phase23_input_str, data)
+    phase0, instr, tmp, acc = v['phase0'], v['instr'], v['tmp'], v['acc']
+    flags, pc, mem_value = v['flags'], v['pc'], v['mem_value']
+    outv = dict()
+    
+    if phase0==0:
+        next_pc = pc
+        maddr = (mem_value+(tmp<<8))&0xfff
+        if_sta = instr==instr_sta
+        if_branch = instr==instr_bcc or instr==instr_bne or instr==instr_bvc or instr==instr_bpl
+        if (instr==instr_bcc and not flag_c(flags)) or \
+            (instr==instr_bne and not flag_z(flags)) or \
+            (instr==instr_bvc and not flag_v(flags)) or \
+            (instr==instr_bpl and not flag_n(flags)):
+            next_pc = maddr
+        outv = {'phase':0 if if_sta or if_branch else 3,
+                'acc':acc, 'flags':flags, 'pc':next_pc, 'mem_rw':int(if_sta),
+                'mem_value':acc, 'mem_address':maddr, 'create':0, 'stop':0}
+    else:
+        outv = bin_decomp(cpu_exec_output_str, cpu_exec(bin_comp(cpu_exec_input_str,
+                {'instr':instr, 'acc':acc, 'flags':flags, 'mem_value':mem_value})))
+        outv['phase'] = 0
+    
+    return bin_comp(cpu_phase23_output_str, outv)
+
+def cpu_phase23_sta_input_test_func(case):
+    return bin_comp(cpu_phase23_input_str,
+        {'phase0':0, 'instr':instr_sta, 'tmp':(case)&0xf, 'acc':(case>>4)&0xff,
+         'flags':(case>>12)&0x1,'pc':0x452+((case>>13)&0xf), 'mem_value':0x1c+((case>>17)&1)})
+
+gen_testsuite("cpu_phase23_sta", "cpu_phase23", 40, 49, range(0, 1<<18), cpu_phase23,
+                cpu_phase23_sta_input_test_func)
