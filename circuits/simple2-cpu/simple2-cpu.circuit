@@ -187,8 +187,6 @@ copy_4bit:
     empty 4
 copy_8bit:
     empty 8
-copy_42bit:
-    empty 42
 not_4bit:
     o0 = nand i0 i0
     o1 = nand i1 i1
