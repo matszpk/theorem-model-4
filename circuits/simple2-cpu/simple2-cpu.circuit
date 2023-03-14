@@ -1,4 +1,4 @@
-# Simple 4-bit CPU
+# Simple 8-bit CPU
 # cell_len_bits: 8, address_len: 10
 # Registers:
 #  A - accumlator (8-bit)
