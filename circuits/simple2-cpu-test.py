@@ -265,9 +265,15 @@ def cpu_phase23_3_t1_input_test_func(case):
     return bin_comp(cpu_phase23_input_str,
         {'phase0':1,'instr':case&0x7,'tmp':11, 'acc':(case>>3)&0xff, 'flags':((case>>11)&0x1)|6,
             'pc':0xb1a,'mem_value':(case>>12)&0xff})
+def cpu_phase23_3_t3_input_test_func(case):
+    return bin_comp(cpu_phase23_input_str,
+        {'phase0':1,'instr':14+(case&1),'tmp':11,'acc':(case>>1)&0xff,'flags':((case>>9)&0x1)|6,
+            'pc':0xd7b,'mem_value':(case>>10)&0xff})
 
 gen_testsuite("cpu_phase23_3_t1", "cpu_phase23", 40, 49, range(0, 1<<20), cpu_phase23,
                 cpu_phase23_3_t1_input_test_func)
+gen_testsuite("cpu_phase23_3_t3", "cpu_phase23", 40, 49, range(0, 1<<18), cpu_phase23,
+                cpu_phase23_3_t3_input_test_func)
 
 cpu_main_input_str = (('phase',2),('instr',4),('tmp',4),('acc',8),('flags',4),('pc',12),
                     ('mem_value',8))
@@ -304,10 +310,14 @@ def cpu_main_phase23_3_t1_input_test_func(case):
     return bin_comp(cpu_main_input_str,
         {'phase':3,'instr':case&0x7,'tmp':11, 'acc':(case>>3)&0xff, 'flags':((case>>11)&0x1)|6,
             'pc':0xb1a,'mem_value':(case>>12)&0xff})
+def cpu_main_phase23_3_t3_input_test_func(case):
+    return bin_comp(cpu_main_input_str,
+        {'phase':3,'instr':14+(case&1),'tmp':11,'acc':(case>>1)&0xff,'flags':((case>>9)&0x1)|6,
+            'pc':0xd7b,'mem_value':(case>>10)&0xff})
 
 gen_testsuite("cpu_main_phase01_1", "main", 42, 57, range(0, 1<<16), cpu_main,
                 cpu_main_phase01_1_input_test_func)
 gen_testsuite("cpu_main_phase23_branch", "main", 42, 57, range(0, 1<<20), cpu_main,
                 cpu_main_phase23_branch_input_test_func)
-gen_testsuite("cpu_main_phase23_3_t1", "main", 42, 57, range(0, 1<<20), cpu_main,
-                cpu_main_phase23_3_t1_input_test_func)
+gen_testsuite("cpu_main_phase23_3_t3", "main", 42, 57, range(0, 1<<18), cpu_main,
+                cpu_main_phase23_3_t3_input_test_func)
