@@ -201,10 +201,6 @@ full_adder:
 half_adder:
     o0 = xor i0 i1
     o1 = and i0 i1
-half_suber:
-    x = xor i0 i1
-    o0 = nand x x
-    o1 = or i0 i1
 # i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
 carry_adder_4bit:
     s0 c0 = full_adder i1 i5 i0
@@ -230,12 +226,6 @@ carry_inc_4bit:
     s3 c3 = half_adder i4 c2
     o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
     o4 = copy c3
-dec_4bit:
-    d0 c0 = half_suber i0 zero
-    d1 c1 = half_suber i1 c0
-    d2 c2 = half_suber i2 c1
-    d3 c3 = half_suber i3 c2
-    o0 o1 o2 o3 = copy_4bit d0 d1 d2 d3
 inc_12bit:
     one = nand zero zero
     s0 s1 s2 s3 c0 = carry_inc_4bit one i0 i1 i2 i3

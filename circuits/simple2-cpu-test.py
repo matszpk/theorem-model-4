@@ -40,10 +40,10 @@ gen_testsuite("ite", "ite", 3, 1, range(0, 1<<3), ite)
 gen_testsuite("ite_4bit", "ite_4bit", 9, 4, range(0, 1<<9), ite_4bit)
 gen_testsuite("full_adder", "full_adder", 3, 2, range(0, 1<<3), full_adder)
 gen_testsuite("half_adder", "half_adder", 2, 2, range(0, 1<<2), full_adder)
-gen_testsuite("half_suber", "half_suber", 2, 2, range(0, 1<<2), lambda x: full_adder(x+4))
+#gen_testsuite("half_suber", "half_suber", 2, 2, range(0, 1<<2), lambda x: full_adder(x+4))
 gen_testsuite("carry_adder_4bit", "carry_adder_4bit", 9, 5, range(0, 1<<9), carry_adder_4bit)
 gen_testsuite("carry_suber_4bit", "carry_suber_4bit", 9, 5, range(0, 1<<9), carry_suber_4bit)
-gen_testsuite("dec_4bit", "dec_4bit", 4, 4, range(0, 1<<4), lambda x: (16+x-1)&0xf)
+#gen_testsuite("dec_4bit", "dec_4bit", 4, 4, range(0, 1<<4), lambda x: (16+x-1)&0xf)
 gen_testsuite("inc_12bit", "inc_12bit", 12, 12, range(0, 1<<12), lambda x: (x+1)&0xfff)
 
 instr_lda=0
