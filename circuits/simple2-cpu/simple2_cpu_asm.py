@@ -75,5 +75,5 @@ class Memory:
     def dump(self):
         out = b''
         for i in range(0,1<<12):
-            out += bytes(self.mem)
+            out += bytes([self.mem[i]])
         return out
