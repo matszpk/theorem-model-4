@@ -157,10 +157,6 @@ or_4bit:
 and_3:
     t0 = and i0 i1
     o0 = and t0 i2
-and_4:
-    t0 = and i0 i1
-    t1 = and i2 i3
-    o0 = and t0 t1
 or_4:
     t0 = or i0 i1
     t1 = or i2 i3
@@ -409,7 +405,8 @@ cpu_phase23:
     
     # phase 2
     # if sta
-    if_sta = and_4 cpu_instr_0 :3:cpu_instr_1_n
+    if_sta_x = and_3 :3:cpu_instr_1_n
+    if_sta = and cpu_instr_0 if_sta_x
     if_sta_n = nand if_sta if_sta
     alias mem_rw_ph2 if_sta
     mem_address_8_ph2 mem_address_9_ph2 mem_address_10_ph2 mem_address_11_ph2 = \
@@ -423,7 +420,7 @@ cpu_phase23:
     if_bne = and_3 cpu_instr_0 cpu_instr_1 cpu_flag_z_n
     if_bvc = and_3 cpu_instr_0_n cpu_instr_1_n cpu_flag_v_n
     if_bpl = and_3 cpu_instr_0 cpu_instr_1_n cpu_flag_n_n
-    if_do_branch_x = or_4 if_bcc if_bne if_bvc if_bpl
+    if_do_branch_x = or_4 :4:if_bcc
     if_do_branch = and if_branch if_do_branch_x
     
     # if branch then skip to phase 3
