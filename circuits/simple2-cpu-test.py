@@ -104,10 +104,8 @@ def cpu_phase01_1_input_test_func(case):
     return bin_comp(cpu_phase01_input_str,
         {'phase0':case&1,'pc':((case>>1)&0xff)*5,'mem_value':(case>>9)&0x7f})
 
-"""
 gen_testsuite("cpu_phase01_1", "cpu_phase01", 21, 34, range(0, 1<<16), cpu_phase01,
                 cpu_phase01_1_input_test_func)
-"""
 
 cpu_exec_0_input_str = (('instr',4),('acc',8),('flags',4),('mem_value',8))
 cpu_exec_0_output_str = (('acc',8),('flag_c',1),('flag_v',1))

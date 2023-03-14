@@ -128,7 +128,6 @@ main:
     # stop
     o56 = ite cpu_phase_1 stop_ph23 zero
 
-
 copy:
     empty 1
 xor:
