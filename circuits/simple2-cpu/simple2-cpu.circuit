@@ -80,7 +80,7 @@ main:
     mem_address_0_ph01 mem_address_1_ph01 mem_address_2_ph01 mem_address_3_ph01 \
     mem_address_4_ph01 mem_address_5_ph01 mem_address_6_ph01 mem_address_7_ph01 \
     mem_address_8_ph01 mem_address_9_ph01 mem_address_10_ph01 mem_address_11_ph01 = \
-        cpu_phase01 cpu_phase_0 :12:cpu_pc_0 :8:mem_value_0
+        cpu_phase01 cpu_phase_0 :20:cpu_pc_0
     
     cpu_phase_0_ph23 cpu_phase_1_ph23 \
     cpu_acc_0_ph23 cpu_acc_1_ph23 cpu_acc_2_ph23 cpu_acc_3_ph23 \
