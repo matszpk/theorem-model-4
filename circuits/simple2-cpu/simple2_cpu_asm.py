@@ -47,7 +47,7 @@ class Memory:
         self.word16(instr_adc | instr_addr(addr))
     def sbc(self, addr):
         self.word16(instr_sbc | instr_addr(addr))
-    def anc(self, addr):
+    def ana(self, addr):
         self.word16(instr_and | instr_addr(addr))
     def ora(self, addr):
         self.word16(instr_or | instr_addr(addr))
