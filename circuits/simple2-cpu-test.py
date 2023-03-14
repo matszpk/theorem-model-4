@@ -81,7 +81,7 @@ def set_flag_n(flags,n):
     return (flags&~8)|(8 if n else 0)
 
 cpu_phase01_input_str = (('phase0',1),('pc',12),('mem_value',8))
-cpu_phase01_output_str = (('phase',2),('instr',4),('pc',12),('tmp',4),('mem_address',12))
+cpu_phase01_output_str = (('phase',2),('instr',4),('tmp',4),('pc',12),('mem_address',12))
 
 def cpu_phase01(data):
     v = bin_decomp(cpu_phase01_input_str, data)

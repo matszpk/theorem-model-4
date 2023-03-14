@@ -73,10 +73,10 @@ main:
     
     cpu_phase_0_ph01 cpu_phase_1_ph01 \
     cpu_instr_0_ph01 cpu_instr_1_ph01 cpu_instr_2_ph01 cpu_instr_3_ph01 \
+    cpu_tmp_0_ph01 cpu_tmp_1_ph01 cpu_tmp_2_ph01 cpu_tmp_3_ph01 \
     cpu_pc_0_ph01 cpu_pc_1_ph01 cpu_pc_2_ph01 cpu_pc_3_ph01 \
     cpu_pc_4_ph01 cpu_pc_5_ph01 cpu_pc_6_ph01 cpu_pc_7_ph01 \
     cpu_pc_8_ph01 cpu_pc_9_ph01 cpu_pc_10_ph01 cpu_pc_11_ph01 \
-    cpu_tmp_0_ph01 cpu_tmp_1_ph01 cpu_tmp_2_ph01 cpu_tmp_3_ph01 \
     mem_address_0_ph01 mem_address_1_ph01 mem_address_2_ph01 mem_address_3_ph01 \
     mem_address_4_ph01 mem_address_5_ph01 mem_address_6_ph01 mem_address_7_ph01 \
     mem_address_8_ph01 mem_address_9_ph01 mem_address_10_ph01 mem_address_11_ph01 = \
@@ -104,10 +104,8 @@ main:
     # cpu_phase_0, cpu_phase_1
     o0 = ite cpu_phase_1 cpu_phase_0_ph23 cpu_phase_0_ph01
     o1 = ite cpu_phase_1 cpu_phase_1_ph23 cpu_phase_1_ph01
-    # cpu_instr_X
-    o2 o3 o4 o5 = ite_4bit cpu_phase_1 :4:cpu_instr_0 :4:cpu_instr_0_ph01
-    # cpu_tmp_X
-    o6 o7 o8 o9 = ite_4bit cpu_phase_1 :4:cpu_tmp_0 :4:cpu_tmp_0_ph01
+    # cpu_instr_X cpu_tmp_X
+    o2 o3 o4 o5 o6 o7 o8 o9 = ite_8bit cpu_phase_1 :8:cpu_instr_0 :8:cpu_instr_0_ph01
     # cpu_acc_X
     o10 o11 o12 o13 o14 o15 o16 o17 = ite_8bit cpu_phase_1 :8:cpu_acc_0_ph23 :8:cpu_acc_0
     # cpu_flag_X
@@ -324,11 +322,11 @@ cpu_phase01:
     o1 = ite cpu_phase_0 cpu_phase_1_ph1 cpu_phase_1_ph0
     # cpu_instr_X
     o2 o3 o4 o5 = copy_4bit :4:mem_value_0
-    # cpu_pc_X
-    o6 o7 o8 o9 o10 o11 o12 o13 = ite_8bit cpu_phase_0 :8:cpu_pc_0_ph1 :8:cpu_pc_0_ph0
-    o14 o15 o16 o17 = ite_4bit cpu_phase_0 :4:cpu_pc_8_ph1 :4:cpu_pc_8_ph0
     # cpu_tmp_X
-    o18 o19 o20 o21 = copy_4bit :4:mem_value_4
+    o6 o7 o8 o9 = copy_4bit :4:mem_value_4
+    # cpu_pc_X
+    o10 o11 o12 o13 o14 o15 o16 o17 = ite_8bit cpu_phase_0 :8:cpu_pc_0_ph1 :8:cpu_pc_0_ph0
+    o18 o19 o20 o21 = ite_4bit cpu_phase_0 :4:cpu_pc_8_ph1 :4:cpu_pc_8_ph0
     # mem_address_X
     o22 o23 o24 o25 o26 o27 o28 o29 = copy_8bit :8:cpu_pc_0
     o30 o31 o32 o33 = copy_4bit :4:cpu_pc_8
