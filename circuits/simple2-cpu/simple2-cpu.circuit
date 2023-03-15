@@ -507,8 +507,8 @@ cpu_exec:
     cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit :4:cpu_instr_0
     mem_value_0_n = nand mem_value_0 mem_value_0
     
-    #if_sec = and if_last_instr cpu_instr_0
-    #cpu_flag_c_tcdef = or if_sec cpu_flag_c
+    if_sec = and if_last_instr cpu_instr_0
+    cpu_flag_c_tcdef = or if_sec cpu_flag_c
     
     if_rol_ror_n = nand cpu_instr_1_n cpu_instr_2_n
     cpu_acc_0_th1 cpu_acc_1_th1 cpu_acc_2_th1 cpu_acc_3_th1 \
