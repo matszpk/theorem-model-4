@@ -436,7 +436,8 @@ cpu_phase23:
     o14 o15 o16 o17 o18 o19 o20 o21 o22 o23 o24 o25 = ite_12bit cpu_phase_0 \
         :12:cpu_pc_0 :12:cpu_pc_0_ph2
     # mem_rw
-    o26 = ite cpu_phase_0 zero mem_rw_ph2
+    #o26 = ite cpu_phase_0 zero mem_rw_ph2, if_phase3, then no sta then mem_rw will be zero
+    o26 = copy mem_rw_ph2
     # mem_value_X
     o27 o28 o29 o30 o31 o32 o33 o34 = copy_8bit :8:cpu_acc_0
     # mem_address_X
