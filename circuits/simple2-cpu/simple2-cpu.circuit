@@ -181,6 +181,8 @@ copy_4bit:
     empty 4
 copy_8bit:
     empty 8
+copy_12bit:
+    empty 12
 not_4bit:
     o0 = nand i0 i0
     o1 = nand i1 i1
@@ -318,8 +320,7 @@ cpu_phase01:
     o10 o11 o12 o13 o14 o15 o16 o17 o18 o19 o20 o21 = ite_12bit cpu_phase_0 \
         :12:cpu_pc_0_ph1 :12:cpu_pc_0_ph0
     # mem_address_X
-    o22 o23 o24 o25 o26 o27 o28 o29 = copy_8bit :8:cpu_pc_0
-    o30 o31 o32 o33 = copy_4bit :4:cpu_pc_8
+    o22 o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 = copy_12bit :12:cpu_pc_0
 
 cpu_phase23:
     alias cpu_phase_0 i0
@@ -365,13 +366,9 @@ cpu_phase23:
     alias mem_value_6 i40
     alias mem_value_7 i41
     
-    one = nand zero zero
     # phase 2 - load memory argument from memory
     # new state: cpu_phase_X
     # new values: mem_rw, mem_address
-    
-    alias cpu_phase_0_ph2 one
-    alias cpu_phase_1_ph2 one
     
     alias mem_address_0_ph2 mem_value_0
     alias mem_address_1_ph2 mem_value_1
@@ -381,6 +378,13 @@ cpu_phase23:
     alias mem_address_5_ph2 mem_value_5
     alias mem_address_6_ph2 mem_value_6
     alias mem_address_7_ph2 mem_value_7
+    mem_address_8_ph2 mem_address_9_ph2 mem_address_10_ph2 mem_address_11_ph2 = \
+        copy_4bit :4:cpu_tmp_0
+    
+    one = nand zero zero
+    
+    alias cpu_phase_0_ph2 one
+    alias cpu_phase_1_ph2 one
     
     ##
     # phase 3 - execute instruction
@@ -405,8 +409,6 @@ cpu_phase23:
     if_sta = and cpu_instr_0 if_sta_x
     if_sta_n = nand if_sta if_sta
     alias mem_rw_ph2 if_sta
-    mem_address_8_ph2 mem_address_9_ph2 mem_address_10_ph2 mem_address_11_ph2 = \
-        copy_4bit :4:cpu_tmp_0
     
     if_branch_x = xor cpu_instr_1 cpu_instr_2
     if_branch_n = nand if_branch_x cpu_instr_3
@@ -423,10 +425,9 @@ cpu_phase23:
     cpu_phase_0_ph2 = and if_branch_n if_sta_n
     alias cpu_phase_1_ph2 cpu_phase_0_ph2
     cpu_pc_0_ph2 cpu_pc_1_ph2 cpu_pc_2_ph2 cpu_pc_3_ph2 \
-    cpu_pc_4_ph2 cpu_pc_5_ph2 cpu_pc_6_ph2 cpu_pc_7_ph2 = ite_8bit if_do_branch \
-        :8:mem_address_0_ph2 :8:cpu_pc_0
-    cpu_pc_8_ph2 cpu_pc_9_ph2 cpu_pc_10_ph2 cpu_pc_11_ph2 = ite_4bit if_do_branch \
-        :4:mem_address_8_ph2 :4:cpu_pc_8
+    cpu_pc_4_ph2 cpu_pc_5_ph2 cpu_pc_6_ph2 cpu_pc_7_ph2 \
+    cpu_pc_8_ph2 cpu_pc_9_ph2 cpu_pc_10_ph2 cpu_pc_11_ph2 = ite_12bit if_do_branch \
+        :12:mem_address_0_ph2 :12:cpu_pc_0
         
     cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
     cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 = copy_8bit :8:cpu_acc_0
@@ -446,8 +447,7 @@ cpu_phase23:
     # mem_value_X
     o27 o28 o29 o30 o31 o32 o33 o34 = copy_8bit :8:cpu_acc_0
     # mem_address_X
-    o35 o36 o37 o38 o39 o40 o41 o42 = copy_8bit :8:mem_address_0_ph2
-    o43 o44 o45 o46 = copy_4bit :4:mem_address_8_ph2
+    o35 o36 o37 o38 o39 o40 o41 o42 o43 o44 o45 o46 = copy_12bit :12:mem_address_0_ph2
     o47 = ite cpu_phase_0 create_ph3 zero
     o48 = ite cpu_phase_0 stop_ph3 zero
 
@@ -590,8 +590,8 @@ cpu_exec_0:
         cpu_flag_c :4:cpu_acc_0 :4:mem_value_0
     cpu_acc_4_t2 cpu_acc_5_t2 cpu_acc_6_t2 cpu_acc_7_t2 cpu_flag_c_t2 = carry_adder_4bit \
         carry_0_t2 :4:cpu_acc_4 :4:mem_value_4
-    tmp0 = xor cpu_acc_7 mem_value_7
-    tmp1 = nand tmp0 tmp0
+    tmp0adc = xor cpu_acc_7 mem_value_7
+    tmp1 = nand tmp0adc tmp0adc
     tmp2 = xor cpu_acc_7 cpu_acc_7_t2
     cpu_flag_v_t2 = and tmp1 tmp2
     
@@ -601,7 +601,7 @@ cpu_exec_0:
     cpu_acc_4_t3 cpu_acc_5_t3 cpu_acc_6_t3 cpu_acc_7_t3 cpu_flag_c_t3 = carry_suber_4bit \
         carry_0_t3 :4:cpu_acc_4 :4:mem_value_4
     tmp0 = xor cpu_acc_7 cpu_acc_7_t3
-    tmp1 = xor cpu_acc_7 mem_value_7
+    alias tmp1 tmp0adc
     cpu_flag_v_t3 = and tmp0 tmp1
     
     cpu_acc_0_t23 cpu_acc_1_t23 cpu_acc_2_t23 cpu_acc_3_t23 \
