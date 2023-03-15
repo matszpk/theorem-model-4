@@ -254,11 +254,11 @@ def cpu_phase23_other_input_test_func(case):
         {'phase0':0, 'ign':0, 'instr':case&0xf, 'tmp':(case>>4)&0xf, 'acc':((case>>8)&0xf)<<2,
          'flags':(case>>12)&0x1,'pc':0x452+((case>>13)&0xf), 'mem_value':0x1c+((case>>17)&1)})
 
-gen_testsuite("cpu_phase23_sta", "cpu_phase23", 40, 49, range(0, 1<<18), cpu_phase23,
+gen_testsuite("cpu_phase23_sta", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
                 cpu_phase23_sta_input_test_func)
-gen_testsuite("cpu_phase23_branch", "cpu_phase23", 40, 49, range(0, 1<<20), cpu_phase23,
+gen_testsuite("cpu_phase23_branch", "cpu_phase23", 42, 49, range(0, 1<<20), cpu_phase23,
                 cpu_phase23_branch_input_test_func)
-gen_testsuite("cpu_phase23_other", "cpu_phase23", 40, 49, range(0, 1<<18), cpu_phase23,
+gen_testsuite("cpu_phase23_other", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
                 cpu_phase23_other_input_test_func)
 
 def cpu_phase23_3_t1_input_test_func(case):
@@ -270,9 +270,9 @@ def cpu_phase23_3_t3_input_test_func(case):
         {'phase0':1,'ign':0,'instr':14+(case&1),'tmp':11,'acc':(case>>1)&0xff,
             'flags':((case>>9)&0x1)|6,'pc':0xd7b,'mem_value':(case>>10)&0xff})
 
-gen_testsuite("cpu_phase23_3_t1", "cpu_phase23", 40, 49, range(0, 1<<20), cpu_phase23,
+gen_testsuite("cpu_phase23_3_t1", "cpu_phase23", 42, 49, range(0, 1<<20), cpu_phase23,
                 cpu_phase23_3_t1_input_test_func)
-gen_testsuite("cpu_phase23_3_t3", "cpu_phase23", 40, 49, range(0, 1<<18), cpu_phase23,
+gen_testsuite("cpu_phase23_3_t3", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
                 cpu_phase23_3_t3_input_test_func)
 
 cpu_main_input_str = (('phase',2),('instr',4),('tmp',4),('acc',8),('flags',4),('pc',12),
