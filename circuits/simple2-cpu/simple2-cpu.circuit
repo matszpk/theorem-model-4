@@ -94,8 +94,7 @@ main:
     mem_address_0_ph23 mem_address_1_ph23 mem_address_2_ph23 mem_address_3_ph23 \
     mem_address_4_ph23 mem_address_5_ph23 mem_address_6_ph23 mem_address_7_ph23 \
     mem_address_8_ph23 mem_address_9_ph23 mem_address_10_ph23 mem_address_11_ph23 \
-    create_ph23 stop_ph23 = cpu_phase23 \
-        :42:cpu_phase_0
+    create_ph23 stop_ph23 = cpu_phase23 :42:cpu_phase_0
     
     zero = copy zero
     cpu_phase_1 = copy cpu_phase_1
