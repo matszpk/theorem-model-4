@@ -22,58 +22,67 @@ def instr_addr(addr):
 class Memory:
     def __init__(self):
         self.mem = [0]*(1<<12)
+        self.mmod = [False]*(1<<12)
         self.pc = 0
     
     def set_pc(self, pc):
         self.pc = pc&0xfff
     
-    def byte(self, a):
+    def byte(self, a, mod=False):
         self.mem[self.pc] = a & 0xff
+        self.mmod[self.pc] = mod
         self.pc = (self.pc + 1) & 0xfff
     
-    def word16(self, a):
-        self.byte(a&0xff)
-        self.byte((a>>8)&0xff)
+    def word16(self, a, mod=[False,False]):
+        self.byte(a&0xff, mod[0])
+        self.byte((a>>8)&0xff, mod[1])
     
-    def word32(self, a):
-        self.word16(a&0xffff)
-        self.word16((a>>16)&0xffff)
+    def word32(self, a, mod=[False,False,False,False]):
+        self.word16(a&0xffff, mod[0:2])
+        self.word16((a>>16)&0xffff, mod[2:4])
 
-    def lda(self, addr):
-        self.word16(instr_lda | instr_addr(addr))
-    def sta(self, addr):
-        self.word16(instr_sta | instr_addr(addr))
-    def adc(self, addr):
-        self.word16(instr_adc | instr_addr(addr))
-    def sbc(self, addr):
-        self.word16(instr_sbc | instr_addr(addr))
-    def ana(self, addr):
-        self.word16(instr_and | instr_addr(addr))
-    def ora(self, addr):
-        self.word16(instr_or | instr_addr(addr))
-    def xor(self, addr):
-        self.word16(instr_xor | instr_addr(addr))
-    def clc(self):
-        self.byte(instr_clc)
-    def rol(self):
-        self.byte(instr_rol)
-    def ror(self):
-        self.byte(instr_ror)
-    def bcc(self, addr):
-        self.word16(instr_bcc | instr_addr(addr))
-    def bne(self, addr):
-        self.word16(instr_bne | instr_addr(addr))
-    def bvc(self, addr):
-        self.word16(instr_bvc | instr_addr(addr))
-    def bpl(self, addr):
-        self.word16(instr_bpl | instr_addr(addr))
-    def spc(self, addr):
-        self.word16(instr_spc | instr_addr(addr))
-    def sec(self):
-        self.byte(instr_sec)
+    def lda(self, addr, mod=[False,False]):
+        self.word16(instr_lda | instr_addr(addr), mod)
+    def sta(self, addr, mod=[False,False]):
+        self.word16(instr_sta | instr_addr(addr), mod)
+    def adc(self, addr, mod=[False,False]):
+        self.word16(instr_adc | instr_addr(addr), mod)
+    def sbc(self, addr, mod=[False,False]):
+        self.word16(instr_sbc | instr_addr(addr), mod)
+    def ana(self, addr, mod=[False,False]):
+        self.word16(instr_and | instr_addr(addr), mod)
+    def ora(self, addr, mod=[False,False]):
+        self.word16(instr_or | instr_addr(addr), mod)
+    def xor(self, addr, mod=[False,False]):
+        self.word16(instr_xor | instr_addr(addr), mod)
+    def clc(self, mod=False):
+        self.byte(instr_clc, mod)
+    def rol(self, mod=False):
+        self.byte(instr_rol, mod)
+    def ror(self, mod=False):
+        self.byte(instr_ror, mod)
+    def bcc(self, addr, mod=[False,False]):
+        self.word16(instr_bcc | instr_addr(addr), mod)
+    def bne(self, addr, mod=[False,False]):
+        self.word16(instr_bne | instr_addr(addr), mod)
+    def bvc(self, addr, mod=[False,False]):
+        self.word16(instr_bvc | instr_addr(addr), mod)
+    def bpl(self, addr, mod=[False,False]):
+        self.word16(instr_bpl | instr_addr(addr), mod)
+    def spc(self, addr, mod=[False,False]):
+        self.word16(instr_spc | instr_addr(addr), mod)
+    def sec(self, mod=False):
+        self.byte(instr_sec, mod)
 
     def dump(self):
         out = b''
         for i in range(0,1<<12):
             out += bytes([self.mem[i]])
         return out
+
+    def imms(self,r):
+        vals=dict()
+        for i in r:
+            if not self.mmod[i]:
+                vals[self.mem[i]] = i
+        return vals
