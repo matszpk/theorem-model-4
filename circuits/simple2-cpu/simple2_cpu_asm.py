@@ -148,3 +148,10 @@ class Memory:
                 break
         imms |= new_imms
         return len(new_imms)!=0
+    
+    def assemble(self, codegen, stages=2):
+        imms = dict()
+        for i in range(0,stages):
+            codegen(self,imms)
+        while self.rest_imms(imms):
+            codegen(self,imms)
