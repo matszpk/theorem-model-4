@@ -145,4 +145,5 @@ class Memory:
             if v<0:
                 new_imms[self.pc] = k
                 self.byte(k)
+                break
         imms |= new_imms
