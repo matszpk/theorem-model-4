@@ -421,15 +421,16 @@ cpu_phase23:
         :12:mem_address_0_ph2 :12:cpu_pc_0
         
     cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
-    cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 = copy_8bit :8:cpu_acc_0
+    cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 \
+    cpu_flag_c cpu_flag_z cpu_flag_v cpu_flag_n = copy_12bit :12:cpu_acc_0
     
     # merge phase2 and phase3
     # cpu_phase_X
     o0 = ite cpu_phase_0 cpu_phase_0_ph3 cpu_phase_0_ph2
     o1 = copy o0
     # cpu_acc_X cpu_flag_X
-    o2 o3 o4 o5 o6 o7 o8 o9 = ite_8bit cpu_phase_0 :8:cpu_acc_0_ph3 :8:cpu_acc_0
-    o10 o11 o12 o13 = ite_4bit cpu_phase_0 :4:cpu_flag_c_ph3 :4:cpu_flag_c
+    o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 o12 o13 = ite_12bit cpu_phase_0 \
+            :12:cpu_acc_0_ph3 :12:cpu_acc_0
     # cpu_pc_X
     o14 o15 o16 o17 o18 o19 o20 o21 o22 o23 o24 o25 = ite_12bit cpu_phase_0 \
         :12:cpu_pc_0 :12:cpu_pc_0_ph2
@@ -497,7 +498,7 @@ cpu_exec:
     
     cpu_acc_0_t89 cpu_acc_1_t89 cpu_acc_2_t89 cpu_acc_3_t89 \
     cpu_acc_4_t89 cpu_acc_5_t89 cpu_acc_6_t89 cpu_acc_7_t89 = ite_8bit cpu_instr_0 \
-        :7:cpu_acc_0_t9 cpu_acc_7_t9 cpu_acc_0_t8 :7:cpu_acc_1_t8
+        :8:cpu_acc_0_t9 cpu_acc_0_t8 :7:cpu_acc_1_t8
     cpu_flag_c_t89 = ite cpu_instr_0 cpu_flag_c_t9 cpu_flag_c_t8
     
     # E - SPC - BCC
