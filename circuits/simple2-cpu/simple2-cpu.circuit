@@ -114,14 +114,14 @@ main:
     # mem_value_X
     o34 o35 o36 o37 o38 o39 o40 o41 = ite_8bit cpu_phase_1 :8:mem_value_0_ph23 .8:zero
     # mem_rw
-    o42 = ite cpu_phase_1 mem_rw_ph23 zero
+    o42 = and cpu_phase_1 mem_rw_ph23
     # mem_address_X
     o43 o44 o45 o46 o47 o48 o49 o50 o51 o52 o53 o54 = ite_12bit cpu_phase_1 \
         :12:mem_address_0_ph23 :12:mem_address_0_ph01
     # create
-    o55 = ite cpu_phase_1 create_ph23 zero
+    o55 = and cpu_phase_1 create_ph23
     # stop
-    o56 = ite cpu_phase_1 stop_ph23 zero
+    o56 = and cpu_phase_1 stop_ph23
 
 copy:
     empty 1
@@ -439,8 +439,8 @@ cpu_phase23:
     o27 o28 o29 o30 o31 o32 o33 o34 = copy_8bit :8:cpu_acc_0
     # mem_address_X
     o35 o36 o37 o38 o39 o40 o41 o42 o43 o44 o45 o46 = copy_12bit :12:mem_address_0_ph2
-    o47 = ite cpu_phase_0 create_ph3 zero
-    o48 = ite cpu_phase_0 stop_ph3 zero
+    o47 = and cpu_phase_0 create_ph3
+    o48 = and cpu_phase_0 stop_ph3
 
 # cpu instruction execution
 cpu_exec:
@@ -505,9 +505,8 @@ cpu_exec:
     cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit :4:cpu_instr_0
     mem_value_0_n = nand mem_value_0 mem_value_0
     
-    one = nand zero zero
     if_sec = and if_last_instr cpu_instr_0
-    cpu_flag_c_tcdef = ite if_sec one cpu_flag_c
+    cpu_flag_c_tcdef = or if_sec cpu_flag_c
     
     if_rol_ror = and cpu_instr_1_n cpu_instr_2_n
     cpu_acc_0_th1 cpu_acc_1_th1 cpu_acc_2_th1 cpu_acc_3_th1 \
@@ -642,7 +641,6 @@ cpu_exec_0:
         :8:cpu_acc_0_t67 :8:cpu_acc_0_t45
     cpu_flag_c_t4567 = ite cpu_instr_1 cpu_flag_c_t67 cpu_flag_c
     
-    o0 o1 o2 o3 o4 o5 o6 o7 = ite_8bit cpu_instr_2 \
-        :8:cpu_acc_0_t4567 :8:cpu_acc_0_t0123
+    o0 o1 o2 o3 o4 o5 o6 o7 = ite_8bit cpu_instr_2 :8:cpu_acc_0_t4567 :8:cpu_acc_0_t0123
     o8 = ite cpu_instr_2 cpu_flag_c_t4567 cpu_flag_c_t0123
     o9 = ite cpu_instr_2 cpu_flag_v cpu_flag_v_t0123
