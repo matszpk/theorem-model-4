@@ -39,7 +39,7 @@ gen_testsuite("or_4", "or_4", 4, 1, range(0, 1<<4), lambda x: (x&1)|((x>>1)&1)|(
 gen_testsuite("ite", "ite", 3, 1, range(0, 1<<3), ite)
 gen_testsuite("ite_4bit", "ite_4bit", 9, 4, range(0, 1<<9), ite_4bit)
 gen_testsuite("full_adder", "full_adder", 3, 2, range(0, 1<<3), full_adder)
-gen_testsuite("half_adder", "half_adder", 2, 2, range(0, 1<<2), full_adder)
+#gen_testsuite("half_adder", "half_adder", 2, 2, range(0, 1<<2), full_adder)
 #gen_testsuite("half_suber", "half_suber", 2, 2, range(0, 1<<2), lambda x: full_adder(x+4))
 gen_testsuite("carry_adder_4bit", "carry_adder_4bit", 9, 5, range(0, 1<<9), carry_adder_4bit)
 gen_testsuite("carry_suber_4bit", "carry_suber_4bit", 9, 5, range(0, 1<<9), carry_suber_4bit)
@@ -209,8 +209,8 @@ gen_testsuite("cpu_exec_t2", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
 gen_testsuite("cpu_exec_t3", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
                 cpu_exec_t3_input_test_func)
 
-cpu_phase23_input_str = (('phase0',1),('instr',4),('tmp',4),('acc',8),('flags',4),('pc',12),
-                         ('mem_value',8))
+cpu_phase23_input_str = (('phase0',1),('ign',1),('instr',4),('tmp',4),('acc',8),('flags',4),
+                         ('pc',12),('mem_value',8))
 cpu_phase23_output_str = (('phase',2),('acc',8),('flags',4),('pc',12),('mem_rw',1),
                           ('mem_value',8),('mem_address',12),('create',1),('stop',1))
 
@@ -243,15 +243,15 @@ def cpu_phase23(data):
 
 def cpu_phase23_sta_input_test_func(case):
     return bin_comp(cpu_phase23_input_str,
-        {'phase0':0, 'instr':instr_sta, 'tmp':(case)&0xf, 'acc':(case>>4)&0xff,
+        {'phase0':0, 'ign':0, 'instr':instr_sta, 'tmp':(case)&0xf, 'acc':(case>>4)&0xff,
          'flags':(case>>12)&0x1,'pc':0x452+((case>>13)&0xf), 'mem_value':0x1c+((case>>17)&1)})
 def cpu_phase23_branch_input_test_func(case):
     return bin_comp(cpu_phase23_input_str,
-        {'phase0':0, 'instr':10+(case&3), 'tmp':(case>>2)&0xf, 'acc':(case>>6)&0xff,
+        {'phase0':0, 'ign':0, 'instr':10+(case&3), 'tmp':(case>>2)&0xf, 'acc':(case>>6)&0xff,
          'flags':(case>>14)&0xf,'pc':0x452+((case>>8)&0x1), 'mem_value':0x1c+((case>>19)&1)})
 def cpu_phase23_other_input_test_func(case):
     return bin_comp(cpu_phase23_input_str,
-        {'phase0':0, 'instr':case&0xf, 'tmp':(case>>4)&0xf, 'acc':((case>>8)&0xf)<<2,
+        {'phase0':0, 'ign':0, 'instr':case&0xf, 'tmp':(case>>4)&0xf, 'acc':((case>>8)&0xf)<<2,
          'flags':(case>>12)&0x1,'pc':0x452+((case>>13)&0xf), 'mem_value':0x1c+((case>>17)&1)})
 
 gen_testsuite("cpu_phase23_sta", "cpu_phase23", 40, 49, range(0, 1<<18), cpu_phase23,
@@ -263,12 +263,12 @@ gen_testsuite("cpu_phase23_other", "cpu_phase23", 40, 49, range(0, 1<<18), cpu_p
 
 def cpu_phase23_3_t1_input_test_func(case):
     return bin_comp(cpu_phase23_input_str,
-        {'phase0':1,'instr':case&0x7,'tmp':11, 'acc':(case>>3)&0xff, 'flags':((case>>11)&0x1)|6,
-            'pc':0xb1a,'mem_value':(case>>12)&0xff})
+        {'phase0':1,'ign':0,'instr':case&0x7,'tmp':11, 'acc':(case>>3)&0xff,
+            'flags':((case>>11)&0x1)|6, 'pc':0xb1a,'mem_value':(case>>12)&0xff})
 def cpu_phase23_3_t3_input_test_func(case):
     return bin_comp(cpu_phase23_input_str,
-        {'phase0':1,'instr':14+(case&1),'tmp':11,'acc':(case>>1)&0xff,'flags':((case>>9)&0x1)|6,
-            'pc':0xd7b,'mem_value':(case>>10)&0xff})
+        {'phase0':1,'ign':0,'instr':14+(case&1),'tmp':11,'acc':(case>>1)&0xff,
+            'flags':((case>>9)&0x1)|6,'pc':0xd7b,'mem_value':(case>>10)&0xff})
 
 gen_testsuite("cpu_phase23_3_t1", "cpu_phase23", 40, 49, range(0, 1<<20), cpu_phase23,
                 cpu_phase23_3_t1_input_test_func)
@@ -292,7 +292,7 @@ def cpu_main(data):
         outv |= {'acc':acc, 'flags':flags, 'mem_value':0, 'mem_rw':0, 'create':0, 'stop':0}
     else:
         outv = bin_decomp(cpu_phase23_output_str, cpu_phase23(bin_comp(cpu_phase23_input_str,
-                {'phase0':phase&1, 'instr':instr, 'tmp':tmp, 'acc':acc, 'flags':flags,
+                {'phase0':phase&1, 'ign':0, 'instr':instr, 'tmp':tmp, 'acc':acc, 'flags':flags,
                  'pc':pc, 'mem_value':mem_value})))
         outv |= {'instr':instr, 'tmp':tmp}
     

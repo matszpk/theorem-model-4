@@ -95,7 +95,7 @@ main:
     mem_address_4_ph23 mem_address_5_ph23 mem_address_6_ph23 mem_address_7_ph23 \
     mem_address_8_ph23 mem_address_9_ph23 mem_address_10_ph23 mem_address_11_ph23 \
     create_ph23 stop_ph23 = cpu_phase23 \
-        cpu_phase_0 :40:cpu_instr_0
+        :42:cpu_phase_0
     
     zero = copy zero
     cpu_phase_1 = copy cpu_phase_1
@@ -193,9 +193,6 @@ full_adder:
     a1 = and s0 i2
     o0 = xor s0 i2
     o1 = or a0 a1
-half_adder:
-    o0 = xor i0 i1
-    o1 = and i0 i1
 # i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
 carry_adder_4bit:
     s0 c0 = full_adder i1 i5 i0
@@ -215,10 +212,10 @@ carry_suber_4bit:
     o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
     o4 = copy c3
 carry_inc_4bit:
-    s0 c0 = half_adder i1 i0
-    s1 c1 = half_adder i2 c0
-    s2 c2 = half_adder i3 c1
-    s3 c3 = half_adder i4 c2
+    s0 c0 = full_adder i1 i0 zero
+    s1 c1 = full_adder i2 c0 zero
+    s2 c2 = full_adder i3 c1 zero
+    s3 c3 = full_adder i4 c2 zero
     o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
     o4 = copy c3
 inc_12bit:
@@ -327,46 +324,47 @@ cpu_phase01:
 
 cpu_phase23:
     alias cpu_phase_0 i0
-    alias cpu_instr_0 i1
-    alias cpu_instr_1 i2
-    alias cpu_instr_2 i3
-    alias cpu_instr_3 i4
-    alias cpu_tmp_0 i5
-    alias cpu_tmp_1 i6
-    alias cpu_tmp_2 i7
-    alias cpu_tmp_3 i8
-    alias cpu_acc_0 i9
-    alias cpu_acc_1 i10
-    alias cpu_acc_2 i11
-    alias cpu_acc_3 i12
-    alias cpu_acc_4 i13
-    alias cpu_acc_5 i14
-    alias cpu_acc_6 i15
-    alias cpu_acc_7 i16
-    alias cpu_flag_c i17
-    alias cpu_flag_z i18
-    alias cpu_flag_v i19
-    alias cpu_flag_n i20
-    alias cpu_pc_0 i21
-    alias cpu_pc_1 i22
-    alias cpu_pc_2 i23
-    alias cpu_pc_3 i24
-    alias cpu_pc_4 i25
-    alias cpu_pc_5 i26
-    alias cpu_pc_6 i27
-    alias cpu_pc_7 i28
-    alias cpu_pc_8 i29
-    alias cpu_pc_9 i30
-    alias cpu_pc_10 i31
-    alias cpu_pc_11 i32
-    alias mem_value_0 i33
-    alias mem_value_1 i34
-    alias mem_value_2 i35
-    alias mem_value_3 i36
-    alias mem_value_4 i37
-    alias mem_value_5 i38
-    alias mem_value_6 i39
-    alias mem_value_7 i40
+    alias cpu_phase_1 i1
+    alias cpu_instr_0 i2
+    alias cpu_instr_1 i3
+    alias cpu_instr_2 i4
+    alias cpu_instr_3 i5
+    alias cpu_tmp_0 i6
+    alias cpu_tmp_1 i7
+    alias cpu_tmp_2 i8
+    alias cpu_tmp_3 i9
+    alias cpu_acc_0 i10
+    alias cpu_acc_1 i11
+    alias cpu_acc_2 i12
+    alias cpu_acc_3 i13
+    alias cpu_acc_4 i14
+    alias cpu_acc_5 i15
+    alias cpu_acc_6 i16
+    alias cpu_acc_7 i17
+    alias cpu_flag_c i18
+    alias cpu_flag_z i19
+    alias cpu_flag_v i20
+    alias cpu_flag_n i21
+    alias cpu_pc_0 i22
+    alias cpu_pc_1 i23
+    alias cpu_pc_2 i24
+    alias cpu_pc_3 i25
+    alias cpu_pc_4 i26
+    alias cpu_pc_5 i27
+    alias cpu_pc_6 i28
+    alias cpu_pc_7 i29
+    alias cpu_pc_8 i30
+    alias cpu_pc_9 i31
+    alias cpu_pc_10 i32
+    alias cpu_pc_11 i33
+    alias mem_value_0 i34
+    alias mem_value_1 i35
+    alias mem_value_2 i36
+    alias mem_value_3 i37
+    alias mem_value_4 i38
+    alias mem_value_5 i39
+    alias mem_value_6 i40
+    alias mem_value_7 i41
     
     one = nand zero zero
     # phase 2 - load memory argument from memory
