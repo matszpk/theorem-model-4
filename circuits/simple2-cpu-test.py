@@ -287,9 +287,13 @@ def cpu_main(data):
     outv = dict()
 
     if phase<2:
+        outvtmp = bin_decomp(cpu_phase23_output_str, cpu_phase23(bin_comp(cpu_phase23_input_str,
+                {'phase0':phase&1, 'ign':0, 'instr':instr, 'tmp':tmp, 'acc':acc, 'flags':flags,
+                 'pc':pc, 'mem_value':mem_value})))
         outv = bin_decomp(cpu_phase01_output_str, cpu_phase01(bin_comp(cpu_phase01_input_str,
                 {'phase0':phase&1, 'pc':pc, 'mem_value': mem_value})))
-        outv |= {'acc':acc, 'flags':flags, 'mem_value':0, 'mem_rw':0, 'create':0, 'stop':0}
+        outv |= {'acc':acc, 'flags':flags, 'mem_value':outvtmp['mem_value'],
+                 'mem_rw':0, 'create':0, 'stop':0}
     else:
         outv = bin_decomp(cpu_phase23_output_str, cpu_phase23(bin_comp(cpu_phase23_input_str,
                 {'phase0':phase&1, 'ign':0, 'instr':instr, 'tmp':tmp, 'acc':acc, 'flags':flags,

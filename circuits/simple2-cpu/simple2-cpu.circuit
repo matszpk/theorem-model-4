@@ -112,7 +112,7 @@ main:
     o22 o23 o24 o25 o26 o27 o28 o29 o30 o31 o32 o33 = ite_12bit cpu_phase_1 \
         :12:cpu_pc_0_ph23 :12:cpu_pc_0_ph01
     # mem_value_X
-    o34 o35 o36 o37 o38 o39 o40 o41 = ite_8bit cpu_phase_1 :8:mem_value_0_ph23 .8:zero
+    o34 o35 o36 o37 o38 o39 o40 o41 = copy_8bit :8:mem_value_0_ph23
     # mem_rw
     o42 = and cpu_phase_1 mem_rw_ph23
     # mem_address_X
