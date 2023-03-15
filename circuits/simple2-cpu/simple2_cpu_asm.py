@@ -147,3 +147,4 @@ class Memory:
                 self.byte(k)
                 break
         imms |= new_imms
+        return len(new_imms)!=0
