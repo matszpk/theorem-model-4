@@ -2,7 +2,6 @@
 # cell_len_bits: 8, address_len: 10
 # Registers:
 #  A - accumlator (8-bit)
-#  S - stack pointer (8-bit)
 #  F - flags (3 - N, 2 - V, 1 - Z, 0 - C)
 #  PC - program counter (12-bit)
 # Instruction set:
