@@ -25,6 +25,9 @@ class Memory:
         self.mmod = [False]*(1<<12)
         self.pc = 0
     
+    def clearmod(self):
+        self.mmod = [False]*(1<<12)
+    
     def set_pc(self, pc):
         self.pc = pc&0xfff
     
@@ -73,6 +76,55 @@ class Memory:
         self.word16(instr_spc | instr_addr(addr), mod)
     def sec(self, mod=False):
         self.byte(instr_sec, mod)
+    
+    def lda_imm(self, im, imms):
+        if im in imms and imms[im]>=0:
+            self.lda(imms[im], [False,False])
+        else:
+            self.lda(0, [True,True])
+            imms[im] = -1
+    
+    def adc_imm(self, im, imms):
+        if im in imms:
+            self.adc(imms[im], [False,False])
+        else:
+            self.adc(0, [True,True])
+            imms[im] = -1
+    
+    def sbc_imm(self, im, imms):
+        if im in imms and imms[im]>=0:
+            self.sbc(imms[im], [False,False])
+        else:
+            self.sbc(0, [True,True])
+            imms[im] = -1
+    
+    def ana_imm(self, im, imms):
+        if im in imms and imms[im]>=0:
+            self.ana(imms[im], [False,False])
+        else:
+            self.ana(0, [True,True])
+            imms[im] = -1
+    
+    def ora_imm(self, im, imms):
+        if im in imms and imms[im]>=0:
+            self.ora(imms[im], [False,False])
+        else:
+            self.ora(0, [True,True])
+            imms[im] = -1
+    
+    def xor_imm(self, im, imms):
+        if im in imms and imms[im]>=0:
+            self.xor(imms[im], [False,False])
+        else:
+            self.xor(0, [True,True])
+            imms[im] = -1
+    
+    def spc_imm(self, im, imms):
+        if im in imms and imms[im]>=0:
+            self.spc(imms[im], [False,False])
+        else:
+            self.spc(0, [True,True])
+            imms[im] = -1
 
     def dump(self):
         out = b''
@@ -86,3 +138,11 @@ class Memory:
             if not self.mmod[i]:
                 vals[self.mem[i]] = i
         return vals
+    
+    def rest_imms(self, imms):
+        new_imms = dict()
+        for (k,v) in imms.items():
+            if v<0:
+                new_imms[self.pc] = k
+                self.byte(k)
+        imms |= new_imms
