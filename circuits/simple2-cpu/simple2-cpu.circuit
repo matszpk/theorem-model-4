@@ -184,10 +184,8 @@ copy_8bit:
 copy_12bit:
     empty 12
 not_4bit:
-    o0 = nand i0 i0
-    o1 = nand i1 i1
-    o2 = nand i2 i2
-    o3 = nand i3 i3
+    one = nand zero zero
+    o0 o1 o2 o3 = xor_4bit :4:i0 .4:one
 full_adder:
     s0 = xor i0 i1
     a0 = and i0 i1
@@ -205,7 +203,7 @@ carry_adder_4bit:
 # 4-bit subtractor with carry
 # i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
 carry_suber_4bit:
-    n0 n1 n2 n3 = not_4bit i5 i6 i7 i8
+    n0 n1 n2 n3 = not_4bit :4:i5
     s0 c0 = full_adder i1 n0 i0
     s1 c1 = full_adder i2 n1 c0
     s2 c2 = full_adder i3 n2 c1
@@ -213,20 +211,13 @@ carry_suber_4bit:
     o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
     o4 = copy c3
 carry_inc_4bit:
-    s0 c0 = full_adder i1 i0 zero
-    s1 c1 = full_adder i2 c0 zero
-    s2 c2 = full_adder i3 c1 zero
-    s3 c3 = full_adder i4 c2 zero
-    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
-    o4 = copy c3
+    o0 o1 o2 o3 o4 = carry_adder_4bit :5:i0 .4:zero
 inc_12bit:
     one = nand zero zero
     s0 s1 s2 s3 c0 = carry_inc_4bit one i0 i1 i2 i3
     s4 s5 s6 s7 c1 = carry_inc_4bit c0 i4 i5 i6 i7
     s8 s9 s10 s11 ign = carry_inc_4bit c1 i8 i9 i10 i11
-    o0 o1 o2 o3 = copy_4bit :4:s0
-    o4 o5 o6 o7 = copy_4bit :4:s4
-    o8 o9 o10 o11 = copy_4bit :4:s8
+    o0 o1 o2 o3 o4 o5 o6 o7 o8 o9 o10 o11 = copy_12bit :4:s0 :4:s4 :4:s8
 
 cpu_phase01:
     alias cpu_phase_0 i0
