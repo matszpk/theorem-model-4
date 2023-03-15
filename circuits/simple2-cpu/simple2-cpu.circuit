@@ -188,10 +188,11 @@ not_4bit:
     o0 o1 o2 o3 = xor_4bit :4:i0 .4:one
 full_adder:
     s0 = xor i0 i1
-    a0 = and i0 i1
-    a1 = and s0 i2
+    a0 = nand i0 i1
+    a1 = nand s0 i2
     o0 = xor s0 i2
-    o1 = or a0 a1
+    # (i0 and i1) or (s0 and i2)
+    o1 = nand a0 a1
 # i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
 carry_adder_4bit:
     s0 c0 = full_adder i1 i5 i0
@@ -506,15 +507,16 @@ cpu_exec:
     cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit :4:cpu_instr_0
     mem_value_0_n = nand mem_value_0 mem_value_0
     
-    if_sec = and if_last_instr cpu_instr_0
-    cpu_flag_c_tcdef = or if_sec cpu_flag_c
+    #if_sec = and if_last_instr cpu_instr_0
+    #cpu_flag_c_tcdef = or if_sec cpu_flag_c
     
-    if_rol_ror = and cpu_instr_1_n cpu_instr_2_n
+    if_rol_ror_n = nand cpu_instr_1_n cpu_instr_2_n
     cpu_acc_0_th1 cpu_acc_1_th1 cpu_acc_2_th1 cpu_acc_3_th1 \
-    cpu_acc_4_th1 cpu_acc_5_th1 cpu_acc_6_th1 cpu_acc_7_th1 = ite_8bit if_rol_ror \
-        :8:cpu_acc_0_t89 :8:cpu_acc_0
+    cpu_acc_4_th1 cpu_acc_5_th1 cpu_acc_6_th1 cpu_acc_7_th1 = ite_8bit if_rol_ror_n \
+        :8:cpu_acc_0 :8:cpu_acc_0_t89
     cpu_flag_c_th1 = ite cpu_instr_2 cpu_flag_c_tcdef cpu_flag_c_t89
-    cpu_acc_changed = or cpu_instr_3_n if_rol_ror
+    #cpu_acc_changed = or cpu_instr_3_n if_rol_ror
+    cpu_acc_changed = nand cpu_instr_3 if_rol_ror_n
     
     cpu_acc_0_tall cpu_acc_1_tall cpu_acc_2_tall cpu_acc_3_tall \
     cpu_acc_4_tall cpu_acc_5_tall cpu_acc_6_tall cpu_acc_7_tall = ite_8bit \
