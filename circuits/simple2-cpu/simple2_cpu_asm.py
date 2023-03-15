@@ -4,7 +4,7 @@ instr_sta=1
 instr_adc=2
 instr_sbc=3
 instr_and=4
-instr_or=5
+instr_ora=5
 instr_xor=6
 instr_clc=7
 instr_rol=8
@@ -52,7 +52,7 @@ class Memory:
     def ana(self, addr, mod=[False,False]):
         self.word16(instr_and | instr_addr(addr), mod)
     def ora(self, addr, mod=[False,False]):
-        self.word16(instr_or | instr_addr(addr), mod)
+        self.word16(instr_ora | instr_addr(addr), mod)
     def xor(self, addr, mod=[False,False]):
         self.word16(instr_xor | instr_addr(addr), mod)
     def clc(self, mod=False):
