@@ -395,12 +395,13 @@ cpu_phase23:
     # if sta
     if_sta_x = and_3 :3:cpu_instr_1_n
     if_sta = and cpu_instr_0 if_sta_x
-    if_sta_n = nand if_sta if_sta
+    #if_sta_n = nand if_sta if_sta
     alias mem_rw_ph2 if_sta
     
     if_branch_x = xor cpu_instr_1 cpu_instr_2
-    if_branch_n = nand if_branch_x cpu_instr_3
-    if_branch = nand if_branch_n if_branch_n
+    #if_branch_n = nand if_branch_x cpu_instr_3
+    #if_branch = nand if_branch_n if_branch_n
+    if_branch = and if_branch_x cpu_instr_3
     cpu_flag_c_n cpu_flag_z_n cpu_flag_v_n cpu_flag_n_n = not_4bit :4:cpu_flag_c
     if_bcc = and_3 cpu_instr_0_n cpu_instr_1 cpu_flag_c_n
     if_bne = and_3 cpu_instr_0 cpu_instr_1 cpu_flag_z_n
@@ -410,7 +411,9 @@ cpu_phase23:
     if_do_branch = and if_branch if_do_branch_x
     
     # if branch then skip to phase 3
-    cpu_phase_0_ph2 = and if_branch_n if_sta_n
+    #cpu_phase_0_ph2 = and if_branch_n if_sta_n
+    cpu_phase_0_ph2_n = or if_branch if_sta
+    cpu_phase_0_ph2 = nand cpu_phase_0_ph2_n cpu_phase_0_ph2_n
     alias cpu_phase_1_ph2 cpu_phase_0_ph2
     cpu_pc_0_ph2 cpu_pc_1_ph2 cpu_pc_2_ph2 cpu_pc_3_ph2 \
     cpu_pc_4_ph2 cpu_pc_5_ph2 cpu_pc_6_ph2 cpu_pc_7_ph2 \
