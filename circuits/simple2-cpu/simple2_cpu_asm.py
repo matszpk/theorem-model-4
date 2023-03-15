@@ -135,7 +135,7 @@ class Memory:
     def imms(self,r):
         vals=dict()
         for i in r:
-            if not self.mmod[i]:
+            if not self.mmod[i] and self.mem[i] not in vals:
                 vals[self.mem[i]] = i
         return vals
     
