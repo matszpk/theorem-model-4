@@ -77,51 +77,51 @@ class Memory:
     def sec(self, mod=False):
         self.byte(instr_sec, mod)
     
-    def lda_imm(self, im, imms):
+    def lda_imm(self, im, imms, mod=[False,False]):
         if im in imms and imms[im]>=0:
-            self.lda(imms[im], [False,False])
+            self.lda(imms[im], mod)
         else:
             self.lda(0, [True,True])
             imms[im] = -1
     
-    def adc_imm(self, im, imms):
+    def adc_imm(self, im, imms, mod=[False,False]):
         if im in imms:
-            self.adc(imms[im], [False,False])
+            self.adc(imms[im], mod)
         else:
             self.adc(0, [True,True])
             imms[im] = -1
     
-    def sbc_imm(self, im, imms):
+    def sbc_imm(self, im, imms, mod=[False,False]):
         if im in imms and imms[im]>=0:
-            self.sbc(imms[im], [False,False])
+            self.sbc(imms[im], mod)
         else:
             self.sbc(0, [True,True])
             imms[im] = -1
     
-    def ana_imm(self, im, imms):
+    def ana_imm(self, im, imms, mod=[False,False]):
         if im in imms and imms[im]>=0:
-            self.ana(imms[im], [False,False])
+            self.ana(imms[im], mod)
         else:
             self.ana(0, [True,True])
             imms[im] = -1
     
-    def ora_imm(self, im, imms):
+    def ora_imm(self, im, imms, mod=[False,False]):
         if im in imms and imms[im]>=0:
-            self.ora(imms[im], [False,False])
+            self.ora(imms[im], mod)
         else:
             self.ora(0, [True,True])
             imms[im] = -1
     
-    def xor_imm(self, im, imms):
+    def xor_imm(self, im, imms, mod=[False,False]):
         if im in imms and imms[im]>=0:
-            self.xor(imms[im], [False,False])
+            self.xor(imms[im], mod)
         else:
             self.xor(0, [True,True])
             imms[im] = -1
     
-    def spc_imm(self, im, imms):
+    def spc_imm(self, im, imms, mod=[False,False]):
         if im in imms and imms[im]>=0:
-            self.spc(imms[im], [False,False])
+            self.spc(imms[im], mod)
         else:
             self.spc(0, [True,True])
             imms[im] = -1
