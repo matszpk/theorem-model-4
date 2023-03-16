@@ -90,6 +90,8 @@ def gencode():
     ret_ch0 = ml.pc
     ml.lda(stack,[False,True])
     ml.sec()
+    ml.rol()
+    ml.ror()
     ml.bne(ch_finish)
     
     # call_table
