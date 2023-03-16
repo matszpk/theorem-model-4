@@ -90,9 +90,9 @@ def gencode():
     ret_ch0 = ml.pc
     ml.lda(stack,[False,True])
     ml.sec()
-    ml.rol()
-    ml.ror()
-    ml.bne(ch_finish)
+    ml.adc_imm(0xff)
+    # overflow always is zero - becuase no change sign in acc
+    ml.bvc(ch_finish)
     
     # call_table
     ml.pc = ((ml.pc + 3) & 0xffc)
