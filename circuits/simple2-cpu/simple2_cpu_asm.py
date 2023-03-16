@@ -45,22 +45,43 @@ class Memory:
         self.word16((a>>16)&0xffff, mod[2:4])
 
     def lda(self, addr, mod=[False,False]):
-        self.word16(instr_lda | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_lda | instr_addr(addr), mod)
+        else:
+            self.word16(instr_lda | instr_addr(0), [True, True])
     def sta(self, addr, mod=[False,False]):
         if self.mmod[addr]:
-            self.word16(instr_sta | instr_addr(addr), mod)
+            if type(addr)==int and addr>=0:
+                self.word16(instr_sta | instr_addr(addr), mod)
+            else:
+                self.word16(instr_sta | instr_addr(0), [True, True])
         else:
             raise(RuntimeError("Illegal write to memory %d"%addr))
     def adc(self, addr, mod=[False,False]):
-        self.word16(instr_adc | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_adc | instr_addr(addr), mod)
+        else:
+            self.word16(instr_adc | instr_addr(0), [True, True])
     def sbc(self, addr, mod=[False,False]):
-        self.word16(instr_sbc | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_sbc | instr_addr(addr), mod)
+        else:
+            self.word16(instr_sbc | instr_addr(0), [True, True])
     def ana(self, addr, mod=[False,False]):
-        self.word16(instr_and | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_and | instr_addr(addr), mod)
+        else:
+            self.word16(instr_and | instr_addr(0), [True, True])
     def ora(self, addr, mod=[False,False]):
-        self.word16(instr_ora | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_ora | instr_addr(addr), mod)
+        else:
+            self.word16(instr_ora | instr_addr(0), [True, True])
     def xor(self, addr, mod=[False,False]):
-        self.word16(instr_xor | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_xor | instr_addr(addr), mod)
+        else:
+            self.word16(instr_xor | instr_addr(0), [True, True])
     def clc(self, mod=False):
         self.byte(instr_clc, mod)
     def rol(self, mod=False):
