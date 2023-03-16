@@ -76,27 +76,26 @@ def gencode():
     ch_sh2 = ml.pc
     ml.bcc(ch_shend)
     ml.adc_imm(0xf)
-    
+    # always carry is zero
     ch_shend = ml.pc
     ml.sta(ch_ch2)
     ml.sta(ch_ch3)
     # store this address of call_table to address loaders
     ml.lda(temp1)
     ml.sta(ch_ch2+1)
-    ml.sec()
-    ml.adc_imm(0)
+    #ml.clc()
+    ml.adc_imm(1)
     ml.sta(ch_ch3+1)
     # load address (really instruction)
-    ch_ch2 = ml.pc
-    ml.lda(call_table, [True, True])
-    ml.sta(ch_ch1)
     ch_ch3 = ml.pc
     ml.lda(call_table, [True, True])
     ml.sta(ch_ch1+1)
-    # call this instruction
-    ml.clc()
+    ch_ch2 = ml.pc
+    ml.lda(call_table, [True, True])
+    ml.sta(ch_ch1)
+    # call this instruction: first byte is always nonzero
     ch_ch1 = ml.pc
-    ml.bcc(0, [True, True])
+    ml.bne(0, [True, True])
     
     # return
     ret_handler = ml.pc
@@ -117,10 +116,10 @@ def gencode():
     # call_table
     ml.pc = ((ml.pc + 3) & 0xffc)
     call_table = ml.pc
-    ml.word16(instr_addr(subroutine1) | instr_bcc)
-    ml.word16(instr_addr(ret_0x01) | instr_bcc)
-    ml.word16(instr_addr(subroutine2) | instr_bcc)
-    ml.word16(instr_addr(ret_0x02) | instr_bcc)
+    ml.word16(instr_addr(subroutine1) | instr_bne)
+    ml.word16(instr_addr(ret_0x01) | instr_bne)
+    ml.word16(instr_addr(subroutine2) | instr_bne)
+    ml.word16(instr_addr(ret_0x02) | instr_bne)
     
     ml.pc = ((ml.pc + 255) & 0xf00) - 2
     if (ml.pc&0xff)>=255:
