@@ -143,7 +143,7 @@ class Memory:
         new_imms = dict()
         for (k,v) in imms.items():
             if v<0:
-                new_imms[self.pc] = k
+                new_imms[k] = self.pc
                 self.byte(k)
                 break
         imms |= new_imms
@@ -151,7 +151,16 @@ class Memory:
     
     def assemble(self, codegen, stages=2):
         imms = dict()
+        old_imms = dict()
         for i in range(0,stages):
             codegen(self,imms)
+        imm_pc = self.pc
         while self.rest_imms(imms):
+            imm_pc = self.pc
             codegen(self,imms)
+            self.pc = imm_pc
+
+def join_imms(imms1, imms2):
+    for (k,v) in imms2.items():
+        if v>=0 and (k not in imms1 or imms1[k]<0):
+            imms1[k] = v
