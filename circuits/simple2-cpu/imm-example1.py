@@ -4,7 +4,6 @@ from sys import stdout
 ml = Memory()
 
 def gencode(ml):
-    global imms
     ml.set_pc(0x00)
     ml.lda_imm(4)
     ml.sec()
