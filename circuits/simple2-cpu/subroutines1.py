@@ -136,6 +136,8 @@ def gencode():
     ml.word16(instr_addr(ret_0x02) | instr_bcc)
     
     ml.pc = ((ml.pc + 255) & 0xf00) - 2
+    if (ml.pc&0xff)>=255:
+        ml.pc = (ml.pc + 0x101) & 0xfff
     # stack
     temp1 = ml.pc
     ml.byte(0,True)
