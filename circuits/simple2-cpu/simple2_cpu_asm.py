@@ -161,8 +161,9 @@ class Memory:
         imms = dict()
         for i in range(0,stages):
             start=codegen(self)
-            join_imms(imms, self.imms(range(start,self.pc)))
         imm_pc = self.pc
+        start=codegen(self)
+        join_imms(imms, self.imms(range(start,self.pc)))
         while self.rest_imms(imms):
             imm_pc = self.pc
             start=codegen(self)
