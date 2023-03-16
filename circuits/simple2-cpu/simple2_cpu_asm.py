@@ -19,6 +19,19 @@ instr_sec=15
 def instr_addr(addr):
     return (((addr>>8)&0xf)<<4) | ((addr&0xff)<<8)
 
+"""
+Assemblying program should be done by using assemble method which argument is function that
+generates code. Function should return start address from assemble method will start
+collecting of immediates for *_imm pseudo-instructions.
+Methods byte, word16, word32 - put values into memory.
+Methods lda, sta, ... generates instructions. 'addr' is address.
+Special argument is mod - defines which byte of instruction will be modified while
+executing code.
+Methods lda_imm, ... generates instructions that operates on specified immediate.
+Because processor doesn't have immediate mode for instructions, thus assembler
+manages immediates after program code.
+"""
+
 class Memory:
     def __init__(self):
         self.mem = [0]*(1<<12)
