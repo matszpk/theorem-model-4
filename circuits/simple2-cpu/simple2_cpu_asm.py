@@ -62,6 +62,7 @@ class Memory:
             self.word16(instr_lda | instr_addr(addr), mod)
         else:
             self.word16(instr_lda | instr_addr(0), [True, True])
+    
     def sta(self, addr, mod=[False,False]):
         if self.mmod[addr]:
             if type(addr)==int and addr>=0:
@@ -70,59 +71,76 @@ class Memory:
                 self.word16(instr_sta | instr_addr(0), [True, True])
         else:
             raise(RuntimeError("Illegal write to memory %d"%addr))
+    
     def adc(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_adc | instr_addr(addr), mod)
         else:
             self.word16(instr_adc | instr_addr(0), [True, True])
+    
     def sbc(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_sbc | instr_addr(addr), mod)
         else:
             self.word16(instr_sbc | instr_addr(0), [True, True])
+    
     def ana(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_and | instr_addr(addr), mod)
         else:
             self.word16(instr_and | instr_addr(0), [True, True])
+    
     def ora(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_ora | instr_addr(addr), mod)
         else:
             self.word16(instr_ora | instr_addr(0), [True, True])
+    
     def xor(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_xor | instr_addr(addr), mod)
         else:
             self.word16(instr_xor | instr_addr(0), [True, True])
+    
     def clc(self, mod=False):
         self.byte(instr_clc, mod)
+    
     def rol(self, mod=False):
         self.byte(instr_rol, mod)
+    
     def ror(self, mod=False):
         self.byte(instr_ror, mod)
+    
     def bcc(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_bcc | instr_addr(addr), mod)
         else:
             self.word16(instr_bcc | instr_addr(0), [True,True])
+    
     def bne(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_bne | instr_addr(addr), mod)
         else:
             self.word16(instr_bne | instr_addr(0), [True,True])
+    
     def bvc(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_bvc | instr_addr(addr), mod)
         else:
             self.word16(instr_bvc | instr_addr(0), [True,True])
+    
     def bpl(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
             self.word16(instr_bpl | instr_addr(addr), mod)
         else:
             self.word16(instr_bpl | instr_addr(0), [True,True])
+    
     def spc(self, addr, mod=[False,False]):
-        self.word16(instr_spc | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_spc | instr_addr(addr), mod)
+        else:
+            self.word16(instr_spc | instr_addr(0), [True, True])
+    
     def sec(self, mod=False):
         self.byte(instr_sec, mod)
     
