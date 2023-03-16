@@ -21,12 +21,13 @@ ret_ch3 = -1000
 def gencode():
     global call_handler, ret_handler, temp1, stack, stack_ptr
     global call_table
+    ct_start = (call_table>>2)&0xff
     ml.set_pc(start)
-    ml.lda_imm(0x01)
+    ml.lda_imm(ct_start)
     ml.bne(call_handler)
     ret_0x01 = ml.pc
     
-    ml.lda_imm(0x02)
+    ml.lda_imm(ct_start+1)
     ml.bne(call_handler)
     ret_0x02 = ml.pc
     ml.spc_imm(1)
@@ -34,14 +35,13 @@ def gencode():
     subroutine1 = ml.pc
     ml.lda_imm(0x20)
     ml.sta(0xff0)
-    ml.clc()
-    ml.bcc(ret_handler)
+    ml.bne(ret_handler)
     
     subroutine2 = ml.pc
     ml.lda_imm(0x30)
     ml.sta(0xff1)
     ml.clc()
-    ml.bcc(ret_handler)
+    ml.bne(ret_handler)
     
     call_handler = ml.pc
     # push to stack
@@ -58,9 +58,13 @@ def gencode():
     # make jump
     global ch_ch1, ch_ch2, ch_ch3
     # shift address by 2 bits
-    for i in range(0,2):
-        ml.clc()
-        ml.rol()
+    ch_finish = ml.pc
+    ch_clc = ml.pc
+    # if sec then add 2
+    ml.clc(True)
+    ml.rol()
+    ml.clc()
+    ml.rol()
     # store this address of call_table to address loaders
     ml.sta(ch_ch2+1)
     ml.sec()
@@ -73,6 +77,9 @@ def gencode():
     ch_ch3 = ml.pc
     ml.lda(call_table, [False, True])
     ml.sta(ch_ch1+1)
+    # restore add 2 (by default no)
+    ml.lda_imm(instr_clc)
+    ml.sta(ch_clc)
     # call this instruction
     ml.clc()
     ch_ch1 = ml.pc
@@ -81,6 +88,9 @@ def gencode():
     # return
     ret_handler = ml.pc
     global ret_ch0, ret_ch1, ret_ch2, ret_ch3
+    # change to second word - return in ch_finish
+    ml.lda_imm(instr_sec)
+    ml.sta(ch_clc)
     # pop from stack
     ml.lda(stack_ptr)
     ml.clc()
@@ -89,31 +99,11 @@ def gencode():
     ml.sta(ret_ch0+1)
     ret_ch0 = ml.pc
     ml.lda(stack,[False,True])
-    # shift address by 2 bits
-    for i in range(0,2):
-        ml.clc()
-        ml.rol()
-    ml.adc_imm(2)
-    ml.sta(ret_ch1+1)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(ret_ch2+1)
-    #loader of return address
-    ret_ch1 = ml.pc
-    ml.lda(call_table, [False, True])
-    ml.sta(ret_ch3)
-    ret_ch2 = ml.pc
-    ml.lda(call_table, [False, True])
-    ml.sta(ret_ch3+1)
-    ml.clc()
-    ret_ch3 = ml.pc
-    ml.bcc(0, [True, True])
+    ml.bne(ch_finish)
     
     # call_table
-    ml.pc = ((ml.pc + 255) & 0xf00)
+    ml.pc = ((ml.pc + 3) & 0xffc)
     call_table = ml.pc
-    ml.word16(0)
-    ml.word16(0)
     ml.word16(instr_addr(subroutine1) | instr_bcc)
     ml.word16(instr_addr(ret_0x01) | instr_bcc)
     ml.word16(instr_addr(subroutine2) | instr_bcc)
