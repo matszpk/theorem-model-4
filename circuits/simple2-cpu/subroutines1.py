@@ -40,7 +40,6 @@ def gencode():
     subroutine2 = ml.pc
     ml.lda_imm(0x30)
     ml.sta(0xff1)
-    ml.clc()
     ml.bne(ret_handler)
     
     call_handler = ml.pc
