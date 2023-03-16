@@ -152,11 +152,13 @@ class Memory:
     def assemble(self, codegen, stages=2):
         imms = dict()
         for i in range(0,stages):
-            codegen(self,imms)
+            start=codegen(self,imms)
+            join_imms(imms, self.imms(range(start,self.pc)))
         imm_pc = self.pc
         while self.rest_imms(imms):
             imm_pc = self.pc
-            codegen(self,imms)
+            start=codegen(self,imms)
+            join_imms(imms, self.imms(range(start,self.pc)))
             self.pc = imm_pc
 
 def join_imms(imms1, imms2):
