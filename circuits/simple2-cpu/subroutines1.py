@@ -114,6 +114,7 @@ def gencode():
     ml.bvc(ch_finish)
     
     # call_table
+    # TODO: separate call address and return address to save memory
     ml.pc = ((ml.pc + 3) & 0xffc)
     call_table = ml.pc
     ml.word16(instr_addr(subroutine1) | instr_bne)
