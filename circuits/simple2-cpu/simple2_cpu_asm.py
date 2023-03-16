@@ -151,7 +151,6 @@ class Memory:
     
     def assemble(self, codegen, stages=2):
         imms = dict()
-        old_imms = dict()
         for i in range(0,stages):
             codegen(self,imms)
         imm_pc = self.pc
