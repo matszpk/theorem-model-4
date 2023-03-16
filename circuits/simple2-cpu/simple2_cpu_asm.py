@@ -77,49 +77,56 @@ class Memory:
     def sec(self, mod=False):
         self.byte(instr_sec, mod)
     
-    def lda_imm(self, im, imms, mod=[False,False]):
+    def lda_imm(self, im, mod=[False,False]):
+        global imms
         if im in imms and imms[im]>=0:
             self.lda(imms[im], mod)
         else:
             self.lda(0, [True,True])
             imms[im] = -1
     
-    def adc_imm(self, im, imms, mod=[False,False]):
+    def adc_imm(self, im, mod=[False,False]):
+        global imms
         if im in imms:
             self.adc(imms[im], mod)
         else:
             self.adc(0, [True,True])
             imms[im] = -1
     
-    def sbc_imm(self, im, imms, mod=[False,False]):
+    def sbc_imm(self, im, mod=[False,False]):
+        global imms
         if im in imms and imms[im]>=0:
             self.sbc(imms[im], mod)
         else:
             self.sbc(0, [True,True])
             imms[im] = -1
     
-    def ana_imm(self, im, imms, mod=[False,False]):
+    def ana_imm(self, im, mod=[False,False]):
+        global imms
         if im in imms and imms[im]>=0:
             self.ana(imms[im], mod)
         else:
             self.ana(0, [True,True])
             imms[im] = -1
     
-    def ora_imm(self, im, imms, mod=[False,False]):
+    def ora_imm(self, im, mod=[False,False]):
+        global imms
         if im in imms and imms[im]>=0:
             self.ora(imms[im], mod)
         else:
             self.ora(0, [True,True])
             imms[im] = -1
     
-    def xor_imm(self, im, imms, mod=[False,False]):
+    def xor_imm(self, im, mod=[False,False]):
+        global imms
         if im in imms and imms[im]>=0:
             self.xor(imms[im], mod)
         else:
             self.xor(0, [True,True])
             imms[im] = -1
     
-    def spc_imm(self, im, imms, mod=[False,False]):
+    def spc_imm(self, im, mod=[False,False]):
+        global imms
         if im in imms and imms[im]>=0:
             self.spc(imms[im], mod)
         else:
@@ -150,14 +157,15 @@ class Memory:
         return len(new_imms)!=0
     
     def assemble(self, codegen, stages=2):
+        global imms
         imms = dict()
         for i in range(0,stages):
-            start=codegen(self,imms)
+            start=codegen(self)
             join_imms(imms, self.imms(range(start,self.pc)))
         imm_pc = self.pc
         while self.rest_imms(imms):
             imm_pc = self.pc
-            start=codegen(self,imms)
+            start=codegen(self)
             join_imms(imms, self.imms(range(start,self.pc)))
             self.pc = imm_pc
 
