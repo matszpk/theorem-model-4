@@ -15,9 +15,6 @@ ch_ch1 = -1000
 ch_ch2 = -1000
 ch_ch3 = -1000
 ret_ch0 = -1000
-ret_ch1 = -1000
-ret_ch2 = -1000
-ret_ch3 = -1000
 def gencode():
     global call_handler, ret_handler, temp1, stack, stack_ptr
     global call_table
@@ -58,10 +55,9 @@ def gencode():
     # make jump
     global ch_ch1, ch_ch2, ch_ch3
     # shift address by 2 bits
-    ch_finish = ml.pc
-    ch_clc = ml.pc
+    ml.clc()
     # if sec then add 2
-    ml.clc(True)
+    ch_finish = ml.pc
     ml.rol()
     ml.clc()
     ml.rol()
@@ -77,9 +73,6 @@ def gencode():
     ch_ch3 = ml.pc
     ml.lda(call_table, [False, True])
     ml.sta(ch_ch1+1)
-    # restore add 2 (by default no)
-    ml.lda_imm(instr_clc)
-    ml.sta(ch_clc)
     # call this instruction
     ml.clc()
     ch_ch1 = ml.pc
@@ -87,10 +80,7 @@ def gencode():
     
     # return
     ret_handler = ml.pc
-    global ret_ch0, ret_ch1, ret_ch2, ret_ch3
-    # change to second word - return in ch_finish
-    ml.lda_imm(instr_sec)
-    ml.sta(ch_clc)
+    global ret_ch0
     # pop from stack
     ml.lda(stack_ptr)
     ml.clc()
@@ -99,6 +89,7 @@ def gencode():
     ml.sta(ret_ch0+1)
     ret_ch0 = ml.pc
     ml.lda(stack,[False,True])
+    ml.sec()
     ml.bne(ch_finish)
     
     # call_table
