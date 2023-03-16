@@ -22,11 +22,11 @@ def instr_addr(addr):
 class Memory:
     def __init__(self):
         self.mem = [0]*(1<<12)
-        self.mmod = [False]*(1<<12)
+        self.mmod = [True]*(1<<12)
         self.pc = 0
     
     def clearmod(self):
-        self.mmod = [False]*(1<<12)
+        self.mmod = [True]*(1<<12)
     
     def set_pc(self, pc):
         self.pc = pc&0xfff
@@ -47,7 +47,10 @@ class Memory:
     def lda(self, addr, mod=[False,False]):
         self.word16(instr_lda | instr_addr(addr), mod)
     def sta(self, addr, mod=[False,False]):
-        self.word16(instr_sta | instr_addr(addr), mod)
+        if self.mmod[addr]:
+            self.word16(instr_sta | instr_addr(addr), mod)
+        else:
+            raise(RuntimeError("Illegal write to memory %d"%addr))
     def adc(self, addr, mod=[False,False]):
         self.word16(instr_adc | instr_addr(addr), mod)
     def sbc(self, addr, mod=[False,False]):
@@ -65,13 +68,25 @@ class Memory:
     def ror(self, mod=False):
         self.byte(instr_ror, mod)
     def bcc(self, addr, mod=[False,False]):
-        self.word16(instr_bcc | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_bcc | instr_addr(addr), mod)
+        else:
+            self.word16(instr_bcc | instr_addr(0), [True,True])
     def bne(self, addr, mod=[False,False]):
-        self.word16(instr_bne | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_bne | instr_addr(addr), mod)
+        else:
+            self.word16(instr_bne | instr_addr(0), [True,True])
     def bvc(self, addr, mod=[False,False]):
-        self.word16(instr_bvc | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_bvc | instr_addr(addr), mod)
+        else:
+            self.word16(instr_bvc | instr_addr(0), [True,True])
     def bpl(self, addr, mod=[False,False]):
-        self.word16(instr_bpl | instr_addr(addr), mod)
+        if type(addr)==int and addr>=0:
+            self.word16(instr_bpl | instr_addr(addr), mod)
+        else:
+            self.word16(instr_bpl | instr_addr(0), [True,True])
     def spc(self, addr, mod=[False,False]):
         self.word16(instr_spc | instr_addr(addr), mod)
     def sec(self, mod=False):
@@ -156,17 +171,17 @@ class Memory:
         imms |= new_imms
         return len(new_imms)!=0
     
-    def assemble(self, codegen, stages=2):
+    def assemble(self, codegen, stages=3):
         global imms
         imms = dict()
         for i in range(0,stages):
-            start=codegen(self)
+            start=codegen()
         imm_pc = self.pc
-        start=codegen(self)
+        start=codegen()
         join_imms(imms, self.imms(range(start,self.pc)))
         while self.rest_imms(imms):
             imm_pc = self.pc
-            start=codegen(self)
+            start=codegen()
             join_imms(imms, self.imms(range(start,self.pc)))
             self.pc = imm_pc
 
