@@ -61,6 +61,9 @@ Ops = IntEnum('Ops',
             'BRK','RTI','RTS','UND'
         ])
 
+op_adc, op_and, op_asl, op_bcc, op_bcs = -10000, -10000, -10000, -100000, -100000
+op_und = -10000
+
 ret_pages = dict()
 def call_proc_8b(proc):
     if proc < 0:
@@ -92,11 +95,10 @@ def get_ret_page(proc):
         return -10000
 
 load_inc_pc, load_inc_pc_ch = -10000, -10000
-decode_notALU, decode_end, decode_noSTAimm = -10000, -10000, -10000
-decode, decode_noALU2IMPA, decode_noAddrMode04 = -10000, -10000, -10000
-decode_noTXA_other, decode_noIMP = -10000, -10000
-decode_notMEM, decode_other_next = -10000, -10000
-other_addr_mode_table, other_opcode_table = -10000, -10000
+decode, decode_end = -10000, -10000
+decode_ch1, decode_ch2, decode_ch3 = -10000, -10000, -10000
+decode_table = -10000
+call_op = -10000
 
 def gencode():
     global ret_pages
@@ -125,193 +127,94 @@ def gencode():
     # load argument high
     call_proc_8b(load_inc_pc)
     
-    
     ##############################
     # decode it
-    global decode, decode_notMEM, decode_other_next
-    global decode_notALU, decode_end, decode_noSTAimm, decode_noAddrMode04
-    global decode_noTXA_other, decode_noIMP
-    global decode_noALU2IMPA, other_addr_mode_table, other_opcode_table
+    global call_op
+    global decode, decode_end, decode_table
+    global decode_ch1, decode_ch2, decode_ch3
+    global op_und
     decode = ml.pc
     #-------------------------------
     ml.sta(nopcode)
-    ml.ana_imm(0x0f)
-    ml.xor_imm(8)
-    ml.bne(decode_noIMP)
+    # skip opcodes that satisfies opcode&0x03 == 3. there are undefined
+    ml.ana_imm(0x03)
+    ml.xor_imm(0x03)
+    ml.bne(op_und)
+    # skip opcode&0x03 == 3 in table.
     ml.lda(nopcode)
+    ml.clc()
+    ml.ror()
+    ml.clc()
+    ml.ror()
+    ml.sta(temp1)
+    ml.sec()
+    ml.lda(nopcode)
+    ml.sbc(temp1)
+    ml.sta(decode_ch1+1)
+    ml.clc()
+    ml.ror()
+    ml.clc()
+    ml.adc_imm(0xa0)
+    ml.sta(decode_ch2+1)
+    # carry off - A-X-1
+    ml.sbc_imm(0xa0-1)
+    ml.clc()
+    ml.ror()
+    ml.sta(decode_ch3+1)
+    
+    decode_ch1 = ml.pc
+    ml.lda((decode_table & 0xf00), [False, True])
+    ml.sta(call_op+1)
+    
+    ml.lda(decode_ch1+1)
+    ml.ror()
+    decode_ch2 = ml.pc
+    ml.lda(((decode_table - 0x60) & 0xf00), [False, True])
+    ml.bcc(ml.pc+6)    # if not higher nibble
     ml.ror()
     ml.ror()
     ml.ror()
     ml.ror()
     ml.ana_imm(0xf)
-    ml.ora_imm(Ops.PHP)
-    ml.sta(op_index)
-    ml.bne(decode_end)
-    #--------------------------
-    # TXA,TXS impls
-    decode_noIMP = ml.pc
-    ml.lda(nopcode)
-    ml.ana_imm(0x8f)
-    ml.xor_imm(0x8a)
-    ml.bne(decode_noTXA_other)
-    ml.lda_imm(AddrMode.imp)
-    ml.sta(addr_mode)
-    ml.lda(nopcode)
+    ml.sta(addr_mode)   # addr mode
+    
+    ml.lda(decode_ch1+1)
+    ml.ror()
+    decode_ch3 = ml.pc
+    ml.lda(((decode_table + 0xc0) & 0xf00), [False, True])
+    ml.bcc(ml.pc+6)    # if not higher nibble
     ml.ror()
     ml.ror()
     ml.ror()
-    ml.ror()
-    ml.ana_imm(0x7)
-    ml.ora_imm(Ops.TXA)
-    ml.sta(op_index)
-    ml.ana_imm(5)
-    ml.xor_imm(5)
-    ml.bne(ml.pc+6)
-    decode_UND = ml.pc
-    ml.lda_imm(Ops.UND)
-    ml.sta(op_index)
-    ml.bne(decode_end)
-    #------------
-    decode_noTXA_other = ml.pc
-    ml.lda(nopcode)
-    ml.ana_imm(3)
-    ml.xor_imm(1)
-    ml.bne(decode_notALU)
-    #----------------
-    # 0x03&opcode = 1 -> ALU
-    ml.lda(nopcode)
-    ml.ror()            # shift >> 2
     ml.ror()
     ml.sta(temp1)
-    ml.ana_imm(7)       # addr mode
-    ml.sta(addr_mode)
+    ml.lda(decode_ch1+1)
+    ml.ror()
+    ml.ror()
     ml.lda(temp1)
-    ml.ror()            # shift >> 3
+    ml.bcc(ml.pc+4)
     ml.ror()
     ml.ror()
-    ml.ana_imm(7)
-    ml.sta(op_index)    # op index
-    ml.lda(nopcode)
-    ml.xor_imm(0x89) # if STA_imm
-    ml.bne(decode_noSTAimm)
-    ml.bpl(decode_UND)
-    decode_noSTAimm = ml.pc
-    ml.bne(decode_end)
-    #----------------
-    decode_notALU = ml.pc
-    #----------------
-    ml.xor_imm(1^2)
-    ml.bne(decode_notMEM)
-    ml.lda(nopcode)
-    # 0x03&opcode = 2 -> shift,inc,dec,stx,ldx
-    ml.ror()            # shift >> 2
-    ml.ror()
-    ml.sta(temp1)
-    ml.ana_imm(7)       # addr mode
-    ml.sta(addr_mode)
-    ml.lda(temp1)
-    ml.ror()            # shift >> 3
-    ml.ror()
-    ml.ror()
-    ml.ana_imm(7)
-    ml.ora_imm(Ops.ASL)
-    ml.sta(op_index)    # op index
-    ml.lda(addr_mode)
-    ml.ana_imm(3)       # addr_mode=0 or 4
-    ml.bne(decode_noAddrMode04)
-    ml.lda(nopcode)
-    ml.xor_imm(0xa0)
-    ml.bne(decode_UND)
-    # if LDX #imm
-    ml.lda(AddrMode.imm)
-    ml.sta(addr_mode)
-    ml.lda(Ops.LDX)
-    ml.sta(op_index)
-    ml.bne(decode_end)
-    decode_noAddrMode04 = ml.pc
-    ml.lda(addr_mode)
-    ml.xor(AddrMode.absy)
-    ml.bne(ml.pc+4) # skip next instr
-    ml.bpl(decode_UND)  # undefined
-    #ml.lda(addr_mode)
-    ml.xor_imm(AddrMode.absy^AddrMode.imm)       # if imm -> imp acc
-    ml.bne(decode_noALU2IMPA)
-    ml.lda(AddrMode.imp)
-    ml.sta(addr_mode)
-    decode_noALU2IMPA = ml.pc
-    # change addr mode for STX and LDX, handle STX, LDX
-    ml.lda(nopcode)
-    ml.xor_imm(0x9e)
-    ml.bne(ml.pc+4)
-    ml.bpl(decode_UND)
-    ml.lda(op_index)
-    ml.xor(Ops.STX)
-    ml.ana_imm(0xfe)
-    ml.bne(decode_end)
-    # if STX, LDX
-    ml.lda(addr_mode)
-    ml.xor(AddrMode.zpgx)
-    ml.bne(ml.pc+8)
-    ml.lda_imm(AddrMode.zpgy)
-    ml.sta(addr_mode)
-    ml.bne(decode_end)
-    #----
-    ml.xor(AddrMode.zpgx^AddrMode.absx)
-    ml.bne(ml.pc+6)
-    ml.lda_imm(AddrMode.absy)
-    ml.sta(addr_mode)
-    ml.bne(decode_end)
-    #---------------------------------
-    decode_notMEM = ml.pc
-    # use tables for other opcodes
-    ml.lda(nopcode)
-    ml.ror()
-    ml.ror()
-    ml.ror()
-    ml.ror()
-    ml.ana_imm(0xf)
-    ml.sta(temp1)
-    ml.lda(nopcode)
-    ml.ana_imm(0xf)
-    ml.xor_imm(1)
-    ml.bne(ml.pc+4)
-    ml.bpl(decode_other_next)
-    ml.xor_imm(1^4)
-    ml.bne(ml.pc+6)
-    ml.lda_imm(16)
-    ml.bne(decode_other_next)
-    ml.xor_imm(4^0xc)
-    ml.bne(decode_UND)
-    ml.lda_imm(32)
-    decode_other_next = ml.pc
-    # (hi_nibble | (16_chunk_index<<4))
-    ml.ora(temp1)
-    ml.clc()
-    ml.adc_imm(other_opcode_table&0xff)
-    ml.sta(ml.pc+3)
-    ml.lda(other_opcode_table, [False, True])
-    ml.sta(temp1)
-    ml.rol()        # move high 3 bits to low 3 bits.
+    #----------
     ml.rol()
     ml.rol()
     ml.rol()
-    ml.ana_imm(0x7)
-    ml.clc()
-    ml.adc(other_addr_mode_table)
-    ml.sta(ml.pc+3)
-    ml.lda(other_addr_mode_table, [False, True])
-    ml.sta(addr_mode)
-    ml.lda(temp1)
-    ml.ana_imm(0x1f)
-    ml.clc()
-    ml.adc_imm(Ops.BPL)
-    ml.sta(op_index)
+    ml.rol()
+    ml.ana_imm(0x30)
+    ml.ora_imm(instr_bcc)
+    ml.sta(call_op)   # 12-13 bits - 2 extra address's bits
     
     decode_end = ml.pc
     # end of decode it
     ##############################
     ml.clc()
+    
+    call_op = ml.pc
+    ml.bcc(0, [True, True])
+    
     ml.bcc(main_loop)
+    
+    op_und = ml.pc
     
     # main_prog subprogs
     
@@ -333,81 +236,12 @@ def gencode():
     ml.bcc(get_ret_page(load_inc_pc), [False, True])
     
     # tables:
-    # addressing modes:
-    other_addr_mode_table = ml.pc
-    other_am_imp = 0
-    ml.byte(AddrMode.imp)
-    other_am_rel = 1
-    ml.byte(AddrMode.rel)
-    other_am_abs = 2
-    ml.byte(AddrMode.abs)
-    other_am_imm = 3
-    ml.byte(AddrMode.imm)
-    other_am_zpg = 4
-    ml.byte(AddrMode.zpg)
-    other_am_zpgx = 5
-    ml.byte(AddrMode.zpgx)
-    other_am_absx = 6
-    ml.byte(AddrMode.absx)
-    other_addr_mode_table_end = ml.pc
-    if (other_addr_mode_table_end&0xf00) != (other_addr_mode_table&0xf00):
-        raise(RuntimeError("Page boundary!!"))
-    
-    other_opcode_table = ml.pc
-    # opcodes: 0xX0
-    ml.byte((other_am_imp<<5) | (Ops.BRK - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BPL - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.JSR - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BMI - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.RTI - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BVC - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.RTS - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BVS - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BCC - Ops.BPL))
-    ml.byte((other_am_imm<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BCS - Ops.BPL))
-    ml.byte((other_am_imm<<5) | (Ops.CPY - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BNE - Ops.BPL))
-    ml.byte((other_am_imm<<5) | (Ops.CPX - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BEQ - Ops.BPL))
-    # opcodes: 0xX4
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.BIT - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.STY - Ops.BPL))
-    ml.byte((other_am_zpgx<<5) | (Ops.STY - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_zpgx<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.CPY - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.CPX - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    # opcodes 0xXC
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.BIT - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.JMP - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.JMPind - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.STY - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_absx<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.CPY - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.CPX - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    other_opcode_table_end = ml.pc
-    if (other_opcode_table_end&0xf00) != (other_opcode_table&0xf00):
-        raise(RuntimeError("Page boundary!!"))
+    # before main table - 0xa0 - page offset - 96 entries - 192 nibble entries
+    # these values are mapped into 8-11 bit of final value - it is addr mode
+    # after main table (192 entries), we have 2-bit entries - 12-13 bits of final values.
+    # it is extra bits of call address
+    ml.set_pc((ml.pc + 0xff) & 0xf00)
+    decode_table = ml.pc
     
     return start
 
