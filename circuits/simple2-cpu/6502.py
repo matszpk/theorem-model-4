@@ -181,14 +181,15 @@ def gencode():
     ml.sta(addr_mode)   # addr mode
     
     ml.lda(decode_ch1+1)
+    ml.xor_imm(1)   # negate first bit
     ml.ror()
     decode_ch3 = ml.pc
     ml.lda(((decode_table + 0xc0) & 0xf00), [False, True])
-    ml.bcc(ml.pc+6)    # if not higher nibble
-    ml.ror()
-    ml.ror()
-    ml.ror()
-    ml.ror()
+    ml.bcc(ml.pc+6)    # if higher nibble (no rol)
+    ml.rol()
+    ml.rol()
+    ml.rol()
+    ml.rol()
     ml.sta(temp1)
     ml.lda(decode_ch2+1)
     ml.ror()
@@ -197,10 +198,6 @@ def gencode():
     ml.ror()
     ml.ror()
     #----------
-    ml.rol()
-    ml.rol()
-    ml.rol()
-    ml.rol()
     ml.ana_imm(0x30)
     ml.ora_imm(instr_bcc)
     ml.sta(call_op)   # 12-13 bits - 2 extra address's bits
