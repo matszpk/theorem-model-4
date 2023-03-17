@@ -92,6 +92,8 @@ def get_ret_page(proc):
 
 load_inc_pc, load_inc_pc_ch = -10000, -10000
 decode_notALU, decode_end, decode_noSTAimm = -10000, -10000, -10000
+decode_noALU2IMPA = -10000
+decode_noTXA_other, decode_noIMP, decode_noBRANCH = -10000, -10000, -10000
 
 def gencode():
     global ret_pages
@@ -117,7 +119,64 @@ def gencode():
     ##############################
     # decode it
     global decode_notALU, decode_end, decode_noSTAimm
+    global decode_noTXA_other, decode_noIMP, decode_noBRANCH
+    global decode_noALU2IMPA
+    #-------------------------------
     ml.sta(nopcode)
+    ml.ana_imm(0x1f)
+    ml.xor_imm(0x10)
+    ml.bne(decode_noBRANCH)
+    ml.lda(nopcode)
+    ml.rol()
+    ml.rol()
+    ml.rol()
+    ml.rol()
+    ml.ana_imm(7)
+    ml.adc_imm(Ops.BPL)
+    ml.sta(op_index)
+    ml.bne(decode_end)
+    #------------------------
+    decode_noBRANCH = ml.pc
+    ml.lda(nopcode)
+    ml.ana_imm(0x0f)
+    ml.xor_imm(8)
+    ml.bne(decode_noIMP)
+    ml.lda(nopcode)
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ana_imm(0xf)
+    ml.adc_imm(Ops.PHP-1)
+    ml.sta(op_index)
+    ml.bne(decode_end)
+    #--------------------------
+    # TXA,TXS impls
+    decode_noIMP = ml.pc
+    ml.lda(nopcode)
+    ml.ana_imm(0x8f)
+    ml.xor_imm(0x8a)
+    ml.bne(decode_noTXA_other)
+    ml.lda_imm(AddrMode.imp)
+    ml.sta(addr_mode)
+    ml.lda(nopcode)
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ana_imm(0x7)
+    ml.adc_imm(Ops.TXA-1)
+    ml.sta(op_index)
+    ml.ana_imm(5)
+    ml.xor_imm(5)
+    ml.bne(ml.pc+6)
+    decode_UND = ml.pc
+    ml.lda_imm(Ops.UND)
+    ml.sta(op_index)
+    ml.bne(decode_end)
+    #------------
+    decode_noTXA_other = ml.pc
+    ml.lda(nopcode)
     ml.ana_imm(3)
     ml.xor_imm(1)
     ml.bne(decode_notALU)
@@ -132,25 +191,47 @@ def gencode():
     ml.ana_imm(7)       # addr mode
     ml.sta(addr_mode)
     ml.lda(temp1)
-    ml.clc()            # shift >> 3
-    ml.rol()
-    ml.clc()
-    ml.rol()
-    ml.clc()
-    ml.rol()
+    ml.ror()            # shift >> 3
+    ml.ror()
+    ml.ror()
+    ml.ana_imm(7)
     ml.sta(op_index)    # op index
-    ml.xor_imm(Ops.STA) # if STA
+    ml.lda(nopcode)
+    ml.xor_imm(0x89) # if STA_imm
     ml.bne(decode_noSTAimm)
-    ml.lda(addr_mode)
-    ml.xor(AddrMode.imm)
-    ml.bne(decode_noSTAimm)
-    ml.lda_imm(Ops.UND) # if yes then undefined
-    ml.sta(op_index)
+    ml.bpl(decode_UND)
     decode_noSTAimm = ml.pc
     ml.bne(decode_end)
     #----------------
     decode_notALU = ml.pc
+    #----------------
+    # 0x03&opcode = 2 -> shift,inc,dec,stx,ldx
+    ml.clc()            # shift >> 2
+    ml.ror()
+    ml.clc()
+    ml.ror()
+    ml.sta(temp1)
+    ml.ana_imm(7)       # addr mode
+    ml.sta(addr_mode)
+    ml.lda(temp1)
+    ml.ror()            # shift >> 3
+    ml.ror()
+    ml.ror()
+    ml.ana_imm(7)
+    ml.clc()
+    ml.adc_imm(Ops.ASL)
+    ml.sta(op_index)    # op index
+    ml.lda(addr_mode)
+    ml.ana_imm(3)       # addr_mode=0 or 4
+    ml.bne(ml.pc+4) # skip next instr
+    ml.bpl(decode_UND)  # undefined
+    ml.lda(addr_mode)
+    ml.xor_imm(2)       # if imm -> imp acc
+    ml.bne(decode_noALU2IMPA)
+    #ml.lda(op_index)
     
+    
+    decode_noALU2IMPA = ml.pc
     
     decode_end = ml.pc
     # end of decode it
