@@ -160,6 +160,8 @@ def gencode():
     ml.sbc_imm(0xa0-1)
     ml.clc()
     ml.ror()
+    ml.clc()
+    ml.adc_imm(0xc0)
     ml.sta(decode_ch3+1)
     
     decode_ch1 = ml.pc
