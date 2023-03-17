@@ -92,7 +92,7 @@ def get_ret_page(proc):
 
 load_inc_pc, load_inc_pc_ch = -10000, -10000
 decode_notALU, decode_end, decode_noSTAimm = -10000, -10000, -10000
-decode_noALU2IMPA = -10000
+decode_noALU2IMPA, decode_noAddrMode04 = -10000, -10000
 decode_noTXA_other, decode_noIMP, decode_noBRANCH = -10000, -10000, -10000
 
 def gencode():
@@ -118,7 +118,7 @@ def gencode():
     call_proc_8b(load_inc_pc)
     ##############################
     # decode it
-    global decode_notALU, decode_end, decode_noSTAimm
+    global decode_notALU, decode_end, decode_noSTAimm, decode_noAddrMode04
     global decode_noTXA_other, decode_noIMP, decode_noBRANCH
     global decode_noALU2IMPA
     #-------------------------------
@@ -222,15 +222,28 @@ def gencode():
     ml.sta(op_index)    # op index
     ml.lda(addr_mode)
     ml.ana_imm(3)       # addr_mode=0 or 4
+    ml.bne(decode_noAddrMode04)
+    ml.lda(nopcode)
+    ml.xor_imm(0xa0)
+    ml.bne(decode_UND)
+    # if LDX #imm
+    ml.lda(AddrMode.imm)
+    ml.sta(addr_mode)
+    ml.lda(Ops.LDX)
+    ml.sta(op_index)
+    ml.bne(decode_end)
+    decode_noAddrMode04 = ml.pc
+    ml.lda(addr_mode)
+    ml.xor(AddrMode.absy)
     ml.bne(ml.pc+4) # skip next instr
     ml.bpl(decode_UND)  # undefined
     ml.lda(addr_mode)
-    ml.xor_imm(2)       # if imm -> imp acc
+    ml.xor_imm(AddrMode.imm)       # if imm -> imp acc
     ml.bne(decode_noALU2IMPA)
-    #ml.lda(op_index)
-    
-    
+    ml.lda(AddrMode.imp)
+    ml.sta(addr_mode)
     decode_noALU2IMPA = ml.pc
+    # change addr mode for STX and LDX, handle STX, LDX
     
     decode_end = ml.pc
     # end of decode it
