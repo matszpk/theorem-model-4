@@ -40,7 +40,12 @@ ml.byte(0x00, True)
 
 # addressing modes
 AddrMode = IntEnum('AddrMode',
-        ['imp','imm','absx','absy','rel', 'zpg','zpgx','zpgy','pindx','pindy'])
+        [
+            # for ALU encoding (mask=0x1c)
+            'pindx','zpg','imm','abs','pindy','zpgx','absy','absx',
+            # other addressing modes
+            'rel','zpgy','imp'
+        ])
 
 # operations
 Ops = IntEnum('Ops',
@@ -52,10 +57,8 @@ Ops = IntEnum('Ops',
             'PHP','CLC','PLP','SEC','PHA','CLI','PLA','SEI', # 32-39
             'DEY','TYA','TAY','CLV','INY','CLD','INX','SED', # 40-47
             'STY','LDY','CPY','CPX','JSR','BIT','JMP','JMPind', # 48-55
-            'RTS'
+            'RTS','UND'
         ])
-
-load_inc_pc, load_inc_pc_ch = -10000, -10000
 
 ret_pages = dict()
 def call_proc_8b(proc):
@@ -87,6 +90,9 @@ def get_ret_page(proc):
     else:
         return -10000
 
+load_inc_pc, load_inc_pc_ch = -10000, -10000
+decode_notALU, decode_end, decode_noSTAimm = -10000, -10000, -10000
+
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
@@ -103,9 +109,52 @@ def gencode():
     ml.spc(0) # call it
 
     main_loop = ml.pc
+    ml.lda_imm(0)
+    ml.sta(instr_cycles)
+    
     # load opcode
     call_proc_8b(load_inc_pc)
+    ##############################
     # decode it
+    global decode_notALU, decode_end, decode_noSTAimm
+    ml.sta(nopcode)
+    ml.ana_imm(3)
+    ml.xor_imm(1)
+    ml.bne(decode_notALU)
+    #----------------
+    # 0x03&opcode = 1 -> ALU
+    ml.lda(nopcode)
+    ml.clc()            # shift >> 2
+    ml.ror()
+    ml.clc()
+    ml.ror()
+    ml.sta(temp1)
+    ml.ana_imm(7)       # addr mode
+    ml.sta(addr_mode)
+    ml.lda(temp1)
+    ml.clc()            # shift >> 3
+    ml.rol()
+    ml.clc()
+    ml.rol()
+    ml.clc()
+    ml.rol()
+    ml.sta(op_index)    # op index
+    ml.xor_imm(Ops.STA) # if STA
+    ml.bne(decode_noSTAimm)
+    ml.lda(addr_mode)
+    ml.xor(AddrMode.imm)
+    ml.bne(decode_noSTAimm)
+    ml.lda_imm(Ops.UND) # if yes then undefined
+    ml.sta(op_index)
+    decode_noSTAimm = ml.pc
+    ml.bne(decode_end)
+    #----------------
+    decode_notALU = ml.pc
+    
+    
+    decode_end = ml.pc
+    # end of decode it
+    ##############################
     
     # load argument low
     call_proc_8b(load_inc_pc)
