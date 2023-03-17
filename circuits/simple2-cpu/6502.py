@@ -52,12 +52,13 @@ Ops = IntEnum('Ops',
         [
             'ORA','AND','EOR','ADC','STA','LDA','CMP','SBC', # 0-7
             'ASL','ROL','LSR','ROR','STX','LDX','DEC','INC', # 8-15
-            'BPL','BMI','BVC','BVS','BCC','BCS','BNE','BEQ', # 16-23
-            'TXA','TXS','TAX','TSX','DEX','BRK','NOP','RTI', # 24-31
-            'PHP','CLC','PLP','SEC','PHA','CLI','PLA','SEI', # 32-39
-            'DEY','TYA','TAY','CLV','INY','CLD','INX','SED', # 40-47
+            'PHP','CLC','PLP','SEC','PHA','CLI','PLA','SEI', # 16-23
+            'DEY','TYA','TAY','CLV','INY','CLD','INX','SED', # 24-31
+            'TXA','TXS','TAX','TSX','DEX','JM1','NOP','JM2', # 32-39
+            #----
+            'BPL','BMI','BVC','BVS','BCC','BCS','BNE','BEQ', # 40-47
             'STY','LDY','CPY','CPX','JSR','BIT','JMP','JMPind', # 48-55
-            'RTS','UND'
+            'BRK','RTI','RTS','UND'
         ])
 
 ret_pages = dict()
@@ -93,8 +94,9 @@ def get_ret_page(proc):
 load_inc_pc, load_inc_pc_ch = -10000, -10000
 decode_notALU, decode_end, decode_noSTAimm = -10000, -10000, -10000
 decode, decode_noALU2IMPA, decode_noAddrMode04 = -10000, -10000, -10000
-decode_noTXA_other, decode_noIMP, decode_noBRANCH = -10000, -10000, -10000
+decode_noTXA_other, decode_noIMP = -10000, -10000
 decode_notMEM = -10000
+other_addr_mode_table, other_opcode_table = -10000, -10000
 
 def gencode():
     global ret_pages
@@ -128,26 +130,11 @@ def gencode():
     # decode it
     global decode, decode_notMEM
     global decode_notALU, decode_end, decode_noSTAimm, decode_noAddrMode04
-    global decode_noTXA_other, decode_noIMP, decode_noBRANCH
-    global decode_noALU2IMPA
+    global decode_noTXA_other, decode_noIMP
+    global decode_noALU2IMPA, other_addr_mode_table, other_opcode_table
     decode = ml.pc
     #-------------------------------
     ml.sta(nopcode)
-    ml.ana_imm(0x1f)
-    ml.xor_imm(0x10)
-    ml.bne(decode_noBRANCH)
-    ml.lda(nopcode)
-    ml.rol()
-    ml.rol()
-    ml.rol()
-    ml.rol()
-    ml.ana_imm(7)
-    ml.adc_imm(Ops.BPL)
-    ml.sta(op_index)
-    ml.bne(decode_end)
-    #------------------------
-    decode_noBRANCH = ml.pc
-    ml.lda(nopcode)
     ml.ana_imm(0x0f)
     ml.xor_imm(8)
     ml.bne(decode_noIMP)
@@ -280,6 +267,7 @@ def gencode():
     ml.bne(decode_end)
     #---------------------------------
     decode_notMEM = ml.pc
+    # use tables for other opcodes
     
     decode_end = ml.pc
     # end of decode it
@@ -308,7 +296,22 @@ def gencode():
     
     # tables:
     # addressing modes:
-    # 
+    other_addr_mode_table = ml.pc
+    ml.byte(AddrMode.imp)
+    ml.byte(AddrMode.rel)
+    ml.byte(AddrMode.abs)
+    ml.byte(AddrMode.imm)
+    ml.byte(AddrMode.zpg)
+    ml.byte(AddrMode.zpgx)
+    ml.byte(AddrMode.absx)
+    other_addr_mode_table_end = ml.pc
+    if (other_addr_mode_table_end&0xf00) != (other_addr_mode_table&0xf00):
+        raise(RuntimeError("Page boundary!!"))
+    
+    other_opcode_table = ml.pc
+    # opcodes: 0x0X
+    ml.byte(0) 
+    
     return start
 
 ml.assemble(gencode)
