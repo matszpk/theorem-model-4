@@ -36,6 +36,7 @@ def call_proc_8b(proc):
         ml.bne(proc)
         return
     page = 0
+    # get page for this routine and check return page with it.
     if proc in ret_pages:
         page = ret_pages[proc]
         if page != ((ml.pc+4) & 0xf00):
@@ -44,6 +45,7 @@ def call_proc_8b(proc):
         page = (ml.pc+4) & 0xf00
         ret_pages[proc] = page
     addr = ml.pc+4
+    # check address range and generate code
     if addr > 0+page and addr < 0x100+page:
         ml.lda_imm(ml.pc+4) # ret address
         ml.bne(proc)
