@@ -180,9 +180,7 @@ def gencode():
     #----------------
     # 0x03&opcode = 1 -> ALU
     ml.lda(nopcode)
-    ml.clc()            # shift >> 2
-    ml.ror()
-    ml.clc()
+    ml.ror()            # shift >> 2
     ml.ror()
     ml.sta(temp1)
     ml.ana_imm(7)       # addr mode
@@ -206,9 +204,7 @@ def gencode():
     ml.bne(decode_notMEM)
     ml.lda(nopcode)
     # 0x03&opcode = 2 -> shift,inc,dec,stx,ldx
-    ml.clc()            # shift >> 2
-    ml.ror()
-    ml.clc()
+    ml.ror()            # shift >> 2
     ml.ror()
     ml.sta(temp1)
     ml.ana_imm(7)       # addr mode
