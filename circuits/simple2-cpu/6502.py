@@ -297,7 +297,7 @@ def gencode():
     ml.sta(ml.pc+3)
     ml.lda(other_opcode_table, [False, True])
     ml.sta(temp1)
-    ml.rol()        # move high nibble to low nibble
+    ml.rol()        # move high 3 bits to low 3 bits.
     ml.rol()
     ml.rol()
     ml.rol()
@@ -411,6 +411,9 @@ def gencode():
     ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
     ml.byte((other_am_abs<<5) | (Ops.CPX - Ops.BPL))
     ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
+    other_opcode_table_end = ml.pc
+    if (other_opcode_table_end&0xf00) != (other_opcode_table&0xf00):
+        raise(RuntimeError("Page boundary!!"))
     
     return start
 
