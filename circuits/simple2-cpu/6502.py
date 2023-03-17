@@ -248,6 +248,11 @@ def gencode():
     ml.xor_imm(0x9e)
     ml.bne(ml.pc+4)
     ml.bpl(decode_UND)
+    ml.lda(op_index)
+    ml.xor(Ops.STX)
+    ml.ana_imm(0xfe)
+    ml.bne(decode_end)
+    # if STX, LDX
     ml.lda(addr_mode)
     ml.xor(AddrMode.zpgx)
     ml.bne(ml.pc+6)
