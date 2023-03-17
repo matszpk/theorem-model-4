@@ -92,8 +92,9 @@ def get_ret_page(proc):
 
 load_inc_pc, load_inc_pc_ch = -10000, -10000
 decode_notALU, decode_end, decode_noSTAimm = -10000, -10000, -10000
-decode_noALU2IMPA, decode_noAddrMode04 = -10000, -10000
+decode, decode_noALU2IMPA, decode_noAddrMode04 = -10000, -10000, -10000
 decode_noTXA_other, decode_noIMP, decode_noBRANCH = -10000, -10000, -10000
+decode_notMEM = -10000
 
 def gencode():
     global ret_pages
@@ -116,11 +117,20 @@ def gencode():
     
     # load opcode
     call_proc_8b(load_inc_pc)
+    # load argument low
+    call_proc_8b(load_inc_pc)
+    
+    # load argument high
+    call_proc_8b(load_inc_pc)
+    
+    
     ##############################
     # decode it
+    global decode, decode_notMEM
     global decode_notALU, decode_end, decode_noSTAimm, decode_noAddrMode04
     global decode_noTXA_other, decode_noIMP, decode_noBRANCH
     global decode_noALU2IMPA
+    decode = ml.pc
     #-------------------------------
     ml.sta(nopcode)
     ml.ana_imm(0x1f)
@@ -205,6 +215,10 @@ def gencode():
     #----------------
     decode_notALU = ml.pc
     #----------------
+    ml.lda(nopcode)
+    ml.ana_imm(3)
+    ml.xor_imm(2)
+    ml.bne(decode_notMEM)
     # 0x03&opcode = 2 -> shift,inc,dec,stx,ldx
     ml.clc()            # shift >> 2
     ml.ror()
@@ -263,16 +277,13 @@ def gencode():
     ml.bne(ml.pc+6)
     ml.lda_imm(AddrMode.absy)
     ml.sta(addr_mode)
+    ml.bne(decode_end)
+    #---------------------------------
+    decode_notMEM = ml.pc
+    
     decode_end = ml.pc
     # end of decode it
     ##############################
-    
-    # load argument low
-    call_proc_8b(load_inc_pc)
-    
-    # load argument high
-    call_proc_8b(load_inc_pc)
-    
     ml.clc()
     ml.bcc(main_loop)
     
@@ -302,4 +313,5 @@ def gencode():
 
 ml.assemble(gencode)
 
-stdout.buffer.write(ml.dump())
+print("decode len:", decode_end-decode)
+#stdout.buffer.write(ml.dump())
