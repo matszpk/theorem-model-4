@@ -29,12 +29,20 @@ ml.byte(0x00, True)
 
 load_inc_pc, load_inc_pc_ch = -10000, -10000
 
+ret_pages = dict()
 def call_proc_8b(proc):
     if proc < 0:
         ml.lda_imm(1) # ret address
         ml.bne(proc)
         return
-    page = proc&0xf00
+    page = 0
+    if proc in ret_pages:
+        page = ret_pages[proc]
+        if page != ((ml.pc+4) & 0xf00):
+            raise(RuntimeError("Wrong page!"))
+    else:
+        page = (ml.pc+4) & 0xf00
+        ret_pages[proc] = page
     addr = ml.pc+4
     if addr > 0+page and addr < 0x100+page:
         ml.lda_imm(ml.pc+4) # ret address
