@@ -144,7 +144,7 @@ def gencode():
     ml.ror()
     ml.ror()
     ml.ana_imm(0xf)
-    ml.adc_imm(Ops.PHP-1)
+    ml.ora_imm(Ops.PHP)
     ml.sta(op_index)
     ml.bne(decode_end)
     #--------------------------
