@@ -162,7 +162,7 @@ def gencode():
     ml.ror()
     ml.ror()
     ml.ana_imm(0x7)
-    ml.adc_imm(Ops.TXA-1)
+    ml.ora_imm(Ops.TXA)
     ml.sta(op_index)
     ml.ana_imm(5)
     ml.xor_imm(5)
