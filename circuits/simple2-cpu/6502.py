@@ -297,7 +297,7 @@ def gencode():
     ml.sta(ml.pc+3)
     ml.lda(other_opcode_table, [False, True])
     ml.sta(temp1)
-    ml.rol()
+    ml.rol()        # move high nibble to low nibble
     ml.rol()
     ml.rol()
     ml.rol()
