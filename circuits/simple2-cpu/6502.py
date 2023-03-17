@@ -150,6 +150,7 @@ def gencode():
     ml.sec()
     ml.lda(nopcode)
     ml.sbc(temp1)
+    # setup address to load decode_table
     ml.sta(decode_ch1+1)
     ml.clc()
     ml.ror()
