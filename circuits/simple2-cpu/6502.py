@@ -244,7 +244,20 @@ def gencode():
     ml.sta(addr_mode)
     decode_noALU2IMPA = ml.pc
     # change addr mode for STX and LDX, handle STX, LDX
-    
+    ml.lda(nopcode)
+    ml.xor_imm(0x9e)
+    ml.bne(ml.pc+4)
+    ml.bpl(decode_UND)
+    ml.lda(addr_mode)
+    ml.xor(AddrMode.zpgx)
+    ml.bne(ml.pc+6)
+    ml.lda_imm(AddrMode.zpgy)
+    ml.sta(addr_mode)
+    ml.lda(addr_mode)
+    ml.xor(AddrMode.zpgx)
+    ml.bne(ml.pc+6)
+    ml.lda_imm(AddrMode.absy)
+    ml.sta(addr_mode)
     decode_end = ml.pc
     # end of decode it
     ##############################
