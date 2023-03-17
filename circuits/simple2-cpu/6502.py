@@ -218,8 +218,7 @@ def gencode():
     ml.ror()
     ml.ror()
     ml.ana_imm(7)
-    ml.clc()
-    ml.adc_imm(Ops.ASL)
+    ml.ora_imm(Ops.ASL)
     ml.sta(op_index)    # op index
     ml.lda(addr_mode)
     ml.ana_imm(3)       # addr_mode=0 or 4
