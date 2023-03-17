@@ -1,31 +1,59 @@
 from simple2_cpu_asm import *
 from sys import stdout
+from enum import *
 
 ml = Memory()
 
-ml.set_pc(0xff0)
-npc = ml.pc # 0xff0: program counter
+ml.set_pc(0xfe0)
+npc = ml.pc # 0xfe0: program counter
 ml.word16(0x0000, [True,True])
-nsr = ml.pc # 0xff2: processor status
+nsr = ml.pc # 0xfe2: processor status
 ml.byte(0x00, True)
-nsp = ml.pc # 0xff3: stack pointer
+nsp = ml.pc # 0xfe3: stack pointer
 ml.byte(0xff, True)
-nacc = ml.pc # 0xff4:
+nacc = ml.pc # 0xfe4:
 ml.byte(0x00, True)
-nxind = ml.pc # 0xff5:
+nxind = ml.pc # 0xfe5:
 ml.byte(0x00, True)
-nyind = ml.pc # 0xff6:
+nyind = ml.pc # 0xfe6:
 ml.byte(0x00, True)
-nopcode = ml.pc # 0xff7:
+instr_cycles = ml.pc # 0xfe7:
 ml.byte(0x00, True)
-narglo = ml.pc # 0xff8:
+nopcode = ml.pc # 0xfe8:
 ml.byte(0x00, True)
-narghi = ml.pc # 0xff9:
+narglo = ml.pc # 0xfe9:
 ml.byte(0x00, True)
-temp1 = ml.pc # 0xffa:
+narghi = ml.pc # 0xfea:
 ml.byte(0x00, True)
-temp2 = ml.pc # 0xffb:
+mem_val = ml.pc # 0xfeb
 ml.byte(0x00, True)
+mem_addr = ml.pc # 0xfec
+ml.word16(0x0000, [True,True])
+addr_mode = ml.pc # 0xfee
+ml.byte(0x00, True)
+op_index = ml.pc # 0xfef
+ml.byte(0x00, True)
+temp1 = ml.pc # 0xff0:
+ml.byte(0x00, True)
+temp2 = ml.pc # 0xff1:
+ml.byte(0x00, True)
+
+# addressing modes
+AddrMode = IntEnum('AddrMode',
+        ['imp','imm','absx','absy','rel', 'zpg','zpgx','zpgy','pindx','pindy'])
+
+# operations
+Ops = IntEnum('Ops',
+        [
+            'ORA','AND','EOR','ADC','STA','LDA','CMP','SBC', # 0-7
+            'ASL','ROL','LSR','ROR','STX','LDX','DEC','INC', # 8-15
+            'BPL','BMI','BVC','BVS','BCC','BCS','BNE','BEQ', # 16-23
+            'TXA','TXS','TAX','TSX','DEX','BRK','NOP','RTI', # 24-31
+            'PHP','CLC','PLP','SEC','PHA','CLI','PLA','SEI', # 32-39
+            'DEY','TYA','TAY','CLV','INY','CLD','INX','SED', # 40-47
+            'STY','LDY','CPY','CPX','JSR','BIT','JMP','JMPind', # 48-55
+            'RTS'
+        ])
 
 load_inc_pc, load_inc_pc_ch = -10000, -10000
 
@@ -53,7 +81,14 @@ def call_proc_8b(proc):
     else:
         raise(RuntimeError("Address above range!"))
 
+def get_ret_page(proc):
+    if proc in ret_pages:
+        return ret_pages[proc]
+    else:
+        return -10000
+
 def gencode():
+    global ret_pages
     global load_inc_pc, load_inc_pc_ch
     
     start = 0
@@ -98,7 +133,7 @@ def gencode():
     ml.lda(0xffd)
     ml.clc()
     load_inc_pc_ch = ml.pc
-    ml.bcc(0, [False, True])
+    ml.bcc(get_ret_page(load_inc_pc), [False, True])
     
     # tables:
     # addressing modes:
