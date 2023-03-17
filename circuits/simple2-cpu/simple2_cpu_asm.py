@@ -64,13 +64,13 @@ class Memory:
             self.word16(instr_lda | instr_addr(0), [True, True])
     
     def sta(self, addr, mod=[False,False]):
-        if self.mmod[addr]:
-            if type(addr)==int and addr>=0:
+        if type(addr)==int and addr>=0:
+            if self.mmod[addr]:
                 self.word16(instr_sta | instr_addr(addr), mod)
             else:
-                self.word16(instr_sta | instr_addr(0), [True, True])
+                raise(RuntimeError("Illegal write to memory %d"%addr))
         else:
-            raise(RuntimeError("Illegal write to memory %d"%addr))
+            self.word16(instr_sta | instr_addr(0), [True, True])
     
     def adc(self, addr, mod=[False,False]):
         if type(addr)==int and addr>=0:
