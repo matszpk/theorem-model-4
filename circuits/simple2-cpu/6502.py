@@ -150,6 +150,7 @@ def gencode():
     ml.sec()
     ml.lda(nopcode)
     ml.sbc(temp1)
+    # A > M - carry on
     # setup address to load decode_table
     ml.sta(decode_ch1+1)
     ml.clc()
@@ -159,10 +160,9 @@ def gencode():
     ml.sta(decode_ch2+1)
     # carry off - A-X-1
     ml.sbc_imm(0xa0-1)
-    ml.clc()
-    ml.ror()
-    ml.clc()
-    ml.adc_imm(0xc0)
+    #ml.clc()
+    ml.ror()    # enables 0x80 - but doesn't matter
+    ml.ora_imm(0xc0)
     ml.sta(decode_ch3+1)
     
     decode_ch1 = ml.pc
