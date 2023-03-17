@@ -202,10 +202,9 @@ def gencode():
     #----------------
     decode_notALU = ml.pc
     #----------------
-    ml.lda(nopcode)
-    ml.ana_imm(3)
-    ml.xor_imm(2)
+    ml.xor_imm(1^2)
     ml.bne(decode_notMEM)
+    ml.lda(nopcode)
     # 0x03&opcode = 2 -> shift,inc,dec,stx,ldx
     ml.clc()            # shift >> 2
     ml.ror()
@@ -419,5 +418,5 @@ def gencode():
 
 ml.assemble(gencode)
 
-print("decode len:", decode_end-decode)
-#stdout.buffer.write(ml.dump())
+#print("decode len:", decode_end-decode)
+stdout.buffer.write(ml.dump())
