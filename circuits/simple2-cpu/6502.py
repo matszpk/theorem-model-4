@@ -176,6 +176,12 @@ op_pull, op_pull_ch = -10000, -10000
 branch_sr_flag = -10000
 op_branch_if_not_set = -10000
 op_branch_if_set = -10000
+set_cpu_nz_z_zero, set_cpu_nz_z_store = -10000, -10000
+set_cpu_nz_n_zero, set_cpu_nz_n_store = -10000, -10000
+adc_dec_no_lo_fix, adc_dec_no_hi_fix, adc_dec_after_hi_fix = -10000, -10000, -10000
+adc_dec_nz_z_zero, adc_dec_nz_z_store = -10000, -10000
+adc_dec_nz_n_zero, adc_dec_nz_n_store = -10000, -10000
+sbc_dec_no_lo_fix, sbc_dec_no_hi_fix = -10000, -10000
 
 def gencode():
     global ret_pages
@@ -783,6 +789,9 @@ def gencode():
     
     ###########################################
     # operations code
+
+    global set_cpu_nz_z_zero, set_cpu_nz_z_store
+    global set_cpu_nz_n_zero, set_cpu_nz_n_store
     
     set_cpu_nzvc = ml.pc
     ml.sta(temp1)
@@ -805,22 +814,26 @@ def gencode():
     set_cpu_nz = ml.pc
     ml.sta(temp1)
     # set Z flag
-    ml.bne(ml.pc+8)
+    ml.bne(set_cpu_nz_z_zero)
     ml.lda(nsr)
     ml.ora_imm(SRFlags.Z)
-    ml.bne(ml.pc+6)
+    ml.bne(set_cpu_nz_z_store)
+    set_cpu_nz_z_zero = ml.pc
     ml.lda(nsr)
     ml.ana_imm(0xff^SRFlags.Z)
+    set_cpu_nz_z_store = ml.pc
     # store nsr
     ml.sta(nsr)
     # set N flag
     ml.lda(temp1)
-    ml.bpl(ml.pc+8)
+    ml.bpl(set_cpu_nz_n_zero)
     ml.lda(nsr)
     ml.ora_imm(SRFlags.N)
-    ml.bne(ml.pc+6)
+    ml.bne(set_cpu_nz_n_store)
+    set_cpu_nz_n_zero = ml.pc
     ml.lda(nsr)
     ml.ana_imm(0xff^SRFlags.N)
+    set_cpu_nz_n_store = ml.pc
     # store nsr
     ml.sta(nsr)
     ml.clc()
@@ -1208,6 +1221,9 @@ def gencode():
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
 
+    global adc_dec_no_lo_fix, adc_dec_no_hi_fix, adc_dec_after_hi_fix
+    global adc_dec_nz_z_zero, adc_dec_nz_z_store
+    global adc_dec_nz_n_zero, adc_dec_nz_n_store
     ###################################
     # ADC DECIMAL
     op_adc_decimal = ml.pc
@@ -1223,10 +1239,11 @@ def gencode():
     # if higher than 9
     ml.sec()
     ml.sbc_imm(10)
-    ml.bcc(ml.pc+6)
+    ml.bcc(adc_dec_no_lo_fix)
     # higher than 9
-    ml.adc_imm(5)   # add 6
+    ml.adc_imm(5+10)   # add 6
     ml.sta(temp1)
+    adc_dec_no_lo_fix = ml.pc
     # next step
     ml.lda(mem_val)
     ml.ana_imm(0xf0)
@@ -1266,34 +1283,40 @@ def gencode():
     # set ZN
     ml.lda(temp1)
     # set Z flag
-    ml.bne(ml.pc+8)
+    ml.bne(adc_dec_nz_z_zero)
     ml.lda(nsr)
     ml.ora_imm(SRFlags.Z)
-    ml.bne(ml.pc+6)
+    adc_dec_nz_z_zero = ml.pc
+    ml.bne(adc_dec_nz_z_store)
     ml.lda(nsr)
     ml.ana_imm(0xff^SRFlags.Z)
+    adc_dec_nz_z_store = ml.pc
     # store nsr
     ml.sta(nsr)
     # set N flag
     ml.lda(temp1)
-    ml.bpl(ml.pc+8)
+    ml.bpl(adc_dec_nz_n_zero)
     ml.lda(nsr)
     ml.ora_imm(SRFlags.N)
-    ml.bne(ml.pc+6)
+    ml.bne(adc_dec_nz_z_store)
+    adc_dec_nz_n_zero = ml.pc
     ml.lda(nsr)
     ml.ana_imm(0xff^SRFlags.N)
+    adc_dec_nz_z_store = ml.pc
     # store nsr
     ml.sta(nsr)
     
     # fix higher nibble
     ml.lda(temp2) # carry!
-    ml.bne(ml.pc+9) # to fix
+    ml.bne(adc_dec_no_hi_fix) # to fix
     ml.lda(temp1)
     ml.sec()
     ml.sbc_imm(0xa0)
-    ml.bcc(ml.pc+6)
+    ml.bcc(adc_dec_after_hi_fix)
+    adc_dec_no_hi_fix = ml.pc
     ml.lda(temp1)
     ml.adc_imm(0x5f)
+    adc_dec_after_hi_fix = ml.pc
     ml.sta(nacc)
     ml.rol()
     ml.ana_imm(1)   # yet another carry
@@ -1320,6 +1343,7 @@ def gencode():
     ml.bne(set_cpu_nzvc)
     ml.bpl(set_cpu_nzvc)
 
+    global sbc_dec_no_lo_fix, sbc_dec_no_hi_fix
     ###################################
     # SBC DECIMAL
     op_sbc_decimal = ml.pc
@@ -1337,11 +1361,12 @@ def gencode():
     ml.ana_imm(0x10)
     ml.sta(temp3)
     ml.bne(ml.pc+4) # skip next instr
-    ml.bpl(ml.pc+9) # skip tmp_a - 6
+    ml.bpl(sbc_dec_no_lo_fix) # skip tmp_a - 6
     ml.lda(temp1)
     ml.clc()
     ml.sbc_imm(5)   # - 6
     ml.sta(temp1)
+    sbc_dec_no_lo_fix = ml.pc
     # after -6
     ml.lda(temp1)
     ml.ana_imm(0xf)
@@ -1361,11 +1386,12 @@ def gencode():
     # fix high nibble
     ml.bcc(ml.pc+5) # skip next instrs - if res&0x100 != 0
     ml.clc()
-    ml.bcc(ml.pc+9) # skip fix of high nibble
+    ml.bcc(sbc_dec_no_hi_fix) # skip fix of high nibble
     ml.lda(nacc)
     ml.sec()
     ml.sbc_imm(0x60)
     ml.sta(nacc)
+    sbc_dec_no_hi_fix = ml.pc
     
     # flags are set from binary subtraction
     ml.lda(nsr)
