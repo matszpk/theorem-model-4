@@ -165,6 +165,8 @@ ops_code_start = -10000
 call_op = -10000
 addr_mode_end = -10000
 addr_mode_table = -10000
+op_push, op_push_ch = -10000, -10000
+op_pull, op_pull_ch = -10000, -10000
 
 def gencode():
     global ret_pages
@@ -804,6 +806,38 @@ def gencode():
     ml.clc()
     ml.bcc(main_loop)
     
+    global op_push, op_push_ch
+    op_push = ml.pc
+    ml.sta(op_push_ch+1)
+    ml.lda(nsp)
+    ml.sta(0xffe)
+    ml.lda_imm(1)
+    ml.sta(0xfff)
+    ml.lda(temp1)
+    ml.sta(0xffd)
+    ml.lda(nsp)
+    ml.clc()
+    ml.sbc_imm(0)
+    ml.sta(nsp)
+    ml.clc()
+    op_push_ch = ml.pc
+    ml.bcc(get_ret_page(op_push), [False, True])
+    
+    global op_pull, op_pull_ch
+    op_pull = ml.pc
+    ml.sta(op_pull_ch+1)
+    ml.lda(nsp)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(nsp)
+    ml.sta(0xffe)
+    ml.lda_imm(1)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.clc()
+    op_pull_ch = ml.pc
+    ml.bcc(get_ret_page(op_pull), [False, True])
+    
     op_adc = ml.pc
     ml.bne(main_loop)
 
@@ -890,9 +924,6 @@ def gencode():
     ml.lda_imm(0x80)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_not_set)
-
-    op_brk = ml.pc
-    ml.bne(main_loop)
 
     op_bvc = ml.pc
     ml.lda_imm(0x40)
@@ -1023,9 +1054,6 @@ def gencode():
     ml.clc()
     ml.bcc(main_loop)
 
-    op_jsr = ml.pc
-    ml.bne(main_loop)
-
     op_lda = ml.pc
     ml.lda(mem_val)
     ml.sta(nacc)
@@ -1060,6 +1088,90 @@ def gencode():
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
 
+    op_brk = ml.pc
+    op_jsr = ml.pc
+    ml.lda(npc)
+    ml.sec()
+    ml.adc_imm(1)   # add 2 to pc
+    ml.sta(temp2)
+    ml.lda(npc+1)
+    ml.adc_imm(0)
+    ml.sta(temp1)
+    call_proc_8b(op_push)
+    ml.lda(temp2)
+    ml.sta(temp1)
+    call_proc_8b(op_push)
+    ml.lda(nopcode)
+    ml.bne(op_jmp)
+    # brk
+    ml.lda(nsr)
+    ml.ora_imm(0x10)
+    call_proc_8b(op_push)
+    # set I
+    ml.lda(nsr)
+    ml.ora_imm(4)
+    ml.sta(nsr)
+    # jump to fffe address
+    ml.lda_imm(0xfe)
+    ml.sta(0xffe)
+    ml.lda_imm(0xff)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(npc)
+    ml.lda_imm(0xff)
+    ml.sta(0xffe)
+    ml.lda(0xffd)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
+
+    op_pha = ml.pc
+    ml.lda(nacc)
+    ml.sta(temp1)
+    call_proc_8b(op_push)
+    ml.bcc(main_loop)
+
+    op_php = ml.pc
+    ml.lda(nsr)
+    ml.ora_imm(0x10)
+    ml.sta(temp1)
+    call_proc_8b(op_push)
+    ml.bcc(main_loop)
+
+    op_pla = ml.pc
+    call_proc_8b(op_pull)
+    ml.sta(nacc)
+    ml.bcc(set_cpu_nz)
+
+    op_plp = ml.pc
+    call_proc_8b(op_pull)
+    ml.sta(nsr)
+    ml.bcc(main_loop)
+    
+    op_rts = ml.pc
+    call_proc_8b(op_pull)
+    ml.sta(npc)
+    call_proc_8b(op_pull)
+    ml.sta(npc+1)
+    ml.lda(npc)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(npc)
+    ml.lda(npc+1)
+    ml.adc_imm(0)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
+    
+    op_rti = ml.pc
+    call_proc_8b(op_pull)
+    ml.sta(nsr)
+    call_proc_8b(op_pull)
+    ml.sta(npc)
+    call_proc_8b(op_pull)
+    ml.sta(npc+1)
+    ml.bcc(main_loop)
+    
     op_nop = ml.pc
     ml.bcc(main_loop)
 
@@ -1069,60 +1181,6 @@ def gencode():
     ml.sta(nacc)
     ml.clc()
     ml.bcc(set_cpu_nz)
-
-    op_pha = ml.pc
-    ml.lda(nsp)
-    ml.sta(0xffe)
-    ml.lda_imm(1)
-    ml.sta(0xfff)
-    ml.lda(nacc)
-    ml.sta(0xffd)
-    ml.lda(nsp)
-    ml.clc()
-    ml.sbc_imm(0)
-    ml.sta(nsp)
-    ml.clc()
-    ml.bcc(main_loop)
-
-    op_php = ml.pc
-    ml.lda(nsp)
-    ml.sta(0xffe)
-    ml.lda_imm(1)
-    ml.sta(0xfff)
-    ml.lda(nsr)
-    ml.ora_imm(0x20)
-    ml.sta(0xffd)
-    ml.lda(nsp)
-    ml.clc()
-    ml.sbc_imm(0)
-    ml.sta(nsp)
-    ml.clc()
-    ml.bcc(main_loop)
-
-    op_pla = ml.pc
-    ml.lda(nsp)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(nsp)
-    ml.sta(0xffe)
-    ml.lda_imm(1)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
-    ml.clc()
-    ml.bcc(set_cpu_nz)
-
-    op_plp = ml.pc
-    ml.lda(nsp)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(nsp)
-    ml.sta(0xffe)
-    ml.lda_imm(1)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
-    ml.sta(nsr)
-    ml.clc()
-    ml.bcc(main_loop)
 
     op_rol = ml.pc
     ml.lda(nsr)
@@ -1159,12 +1217,6 @@ def gencode():
     ml.sta(nacc)
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
-
-    op_rti = ml.pc
-    ml.bne(main_loop)
-
-    op_rts = ml.pc
-    ml.bne(main_loop)
 
     op_sbc = ml.pc
     ml.bne(main_loop)
