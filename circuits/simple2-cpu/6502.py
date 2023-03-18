@@ -561,8 +561,8 @@ def gencode():
         ml.byte(opcode_table[i][1] & 0xff)
     decode_12_13_table = ml.pc
     for i in range(0,48):
-        ml.byte((opcode_table[i*4][1]&3) | ((opcode_table[i*4+1][1]&3)<<2) |
-                ((opcode_table[i*4+2][1]&3)<<4) | ((opcode_table[i*4+3][1]&3)<<6))
+        ml.byte(((opcode_table[i*4][1]>>8)&3) | (((opcode_table[i*4+1][1]>>8)&3)<<2) |
+                (((opcode_table[i*4+2][1]>>8)&3)<<4) | (((opcode_table[i*4+3][1]>>8)&3)<<6))
     
     op_adc = ml.pc
     ml.bne(main_loop)
