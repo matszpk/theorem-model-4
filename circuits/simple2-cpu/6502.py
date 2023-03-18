@@ -53,6 +53,8 @@ AddrMode = IntEnum('AddrMode',
             'abs', 'absx', 'absy'
         ])
 
+SRFlags = IntFlag('Flags', [ 'C', 'Z', 'I', 'D', 'B', '_', 'V', 'N' ]);
+
 am_imp = -10000
 am_imm = -10000
 am_zpg = -10000
@@ -785,18 +787,18 @@ def gencode():
     set_cpu_nzvc = ml.pc
     ml.sta(temp1)
     ml.lda(nsr)
-    ml.ana_imm(0xff^0x40)
+    ml.ana_imm(0xff^SRFlags.V)
     ml.bvc(ml.pc+4)
-    ml.ora_imm(0x40)
+    ml.ora_imm(SRFlags.V)
     ml.sta(nsr)
     ml.lda(temp1)
     # continue to set_cpu_nzc
     set_cpu_nzc = ml.pc
     ml.sta(temp1)
     ml.lda(nsr)
-    ml.ana_imm(0xfe)
+    ml.ana_imm(0xff^SRFlags.C)
     ml.bcc(ml.pc+4)
-    ml.ora_imm(1)
+    ml.ora_imm(SRFlags.C)
     ml.sta(nsr)
     ml.lda(temp1)
     # continue to set_cpu_nz
@@ -805,20 +807,20 @@ def gencode():
     # set Z flag
     ml.bne(ml.pc+8)
     ml.lda(nsr)
-    ml.ora_imm(0x2)
+    ml.ora_imm(SRFlags.Z)
     ml.bne(ml.pc+6)
     ml.lda(nsr)
-    ml.ana_imm(0xff^0x2)
+    ml.ana_imm(0xff^SRFlags.Z)
     # store nsr
     ml.sta(nsr)
     # set N flag
     ml.lda(temp1)
     ml.bpl(ml.pc+8)
     ml.lda(nsr)
-    ml.ora_imm(0x80)
+    ml.ora_imm(SRFlags.N)
     ml.bne(ml.pc+6)
     ml.lda(nsr)
-    ml.ana_imm(0x7f)
+    ml.ana_imm(0xff^SRFlags.N)
     # store nsr
     ml.sta(nsr)
     ml.clc()
@@ -870,17 +872,17 @@ def gencode():
     ml.bpl(set_cpu_nzc)
     
     op_bcc = ml.pc
-    ml.lda_imm(1)
+    ml.lda_imm(SRFlags.C)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_not_set)
     
     op_bcs = ml.pc
-    ml.lda_imm(1)
+    ml.lda_imm(SRFlags.C)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_set)
     
     op_beq = ml.pc
-    ml.lda_imm(2)
+    ml.lda_imm(SRFlags.Z)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_set)
 
@@ -888,10 +890,10 @@ def gencode():
     ml.lda(nacc)
     ml.ana(mem_val)
     ml.sta(temp1)
-    ml.ana_imm(0x40)
+    ml.ana_imm(SRFlags.V)
     ml.sta(temp2)
     ml.lda(nsr)
-    ml.ana_imm(0xff^0x40)
+    ml.ana_imm(0xff^SRFlags.V)
     ml.ora(temp2)
     ml.sta(nsr)
     ml.lda(temp1)
@@ -899,51 +901,51 @@ def gencode():
     ml.bcc(set_cpu_nz)
 
     op_bmi = ml.pc
-    ml.lda_imm(0x80)
+    ml.lda_imm(SRFlags.N)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_set)
 
     op_bne = ml.pc
-    ml.lda_imm(2)
+    ml.lda_imm(SRFlags.Z)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_not_set)
 
     op_bpl = ml.pc
-    ml.lda_imm(0x80)
+    ml.lda_imm(SRFlags.N)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_not_set)
 
     op_bvc = ml.pc
-    ml.lda_imm(0x40)
+    ml.lda_imm(SRFlags.V)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_not_set)
 
     op_bvs = ml.pc
-    ml.lda_imm(0x40)
+    ml.lda_imm(SRFlags.V)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_set)
 
     op_clc = ml.pc
     ml.lda(nsr)
-    ml.ana_imm(0xfe)
+    ml.ana_imm(0xff^SRFlags.C)
     ml.sta(nsr)
     ml.bcc(main_loop)
 
     op_cld = ml.pc
     ml.lda(nsr)
-    ml.ana_imm(0xff^8)
+    ml.ana_imm(0xff^SRFlags.D)
     ml.sta(nsr)
     ml.bcc(main_loop)
 
     op_cli = ml.pc
     ml.lda(nsr)
-    ml.ana_imm(0xff^4)
+    ml.ana_imm(0xff^SRFlags.I)
     ml.sta(nsr)
     ml.bcc(main_loop)
 
     op_clv = ml.pc
     ml.lda(nsr)
-    ml.ana_imm(0xff^0x40)
+    ml.ana_imm(0xff^SRFlags.V)
     ml.sta(nsr)
     ml.bcc(main_loop)
 
@@ -1077,11 +1079,11 @@ def gencode():
     ml.bne(op_jmp)
     # brk
     ml.lda(nsr)
-    ml.ora_imm(0x10)
+    ml.ora_imm(SRFlags.B)
     call_proc_8b(op_push)
     # set I
     ml.lda(nsr)
-    ml.ora_imm(4)
+    ml.ora_imm(SRFlags.I)
     ml.sta(nsr)
     # jump to fffe address
     ml.lda_imm(0xfe)
@@ -1105,7 +1107,7 @@ def gencode():
 
     op_php = ml.pc
     ml.lda(nsr)
-    ml.ora_imm(0x10)
+    ml.ora_imm(SRFlags.B)
     ml.sta(temp1)
     call_proc_8b(op_push)
     ml.bcc(main_loop)
@@ -1254,10 +1256,10 @@ def gencode():
     ml.xor_imm(0x80)    # neg it
     ml.ana(temp3)
     ml.ror() # to 6 bit - V
-    ml.ana_imm(0x40)
+    ml.ana_imm(SRFlags.V)
     ml.sta(temp3)
     ml.lda(nsr)
-    ml.ana_imm(0xff^0x40)
+    ml.ana_imm(0xff^SRFlags.V)
     ml.ora(temp3)
     ml.sta(nsr)
     # end of calculate V
@@ -1266,20 +1268,20 @@ def gencode():
     # set Z flag
     ml.bne(ml.pc+8)
     ml.lda(nsr)
-    ml.ora_imm(0x2)
+    ml.ora_imm(SRFlags.Z)
     ml.bne(ml.pc+6)
     ml.lda(nsr)
-    ml.ana_imm(0xff^0x2)
+    ml.ana_imm(0xff^SRFlags.Z)
     # store nsr
     ml.sta(nsr)
     # set N flag
     ml.lda(temp1)
     ml.bpl(ml.pc+8)
     ml.lda(nsr)
-    ml.ora_imm(0x80)
+    ml.ora_imm(SRFlags.N)
     ml.bne(ml.pc+6)
     ml.lda(nsr)
-    ml.ana_imm(0x7f)
+    ml.ana_imm(0xff^SRFlags.N)
     # store nsr
     ml.sta(nsr)
     
@@ -1298,7 +1300,7 @@ def gencode():
     ml.ora(temp2)
     ml.sta(temp2)
     ml.lda(nsr)         # store to SR (flags)
-    ml.ana_imm(0xfe)
+    ml.ana_imm(0xff^SRFlags.C)
     ml.ora(temp2)
     ml.sta(nsr)
     ml.clc()
@@ -1308,7 +1310,7 @@ def gencode():
     
     op_adc = ml.pc
     ml.lda(nsr)
-    ml.ana_imm(8)   # decimal
+    ml.ana_imm(SRFlags.D)   # decimal
     ml.bne(op_adc_decimal)
     ml.lda(nsr)
     ml.ror()    # get carry
@@ -1377,7 +1379,7 @@ def gencode():
 
     op_sbc = ml.pc
     ml.lda(nsr)
-    ml.ana_imm(8)   # decimal
+    ml.ana_imm(SRFlags.D)   # decimal
     ml.bne(op_sbc_decimal)
     ml.lda(nsr)
     ml.ror()    # get carry
@@ -1389,19 +1391,19 @@ def gencode():
 
     op_sec = ml.pc
     ml.lda(nsr)
-    ml.ora_imm(1)
+    ml.ora_imm(SRFlags.C)
     ml.sta(nsr)
     ml.bcc(main_loop)
 
     op_sed = ml.pc
     ml.lda(nsr)
-    ml.ora_imm(8)
+    ml.ora_imm(SRFlags.D)
     ml.sta(nsr)
     ml.bcc(main_loop)
 
     op_sei = ml.pc
     ml.lda(nsr)
-    ml.ora_imm(4)
+    ml.ora_imm(SRFlags.I)
     ml.sta(nsr)
     ml.bcc(main_loop)
 
