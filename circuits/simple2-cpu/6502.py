@@ -43,10 +43,9 @@ ml.byte(0x00, True)
 # addressing modes
 AddrMode = IntEnum('AddrMode',
         [
-            # for ALU encoding (mask=0x1c)
-            'pindx','zpg','imm','abs','pindy','zpgx','absy','absx',
-            # other addressing modes
-            'rel','zpgy','imp'
+            'imp',  # 1-byte
+            'imm', 'zpg', 'zpgx', 'zpgy', 'pindx', 'pindy', 'rel', # 2-byte
+            'abs', 'absx', 'absy'
         ])
 
 op_adc = -10000
@@ -143,12 +142,16 @@ def get_ret_page(proc):
 load_inc_pc, load_inc_pc_ch = -10000, -10000
 decode, decode_end = -10000, -10000
 decode_ch1, decode_ch2, decode_ch3 = -10000, -10000, -10000
+no_load_arg = -10000
 decode_table = -10000
+ops_code_start = -10000
 call_op = -10000
+addr_mode_len_table = -10000
 
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
+    global no_load_arg
     
     global op_adc
     global op_and
@@ -228,15 +231,9 @@ def gencode():
     
     # load opcode
     call_proc_8b(load_inc_pc)
-    # load argument low
-    call_proc_8b(load_inc_pc)
-    
-    # load argument high
-    call_proc_8b(load_inc_pc)
-    
     ##############################
     # decode it
-    global call_op
+    global call_op, ops_code_start
     global decode, decode_end, decode_table
     global decode_ch1, decode_ch2, decode_ch3
     decode = ml.pc
@@ -307,42 +304,35 @@ def gencode():
     ml.ror()
     #----------
     ml.ana_imm(0x30)
-    ml.ora_imm(instr_bcc)
+    ml.clc()
+    ml.adc_imm(instr_bcc | ((ops_code_start&0xf00)>>4))
     ml.sta(call_op)   # 12-13 bits - 2 extra address's bits
     
     decode_end = ml.pc
     # end of decode it
     ##############################
-    ml.clc()
+    ml.lda(addr_mode)
+    ml.bne(ml.pc+4) # skip next instr
+    ml.bpl(no_load_arg) # skip loading if AddrMode.imp
+    # load argument low
+    call_proc_8b(load_inc_pc)
+    ml.sta(narglo)
     
+    ml.lda(addr_mode)
+    ml.ana_imm(8)
+    ml.bne(no_load_arg)
+    ml.xor_imm(3^AddrMode.absy)
+    # load argument high
+    call_proc_8b(load_inc_pc)
+    ml.sta(narghi)
+    
+    no_load_arg = ml.pc
+    
+    ml.clc()
     call_op = ml.pc
     ml.bcc(0, [True, True])
     
     ml.bcc(main_loop)
-    
-    op_und = ml.pc
-    ml.lda_imm(1)
-    ml.sta(undef_instr)
-    ml.spc_imm(1)
-    
-    # main_prog subprogs
-    
-    # load byte from pc and increment pc
-    load_inc_pc = ml.pc
-    ml.sta(load_inc_pc_ch+1)
-    ml.lda(npc)
-    ml.sta(0xffe)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(npc)
-    ml.lda(npc+1)
-    ml.sta(0xfff)
-    ml.adc_imm(0)
-    ml.sta(npc+1)
-    ml.lda(0xffd)
-    ml.clc()
-    load_inc_pc_ch = ml.pc
-    ml.bcc(get_ret_page(load_inc_pc), [False, True])
     
     # tables:
     # before main table - 0xa0 - page offset - 96 entries - 192 nibble entries
@@ -563,6 +553,28 @@ def gencode():
     for i in range(0,48):
         ml.byte(((opcode_table[i*4][1]>>8)&3) | (((opcode_table[i*4+1][1]>>8)&3)<<2) |
                 (((opcode_table[i*4+2][1]>>8)&3)<<4) | (((opcode_table[i*4+3][1]>>8)&3)<<6))
+    addr_mode_len_table = ml.pc
+    
+    # main_prog subprogs
+    
+    # load byte from pc and increment pc
+    load_inc_pc = ml.pc
+    ml.sta(load_inc_pc_ch+1)
+    ml.lda(npc)
+    ml.sta(0xffe)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(npc)
+    ml.lda(npc+1)
+    ml.sta(0xfff)
+    ml.adc_imm(0)
+    ml.sta(npc+1)
+    ml.lda(0xffd)
+    ml.clc()
+    load_inc_pc_ch = ml.pc
+    ml.bcc(get_ret_page(load_inc_pc), [False, True])
+    
+    ops_code_start = ml.pc
     
     op_adc = ml.pc
     ml.bne(main_loop)
@@ -740,6 +752,11 @@ def gencode():
     
     op_stp = ml.pc
     ml.bne(main_loop)
+    
+    op_und = ml.pc
+    ml.lda_imm(1)
+    ml.sta(undef_instr)
+    ml.spc_imm(1)
 
     return start
 
