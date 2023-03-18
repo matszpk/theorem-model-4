@@ -650,18 +650,6 @@ def gencode():
     ml.sta(mem_val)
     ml.bcc(addr_mode_end)
     
-    am_zpgx = ml.pc
-    ml.lda(narglo)
-    ml.clc()
-    ml.adc(nxind)
-    ml.sta(0xffe)
-    ml.lda_imm(0)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
-    ml.sta(mem_val)
-    ml.clc()
-    ml.bcc(addr_mode_end)
-    
     am_zpgy = ml.pc
     ml.lda(narglo)
     ml.clc()
@@ -674,6 +662,7 @@ def gencode():
     ml.clc()
     ml.bne(addr_mode_end)
     
+    am_zpgx = ml.pc
     am_pindx = ml.pc
     ml.lda(narglo)
     ml.clc()
@@ -683,6 +672,10 @@ def gencode():
     ml.sta(0xfff)
     ml.lda(0xffd)
     ml.sta(narglo)
+    ml.sta(mem_val)
+    ml.lda(addr_mode)
+    ml.xor_imm(AddrMode.pindx)
+    ml.bne(addr_mode_end)   # if not AddrMode.pindx (if AddrMode.zpgx)
     ml.lda(0xffe)
     ml.sec()
     ml.adc_imm(0)
@@ -957,5 +950,5 @@ def gencode():
 
 ml.assemble(gencode)
 
-#print("decode len:", decode_end-decode)
+#print("mpc:", ml.pc)
 stdout.buffer.write(ml.dump())
