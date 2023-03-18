@@ -64,6 +64,7 @@ am_absy = -10000
 op_adc = -10000
 op_and = -10000
 op_asl = -10000
+op_asl_a = -10000
 op_bcc = -10000
 op_bcs = -10000
 op_beq = -10000
@@ -95,6 +96,7 @@ op_lda = -10000
 op_ldx = -10000
 op_ldy = -10000
 op_lsr = -10000
+op_lsr_a = -10000
 op_nop = -10000
 op_ora = -10000
 op_pha = -10000
@@ -102,7 +104,9 @@ op_php = -10000
 op_pla = -10000
 op_plp = -10000
 op_rol = -10000
+op_rol_a = -10000
 op_ror = -10000
+op_ror_a = -10000
 op_rti = -10000
 op_rts = -10000
 op_sbc = -10000
@@ -184,6 +188,7 @@ def gencode():
     global op_adc
     global op_and
     global op_asl
+    global op_asl_a
     global op_bcc
     global op_bcs
     global op_beq
@@ -215,6 +220,7 @@ def gencode():
     global op_ldx
     global op_ldy
     global op_lsr
+    global op_lsr_a
     global op_nop
     global op_ora
     global op_pha
@@ -222,7 +228,9 @@ def gencode():
     global op_pla
     global op_plp
     global op_rol
+    global op_rol_a
     global op_ror
+    global op_ror_a
     global op_rti
     global op_rts
     global op_sbc
@@ -391,7 +399,7 @@ def gencode():
         (AddrMode.zpg, op_asl), # 0x06
         (AddrMode.imp, op_php), # 0x08
         (AddrMode.imm, op_ora), # 0x09
-        (AddrMode.imp, op_asl), # 0x0a
+        (AddrMode.imp, op_asl_a), # 0x0a
         (AddrMode.imp, op_und), # 0x0c
         (AddrMode.abs, op_ora), # 0x0d
         (AddrMode.abs, op_asl), # 0x0e
@@ -416,7 +424,7 @@ def gencode():
         (AddrMode.zpg, op_rol), # 0x26
         (AddrMode.imp, op_plp), # 0x28
         (AddrMode.imm, op_and), # 0x29
-        (AddrMode.imp, op_rol), # 0x2a
+        (AddrMode.imp, op_rol_a), # 0x2a
         (AddrMode.abs, op_bit), # 0x2c
         (AddrMode.abs, op_and), # 0x2d
         (AddrMode.abs, op_rol), # 0x2e
@@ -441,7 +449,7 @@ def gencode():
         (AddrMode.zpg, op_lsr), # 0x46
         (AddrMode.imp, op_pha), # 0x48
         (AddrMode.imm, op_eor), # 0x49
-        (AddrMode.imp, op_lsr), # 0x4a
+        (AddrMode.imp, op_lsr_a), # 0x4a
         (AddrMode.abs, op_jmp), # 0x4c
         (AddrMode.abs, op_eor), # 0x4d
         (AddrMode.abs, op_lsr), # 0x4e
@@ -466,7 +474,7 @@ def gencode():
         (AddrMode.zpg, op_ror), # 0x66
         (AddrMode.imp, op_pla), # 0x68
         (AddrMode.imm, op_adc), # 0x69
-        (AddrMode.imp, op_ror), # 0x6a
+        (AddrMode.imp, op_ror_a), # 0x6a
         (AddrMode.abs, op_jmpind), # 0x6c
         (AddrMode.abs, op_adc), # 0x6d
         (AddrMode.abs, op_ror), # 0x6e
@@ -764,6 +772,14 @@ def gencode():
     # operations code
     ops_code_start = ml.pc
     
+    set_cpu_nzc = ml.pc
+    ml.sta(temp1)
+    ml.lda(nsr)
+    ml.ana_imm(0xfe)
+    ml.bcc(ml.pc+4)
+    ml.ora_imm(1)
+    ml.sta(nsr)
+    # continue to set_cpu_nz
     set_cpu_nz = ml.pc
     ml.sta(temp1)
     # set Z flag
@@ -799,10 +815,27 @@ def gencode():
     ml.bcc(set_cpu_nz)
 
     op_asl = ml.pc
-    ml.bne(main_loop)
+    ml.lda(0xffd)
+    ml.clc()
+    ml.rol()
+    ml.sta(0xffd)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_asl_a = ml.pc
+    ml.lda(nacc)
+    ml.clc()
+    ml.rol()
+    ml.sta(nacc)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
     
     branch_sr_flag = ml.pc
     ml.byte(0, True)
+    
+    op_bcc = ml.pc
+    ml.lda_imm(1)
+    ml.sta(branch_sr_flag)
     op_branch_if_not_set = ml.pc
     ml.lda(nsr)
     ml.ana(branch_sr_flag)
@@ -815,29 +848,33 @@ def gencode():
     ml.clc()
     ml.bcc(main_loop)
 
+    op_bcs = ml.pc
+    ml.lda_imm(1)
+    ml.sta(branch_sr_flag)
     op_branch_if_set = ml.pc
     ml.lda(nsr)
     ml.ana(branch_sr_flag)
     ml.bne(branch_do)
     ml.bpl(main_loop)
     
-    op_bcc = ml.pc
-    ml.lda_imm(1)
-    ml.sta(branch_sr_flag)
-    ml.bne(op_branch_if_not_set)
-
-    op_bcs = ml.pc
-    ml.lda_imm(1)
-    ml.sta(branch_sr_flag)
-    ml.bne(op_branch_if_set)
-
     op_beq = ml.pc
     ml.lda_imm(2)
     ml.sta(branch_sr_flag)
     ml.bne(op_branch_if_set)
 
     op_bit = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nacc)
+    ml.ana(mem_val)
+    ml.sta(temp1)
+    ml.ana_imm(0x40)
+    ml.sta(temp2)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^0x40)
+    ml.ora(temp2)
+    ml.sta(nsr)
+    ml.lda(temp1)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_bmi = ml.pc
     ml.lda_imm(0x80)
@@ -892,16 +929,33 @@ def gencode():
     ml.bcc(main_loop)
 
     op_cmp = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nacc)
+    ml.sec()
+    ml.sbc(mem_val)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
 
     op_cpx = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nxind)
+    ml.sec()
+    ml.sbc(mem_val)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
 
     op_cpy = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nyind)
+    ml.sec()
+    ml.sbc(mem_val)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
 
     op_dec = ml.pc
-    ml.bne(main_loop)
+    ml.lda(0xffd)
+    ml.clc()
+    ml.sbc_imm(0)
+    ml.sta(0xffd)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_dex = ml.pc
     ml.lda(nxind)
@@ -927,7 +981,12 @@ def gencode():
     ml.bcc(set_cpu_nz)
 
     op_inc = ml.pc
-    ml.bne(main_loop)
+    ml.lda(0xffd)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(0xffd)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_inx = ml.pc
     ml.lda(nxind)
@@ -986,7 +1045,20 @@ def gencode():
     ml.bcc(set_cpu_nz)
 
     op_lsr = ml.pc
-    ml.bne(main_loop)
+    ml.lda(0xffd)
+    ml.clc()
+    ml.ror()
+    ml.sta(0xffd)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_lsr_a = ml.pc
+    ml.lda(nacc)
+    ml.clc()
+    ml.ror()
+    ml.sta(nacc)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
 
     op_nop = ml.pc
     ml.bcc(main_loop)
@@ -1011,10 +1083,40 @@ def gencode():
     ml.bne(main_loop)
 
     op_rol = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(0xffd)
+    ml.rol()
+    ml.sta(0xffd)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_rol_a = ml.pc
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(nacc)
+    ml.rol()
+    ml.sta(nacc)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
 
     op_ror = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(0xffd)
+    ml.ror()
+    ml.sta(0xffd)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_ror_a = ml.pc
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(nacc)
+    ml.ror()
+    ml.sta(nacc)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
 
     op_rti = ml.pc
     ml.bne(main_loop)
