@@ -33,9 +33,11 @@ addr_mode = ml.pc # 0xfee
 ml.byte(0x00, True)
 op_index = ml.pc # 0xfef
 ml.byte(0x00, True)
-temp1 = ml.pc # 0xff0:
+undef_instr = ml.pc # 0xff0
 ml.byte(0x00, True)
-temp2 = ml.pc # 0xff1:
+temp1 = ml.pc # 0xff1:
+ml.byte(0x00, True)
+temp2 = ml.pc # 0xff2:
 ml.byte(0x00, True)
 
 # addressing modes
@@ -214,6 +216,9 @@ def gencode():
     ml.bcc(main_loop)
     
     op_und = ml.pc
+    ml.lda_imm(1)
+    ml.sta(undef_instr)
+    ml.spc_imm(1)
     
     # main_prog subprogs
     
