@@ -37,6 +37,8 @@ temp1 = ml.pc # 0xff1:
 ml.byte(0x00, True)
 temp2 = ml.pc # 0xff2:
 ml.byte(0x00, True)
+temp3 = ml.pc # 0xff2:
+ml.byte(0x00, True)
 
 mem_addr = 0xffe # 0xffe
 
@@ -785,6 +787,7 @@ def gencode():
     ml.bvc(ml.pc+4)
     ml.ora_imm(0x40)
     ml.sta(nsr)
+    ml.lda(temp1)
     # continue to set_cpu_nzc
     set_cpu_nzc = ml.pc
     ml.sta(temp1)
@@ -793,6 +796,7 @@ def gencode():
     ml.bcc(ml.pc+4)
     ml.ora_imm(1)
     ml.sta(nsr)
+    ml.lda(temp1)
     # continue to set_cpu_nz
     set_cpu_nz = ml.pc
     ml.sta(temp1)
@@ -1211,7 +1215,6 @@ def gencode():
     ml.ana_imm(0xf)     # adc for low nibble
     ml.adc(temp1)
     ml.sta(temp1)
-    # TODO: write decimal mode
     # if higher than 9
     ml.sec()
     ml.sbc_imm(10)
@@ -1230,8 +1233,67 @@ def gencode():
     ml.clc()
     ml.adc(temp1)   # tmp <= 0x0f then (tmp&0xf) else (tmp&0xf) + 0x10
     ml.sta(temp1)
+    ml.rol()
+    ml.ana_imm(1)
+    ml.sta(temp2) # carry!
     # set ZNV
+    # calculate V
+    ml.lda(nacc)
+    ml.xor(temp1)
+    ml.sta(temp3)
+    ml.lda(nacc)
+    ml.xor(mem_val)
+    ml.xor_imm(0x80)    # neg it
+    ml.ana(temp3)
+    ml.ror() # to 6 bit - V
+    ml.ana_imm(0x40)
+    ml.sta(temp3)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^0x40)
+    ml.ora(temp3)
+    ml.sta(nsr)
+    # end of calculate V
+    # set ZN
+    ml.lda(temp1)
+    # set Z flag
+    ml.bne(ml.pc+8)
+    ml.lda(nsr)
+    ml.ora_imm(0x2)
+    ml.bne(ml.pc+6)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^0x2)
+    # store nsr
+    ml.sta(nsr)
+    # set N flag
+    ml.lda(temp1)
+    ml.bpl(ml.pc+8)
+    ml.lda(nsr)
+    ml.ora_imm(0x80)
+    ml.bne(ml.pc+6)
+    ml.lda(nsr)
+    ml.ana_imm(0x7f)
+    # store nsr
+    ml.sta(nsr)
+    
     # fix higher nibble
+    ml.lda(temp2) # carry!
+    ml.bne(ml.pc+9) # to fix
+    ml.lda(temp1)
+    ml.sec()
+    ml.sbc_imm(0xa0)
+    ml.bcc(ml.pc+6)
+    ml.lda(temp1)
+    ml.adc_imm(0x5f)
+    ml.sta(nacc)
+    ml.rol()
+    ml.ana_imm(1)   # yet another carry
+    ml.ora(temp2)
+    ml.sta(temp2)
+    ml.lda(nsr)         # store to SR (flags)
+    ml.ana_imm(0xfe)
+    ml.ora(temp2)
+    ml.sta(nsr)
+    
     # set carry
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
