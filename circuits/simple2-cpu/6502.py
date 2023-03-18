@@ -782,7 +782,7 @@ def gencode():
     ml.lda(nsr)
     ml.ana_imm(0x7f)
     ml.clc()
-    ml.bne(ml.pc+6)
+    ml.bcc(ml.pc+6)
     ml.lda(nsr)
     ml.ora_imm(0x80)
     # store nsr
