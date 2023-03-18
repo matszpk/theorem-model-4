@@ -33,9 +33,11 @@ addr_mode = ml.pc # 0xfee
 ml.byte(0x00, True)
 op_index = ml.pc # 0xfef
 ml.byte(0x00, True)
-temp1 = ml.pc # 0xff0:
+undef_instr = ml.pc # 0xff0
 ml.byte(0x00, True)
-temp2 = ml.pc # 0xff1:
+temp1 = ml.pc # 0xff1:
+ml.byte(0x00, True)
+temp2 = ml.pc # 0xff2:
 ml.byte(0x00, True)
 
 # addressing modes
@@ -47,19 +49,66 @@ AddrMode = IntEnum('AddrMode',
             'rel','zpgy','imp'
         ])
 
-# operations
-Ops = IntEnum('Ops',
-        [
-            'ORA','AND','EOR','ADC','STA','LDA','CMP','SBC', # 0-7
-            'ASL','ROL','LSR','ROR','STX','LDX','DEC','INC', # 8-15
-            'PHP','CLC','PLP','SEC','PHA','CLI','PLA','SEI', # 16-23
-            'DEY','TYA','TAY','CLV','INY','CLD','INX','SED', # 24-31
-            'TXA','TXS','TAX','TSX','DEX','JM1','NOP','JM2', # 32-39
-            #----
-            'BPL','BMI','BVC','BVS','BCC','BCS','BNE','BEQ', # 40-47
-            'STY','LDY','CPY','CPX','JSR','BIT','JMP','JMPind', # 48-55
-            'BRK','RTI','RTS','UND'
-        ])
+op_adc = -10000
+op_and = -10000
+op_asl = -10000
+op_bcc = -10000
+op_bcs = -10000
+op_beq = -10000
+op_bit = -10000
+op_bmi = -10000
+op_bne = -10000
+op_bpl = -10000
+op_brk = -10000
+op_bvc = -10000
+op_bvs = -10000
+op_clc = -10000
+op_cld = -10000
+op_cli = -10000
+op_clv = -10000
+op_cmp = -10000
+op_cpx = -10000
+op_cpy = -10000
+op_dec = -10000
+op_dex = -10000
+op_dey = -10000
+op_eor = -10000
+op_inc = -10000
+op_inx = -10000
+op_iny = -10000
+op_jmp = -10000
+op_jmpind = -10000
+op_jsr = -10000
+op_lda = -10000
+op_ldx = -10000
+op_ldy = -10000
+op_lsr = -10000
+op_nop = -10000
+op_ora = -10000
+op_pha = -10000
+op_php = -10000
+op_pla = -10000
+op_plp = -10000
+op_rol = -10000
+op_ror = -10000
+op_rti = -10000
+op_rts = -10000
+op_sbc = -10000
+op_sec = -10000
+op_sed = -10000
+op_sei = -10000
+op_sta = -10000
+op_stx = -10000
+op_sty = -10000
+op_tax = -10000
+op_tay = -10000
+op_tsx = -10000
+op_txa = -10000
+op_txs = -10000
+op_tya = -10000
+op_und = -10000
+op_crt = -10000     # create machine
+op_stp = -10000     # stop machine
 
 ret_pages = dict()
 def call_proc_8b(proc):
@@ -92,226 +141,208 @@ def get_ret_page(proc):
         return -10000
 
 load_inc_pc, load_inc_pc_ch = -10000, -10000
-decode_notALU, decode_end, decode_noSTAimm = -10000, -10000, -10000
-decode, decode_noALU2IMPA, decode_noAddrMode04 = -10000, -10000, -10000
-decode_noTXA_other, decode_noIMP = -10000, -10000
-decode_notMEM, decode_other_next = -10000, -10000
-other_addr_mode_table, other_opcode_table = -10000, -10000
+decode, decode_end = -10000, -10000
+decode_ch1, decode_ch2, decode_ch3 = -10000, -10000, -10000
+decode_table = -10000
+call_op = -10000
 
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
     
+    global op_adc
+    global op_and
+    global op_asl
+    global op_bcc
+    global op_bcs
+    global op_beq
+    global op_bit
+    global op_bmi
+    global op_bne
+    global op_bpl
+    global op_brk
+    global op_bvc
+    global op_bvs
+    global op_clc
+    global op_cld
+    global op_cli
+    global op_clv
+    global op_cmp
+    global op_cpx
+    global op_cpy
+    global op_dec
+    global op_dex
+    global op_dey
+    global op_eor
+    global op_inc
+    global op_inx
+    global op_iny
+    global op_jmp
+    global op_jmpind
+    global op_jsr
+    global op_lda
+    global op_ldx
+    global op_ldy
+    global op_lsr
+    global op_nop
+    global op_ora
+    global op_pha
+    global op_php
+    global op_pla
+    global op_plp
+    global op_rol
+    global op_ror
+    global op_rti
+    global op_rts
+    global op_sbc
+    global op_sec
+    global op_sed
+    global op_sei
+    global op_sta
+    global op_stx
+    global op_sty
+    global op_tax
+    global op_tay
+    global op_tsx
+    global op_txa
+    global op_txs
+    global op_tya
+    global op_und
+    global op_crt
+    global op_stp
+    
     start = 0
     ml.set_pc(start)
     # create 6502 machine - memory: 16-bit address, 8-bit cell
-    ml.lda_imm(0x10)
-    ml.sta(0xffd)
-    ml.lda_imm(0x30)
-    ml.sta(0xffe)
-    ml.lda_imm(0)
-    ml.sta(0xfff)
-    ml.spc(0) # call it
+    # ml.lda_imm(0x10)
+    # ml.sta(0xffd)
+    # ml.lda_imm(0x30)
+    # ml.sta(0xffe)
+    # ml.lda_imm(0)
+    # ml.sta(0xfff)
+    # ml.spc(0) # call it
 
+    ml.lda_imm(0x00)
+    ml.sta(0xfc0)
+    
     main_loop = ml.pc
-    ml.lda_imm(0)
-    ml.sta(instr_cycles)
+    ml.lda(0xfc0)
     
-    # load opcode
-    call_proc_8b(load_inc_pc)
-    # load argument low
-    call_proc_8b(load_inc_pc)
-    
-    # load argument high
-    call_proc_8b(load_inc_pc)
-    
-    # TODO use simpler decoder that uses tables.
     ##############################
     # decode it
-    global decode, decode_notMEM, decode_other_next
-    global decode_notALU, decode_end, decode_noSTAimm, decode_noAddrMode04
-    global decode_noTXA_other, decode_noIMP
-    global decode_noALU2IMPA, other_addr_mode_table, other_opcode_table
+    global call_op
+    global decode, decode_end, decode_table
+    global decode_ch1, decode_ch2, decode_ch3
     decode = ml.pc
     #-------------------------------
     ml.sta(nopcode)
-    ml.ana_imm(0x0f)
-    ml.xor_imm(8)
-    ml.bne(decode_noIMP)
+    # skip opcodes that satisfies opcode&0x03 == 3. there are undefined
+    ml.ana_imm(0x03)
+    ml.xor_imm(0x03)
+    ml.bne(ml.pc+4)
+    ml.bpl(op_und)
+    # skip opcode&0x03 == 3 in table.
     ml.lda(nopcode)
+    ml.clc()
+    ml.ror()
+    ml.clc()
+    ml.ror()
+    ml.sta(temp1)
+    ml.sec()
+    ml.lda(nopcode)
+    ml.sbc(temp1)
+    # A > M - carry on
+    # setup address to load decode_table
+    ml.sta(decode_ch1+1)
+    ml.clc()
+    ml.ror()
+    ml.clc()
+    ml.adc_imm(0xa0)
+    ml.sta(decode_ch2+1)
+    # carry off - A-X-1
+    ml.sbc_imm(0xa0-1)
+    #ml.clc()
+    ml.ror()    # enables 0x80 - but doesn't matter
+    ml.ora_imm(0xc0)
+    ml.sta(decode_ch3+1)
+    
+    decode_ch1 = ml.pc
+    ml.lda((decode_table & 0xf00), [False, True])
+    ml.sta(call_op+1)
+    chxx1 = ml.pc
+    ml.sta(0xc00, [False, True])
+    
+    ml.lda(decode_ch1+1)
+    ml.ror()
+    decode_ch2 = ml.pc
+    ml.lda(((decode_table - 0x60) & 0xf00), [False, True])
+    ml.bcc(ml.pc+6)    # if not higher nibble
     ml.ror()
     ml.ror()
     ml.ror()
     ml.ror()
     ml.ana_imm(0xf)
-    ml.ora_imm(Ops.PHP)
-    ml.sta(op_index)
-    ml.bne(decode_end)
-    #--------------------------
-    # TXA,TXS impls
-    decode_noIMP = ml.pc
-    ml.lda(nopcode)
-    ml.ana_imm(0x8f)
-    ml.xor_imm(0x8a)
-    ml.bne(decode_noTXA_other)
-    ml.lda_imm(AddrMode.imp)
-    ml.sta(addr_mode)
-    ml.lda(nopcode)
+    ml.sta(addr_mode)   # addr mode
+    chxx2 = ml.pc
+    ml.sta(0xe00, [False, True])
+    
+    ml.lda(decode_ch2+1)
+    ml.xor_imm(1)   # negate first bit
+    ml.ror()
+    decode_ch3 = ml.pc
+    ml.lda(((decode_table + 0xc0) & 0xf00), [False, True])
+    ml.bcc(ml.pc+6)    # if higher nibble (no rol)
+    ml.rol()
+    ml.rol()
+    ml.rol()
+    ml.rol()
+    ml.sta(temp1)
+    ml.lda(decode_ch1+1)
+    ml.ror()
+    ml.lda(temp1)
+    ml.bcc(ml.pc+4)
     ml.ror()
     ml.ror()
-    ml.ror()
-    ml.ror()
-    ml.ana_imm(0x7)
-    ml.ora_imm(Ops.TXA)
-    ml.sta(op_index)
-    ml.ana_imm(5)
-    ml.xor_imm(5)
-    ml.bne(ml.pc+6)
-    decode_UND = ml.pc
-    ml.lda_imm(Ops.UND)
-    ml.sta(op_index)
-    ml.bne(decode_end)
-    #------------
-    decode_noTXA_other = ml.pc
-    ml.lda(nopcode)
+    #----------
+    ml.ana_imm(0x30)
+    ml.ora_imm(instr_bcc)
+    ml.sta(call_op)   # 12-13 bits - 2 extra address's bits
+    chxx3 = ml.pc
+    ml.sta(0xd00, [False, True])
+    
+    ml.lda(0xfc0)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(0xfc0)
     ml.ana_imm(3)
-    ml.xor_imm(1)
-    ml.bne(decode_notALU)
-    #----------------
-    # 0x03&opcode = 1 -> ALU
-    ml.lda(nopcode)
-    ml.ror()            # shift >> 2
-    ml.ror()
-    ml.sta(temp1)
-    ml.ana_imm(7)       # addr mode
-    ml.sta(addr_mode)
-    ml.lda(temp1)
-    ml.ror()            # shift >> 3
-    ml.ror()
-    ml.ror()
-    ml.ana_imm(7)
-    ml.sta(op_index)    # op index
-    ml.lda(nopcode)
-    ml.xor_imm(0x89) # if STA_imm
-    ml.bne(decode_noSTAimm)
-    ml.bpl(decode_UND)
-    decode_noSTAimm = ml.pc
-    ml.bne(decode_end)
-    #----------------
-    decode_notALU = ml.pc
-    #----------------
-    ml.xor_imm(1^2)
-    ml.bne(decode_notMEM)
-    ml.lda(nopcode)
-    # 0x03&opcode = 2 -> shift,inc,dec,stx,ldx
-    ml.ror()            # shift >> 2
-    ml.ror()
-    ml.sta(temp1)
-    ml.ana_imm(7)       # addr mode
-    ml.sta(addr_mode)
-    ml.lda(temp1)
-    ml.ror()            # shift >> 3
-    ml.ror()
-    ml.ror()
-    ml.ana_imm(7)
-    ml.ora_imm(Ops.ASL)
-    ml.sta(op_index)    # op index
-    ml.lda(addr_mode)
-    ml.ana_imm(3)       # addr_mode=0 or 4
-    ml.bne(decode_noAddrMode04)
-    ml.lda(nopcode)
-    ml.xor_imm(0xa0)
-    ml.bne(decode_UND)
-    # if LDX #imm
-    ml.lda(AddrMode.imm)
-    ml.sta(addr_mode)
-    ml.lda(Ops.LDX)
-    ml.sta(op_index)
-    ml.bne(decode_end)
-    decode_noAddrMode04 = ml.pc
-    ml.lda(addr_mode)
-    ml.xor(AddrMode.absy)
-    ml.bne(ml.pc+4) # skip next instr
-    ml.bpl(decode_UND)  # undefined
-    #ml.lda(addr_mode)
-    ml.xor_imm(AddrMode.absy^AddrMode.imm)       # if imm -> imp acc
-    ml.bne(decode_noALU2IMPA)
-    ml.lda(AddrMode.imp)
-    ml.sta(addr_mode)
-    decode_noALU2IMPA = ml.pc
-    # change addr mode for STX and LDX, handle STX, LDX
-    ml.lda(nopcode)
-    ml.xor_imm(0x9e)
-    ml.bne(ml.pc+4)
-    ml.bpl(decode_UND)
-    ml.lda(op_index)
-    ml.xor(Ops.STX)
-    ml.ana_imm(0xfe)
-    ml.bne(decode_end)
-    # if STX, LDX
-    ml.lda(addr_mode)
-    ml.xor(AddrMode.zpgx)
-    ml.bne(ml.pc+8)
-    ml.lda_imm(AddrMode.zpgy)
-    ml.sta(addr_mode)
-    ml.bne(decode_end)
-    #----
-    ml.xor(AddrMode.zpgx^AddrMode.absx)
-    ml.bne(ml.pc+6)
-    ml.lda_imm(AddrMode.absy)
-    ml.sta(addr_mode)
-    ml.bne(decode_end)
-    #---------------------------------
-    decode_notMEM = ml.pc
-    # use tables for other opcodes
-    ml.lda(nopcode)
-    ml.ror()
-    ml.ror()
-    ml.ror()
-    ml.ror()
-    ml.ana_imm(0xf)
-    ml.sta(temp1)
-    ml.lda(nopcode)
-    ml.ana_imm(0xf)
-    ml.xor_imm(1)
-    ml.bne(ml.pc+4)
-    ml.bpl(decode_other_next)
-    ml.xor_imm(1^4)
-    ml.bne(ml.pc+6)
-    ml.lda_imm(16)
-    ml.bne(decode_other_next)
-    ml.xor_imm(4^0xc)
-    ml.bne(decode_UND)
-    ml.lda_imm(32)
-    decode_other_next = ml.pc
-    # (hi_nibble | (16_chunk_index<<4))
-    ml.ora(temp1)
-    ml.clc()
-    ml.adc_imm(other_opcode_table&0xff)
-    ml.sta(ml.pc+3)
-    ml.lda(other_opcode_table, [False, True])
-    ml.sta(temp1)
-    ml.rol()        # move high 3 bits to low 3 bits.
-    ml.rol()
-    ml.rol()
-    ml.rol()
-    ml.ana_imm(0x7)
-    ml.clc()
-    ml.adc(other_addr_mode_table)
-    ml.sta(ml.pc+3)
-    ml.lda(other_addr_mode_table, [False, True])
-    ml.sta(addr_mode)
-    ml.lda(temp1)
-    ml.ana_imm(0x1f)
-    ml.clc()
-    ml.adc_imm(Ops.BPL)
-    ml.sta(op_index)
+    ml.xor_imm(3)
+    ml.bne(ml.pc+9)
+    ml.lda(0xfc0)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(0xfc0)
+    ml.lda(0xfc0)
+    ml.sta(chxx1+1)
+    ml.sta(chxx2+1)
+    ml.sta(chxx3+1)
+    ml.bne(main_loop)
+    
+    ml.spc_imm(1)
     
     decode_end = ml.pc
     # end of decode it
     ##############################
     ml.clc()
+    
+    call_op = ml.pc
+    ml.bcc(0, [True, True])
+    
     ml.bcc(main_loop)
+    
+    op_und = ml.pc
+    ml.lda_imm(1)
+    ml.sta(undef_instr)
+    ml.spc_imm(1)
     
     # main_prog subprogs
     
@@ -333,82 +364,402 @@ def gencode():
     ml.bcc(get_ret_page(load_inc_pc), [False, True])
     
     # tables:
-    # addressing modes:
-    other_addr_mode_table = ml.pc
-    other_am_imp = 0
-    ml.byte(AddrMode.imp)
-    other_am_rel = 1
-    ml.byte(AddrMode.rel)
-    other_am_abs = 2
-    ml.byte(AddrMode.abs)
-    other_am_imm = 3
-    ml.byte(AddrMode.imm)
-    other_am_zpg = 4
-    ml.byte(AddrMode.zpg)
-    other_am_zpgx = 5
-    ml.byte(AddrMode.zpgx)
-    other_am_absx = 6
-    ml.byte(AddrMode.absx)
-    other_addr_mode_table_end = ml.pc
-    if (other_addr_mode_table_end&0xf00) != (other_addr_mode_table&0xf00):
-        raise(RuntimeError("Page boundary!!"))
+    # before main table - 0xa0 - page offset - 96 entries - 192 nibble entries
+    # these values are mapped into 8-11 bit of final value - it is addr mode
+    # after main table (192 entries), we have 2-bit entries - 12-13 bits of final values.
+    # it is extra bits of call address
     
-    other_opcode_table = ml.pc
-    # opcodes: 0xX0
-    ml.byte((other_am_imp<<5) | (Ops.BRK - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BPL - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.JSR - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BMI - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.RTI - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BVC - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.RTS - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BVS - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BCC - Ops.BPL))
-    ml.byte((other_am_imm<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BCS - Ops.BPL))
-    ml.byte((other_am_imm<<5) | (Ops.CPY - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BNE - Ops.BPL))
-    ml.byte((other_am_imm<<5) | (Ops.CPX - Ops.BPL))
-    ml.byte((other_am_rel<<5) | (Ops.BEQ - Ops.BPL))
-    # opcodes: 0xX4
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.BIT - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.STY - Ops.BPL))
-    ml.byte((other_am_zpgx<<5) | (Ops.STY - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_zpgx<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.CPY - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_zpg<<5) | (Ops.CPX - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    # opcodes 0xXC
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.BIT - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.JMP - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.JMPind - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.STY - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_absx<<5) | (Ops.LDY - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.CPY - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    ml.byte((other_am_abs<<5) | (Ops.CPX - Ops.BPL))
-    ml.byte((other_am_imp<<5) | (Ops.UND - Ops.BPL))
-    other_opcode_table_end = ml.pc
-    if (other_opcode_table_end&0xf00) != (other_opcode_table&0xf00):
-        raise(RuntimeError("Page boundary!!"))
+    opcode_table = [
+        (AddrMode.imp, op_brk), # 0x00
+        (AddrMode.pindx, op_ora), # 0x01
+        (AddrMode.imp, op_crt), # 0x02
+        (AddrMode.imp, op_stp), # 0x04
+        (AddrMode.zpg, op_ora), # 0x05
+        (AddrMode.zpg, op_asl), # 0x06
+        (AddrMode.imp, op_php), # 0x08
+        (AddrMode.imm, op_ora), # 0x09
+        (AddrMode.imp, op_asl), # 0x0a
+        (AddrMode.imp, op_und), # 0x0c
+        (AddrMode.abs, op_ora), # 0x0d
+        (AddrMode.abs, op_asl), # 0x0e
+        (AddrMode.rel, op_bpl), # 0x10
+        (AddrMode.pindy, op_ora), # 0x11
+        (AddrMode.imp, op_und), # 0x12
+        (AddrMode.imp, op_und), # 0x14
+        (AddrMode.zpgx, op_ora), # 0x15
+        (AddrMode.zpgx, op_asl), # 0x16
+        (AddrMode.imp, op_clc), # 0x18
+        (AddrMode.absy, op_ora), # 0x19
+        (AddrMode.imp, op_und), # 0x1a
+        (AddrMode.imp, op_und), # 0x1c
+        (AddrMode.absx, op_ora), # 0x1d
+        (AddrMode.absx, op_asl), # 0x1e
+        
+        (AddrMode.abs, op_jsr), # 0x20
+        (AddrMode.pindx, op_and), # 0x21
+        (AddrMode.imp, op_und), # 0x22
+        (AddrMode.zpg, op_bit), # 0x24
+        (AddrMode.zpg, op_and), # 0x25
+        (AddrMode.zpg, op_rol), # 0x26
+        (AddrMode.imp, op_plp), # 0x28
+        (AddrMode.imm, op_and), # 0x29
+        (AddrMode.imp, op_rol), # 0x2a
+        (AddrMode.abs, op_bit), # 0x2c
+        (AddrMode.abs, op_and), # 0x2d
+        (AddrMode.abs, op_rol), # 0x2e
+        (AddrMode.rel, op_bmi), # 0x30
+        (AddrMode.pindy, op_and), # 0x31
+        (AddrMode.imp, op_und), # 0x32
+        (AddrMode.imp, op_und), # 0x34
+        (AddrMode.zpgx, op_and), # 0x35
+        (AddrMode.zpgx, op_rol), # 0x36
+        (AddrMode.imp, op_sec), # 0x38
+        (AddrMode.absy, op_and), # 0x39
+        (AddrMode.imp, op_und), # 0x3a
+        (AddrMode.imp, op_und), # 0x3c
+        (AddrMode.absx, op_and), # 0x3d
+        (AddrMode.absx, op_rol), # 0x3e
+        
+        (AddrMode.imp, op_rti), # 0x40
+        (AddrMode.pindx, op_eor), # 0x41
+        (AddrMode.imp, op_und), # 0x42
+        (AddrMode.imp, op_und), # 0x44
+        (AddrMode.zpg, op_eor), # 0x45
+        (AddrMode.zpg, op_lsr), # 0x46
+        (AddrMode.imp, op_pha), # 0x48
+        (AddrMode.imm, op_eor), # 0x49
+        (AddrMode.imp, op_lsr), # 0x4a
+        (AddrMode.abs, op_jmp), # 0x4c
+        (AddrMode.abs, op_eor), # 0x4d
+        (AddrMode.abs, op_lsr), # 0x4e
+        (AddrMode.rel, op_bvc), # 0x50
+        (AddrMode.pindy, op_eor), # 0x51
+        (AddrMode.imp, op_und), # 0x52
+        (AddrMode.imp, op_und), # 0x54
+        (AddrMode.zpgx, op_eor), # 0x55
+        (AddrMode.zpgx, op_lsr), # 0x56
+        (AddrMode.imp, op_cli), # 0x58
+        (AddrMode.absy, op_eor), # 0x59
+        (AddrMode.imp, op_und), # 0x5a
+        (AddrMode.imp, op_und), # 0x5c
+        (AddrMode.absx, op_eor), # 0x5d
+        (AddrMode.absx, op_lsr), # 0x5e
+        
+        (AddrMode.imp, op_rts), # 0x60
+        (AddrMode.pindx, op_adc), # 0x61
+        (AddrMode.imp, op_und), # 0x62
+        (AddrMode.imp, op_und), # 0x64
+        (AddrMode.zpg, op_adc), # 0x65
+        (AddrMode.zpg, op_ror), # 0x66
+        (AddrMode.imp, op_pla), # 0x68
+        (AddrMode.imm, op_adc), # 0x69
+        (AddrMode.imp, op_ror), # 0x6a
+        (AddrMode.abs, op_jmpind), # 0x6c
+        (AddrMode.abs, op_adc), # 0x6d
+        (AddrMode.abs, op_ror), # 0x6e
+        (AddrMode.rel, op_bvs), # 0x70
+        (AddrMode.pindy, op_adc), # 0x71
+        (AddrMode.imp, op_und), # 0x72
+        (AddrMode.imp, op_und), # 0x74
+        (AddrMode.zpgx, op_adc), # 0x75
+        (AddrMode.zpgx, op_ror), # 0x76
+        (AddrMode.imp, op_sei), # 0x78
+        (AddrMode.absy, op_adc), # 0x79
+        (AddrMode.imp, op_und), # 0x7a
+        (AddrMode.imp, op_und), # 0x7c
+        (AddrMode.absx, op_adc), # 0x7d
+        (AddrMode.absx, op_ror), # 0x7e
+        
+        (AddrMode.imp, op_und), # 0x80
+        (AddrMode.pindx, op_sta), # 0x81
+        (AddrMode.imp, op_und), # 0x82
+        (AddrMode.zpg, op_sty), # 0x84
+        (AddrMode.zpg, op_sta), # 0x85
+        (AddrMode.zpg, op_stx), # 0x86
+        (AddrMode.imp, op_dey), # 0x88
+        (AddrMode.imm, op_und), # 0x89
+        (AddrMode.imp, op_txa), # 0x8a
+        (AddrMode.abs, op_sty), # 0x8c
+        (AddrMode.abs, op_sta), # 0x8d
+        (AddrMode.abs, op_stx), # 0x8e
+        (AddrMode.rel, op_bcc), # 0x90
+        (AddrMode.pindy, op_sta), # 0x91
+        (AddrMode.imp, op_und), # 0x92
+        (AddrMode.zpgx, op_sty), # 0x94
+        (AddrMode.zpgx, op_sta), # 0x95
+        (AddrMode.zpgy, op_stx), # 0x96
+        (AddrMode.imp, op_tya), # 0x98
+        (AddrMode.absy, op_sta), # 0x99
+        (AddrMode.imp, op_txs), # 0x9a
+        (AddrMode.imp, op_und), # 0x9c
+        (AddrMode.absx, op_sta), # 0x9d
+        (AddrMode.imp, op_und), # 0x9e
+        
+        (AddrMode.imm, op_ldy), # 0xa0
+        (AddrMode.pindx, op_lda), # 0xa1
+        (AddrMode.imm, op_ldx), # 0xa2
+        (AddrMode.zpg, op_ldy), # 0xa4
+        (AddrMode.zpg, op_lda), # 0xa5
+        (AddrMode.zpg, op_ldx), # 0xa6
+        (AddrMode.imp, op_tay), # 0xa8
+        (AddrMode.imm, op_lda), # 0xa9
+        (AddrMode.imp, op_tax), # 0xaa
+        (AddrMode.abs, op_ldy), # 0xac
+        (AddrMode.abs, op_lda), # 0xad
+        (AddrMode.abs, op_ldx), # 0xae
+        (AddrMode.rel, op_bcs), # 0xb0
+        (AddrMode.pindy, op_lda), # 0xb1
+        (AddrMode.imp, op_und), # 0xb2
+        (AddrMode.zpgx, op_ldy), # 0xb4
+        (AddrMode.zpgx, op_lda), # 0xb5
+        (AddrMode.zpgy, op_ldx), # 0xb6
+        (AddrMode.imp, op_clv), # 0xb8
+        (AddrMode.absy, op_lda), # 0xb9
+        (AddrMode.imp, op_tsx), # 0xba
+        (AddrMode.absx, op_ldy), # 0xbc
+        (AddrMode.absx, op_lda), # 0xbd
+        (AddrMode.absy, op_ldx), # 0xbe
+        
+        (AddrMode.imm, op_cpy), # 0xc0
+        (AddrMode.pindx, op_cmp), # 0xc1
+        (AddrMode.imp, op_und), # 0xc2
+        (AddrMode.zpg, op_cpy), # 0xc4
+        (AddrMode.zpg, op_cmp), # 0xc5
+        (AddrMode.zpg, op_dec), # 0xc6
+        (AddrMode.imp, op_iny), # 0xc8
+        (AddrMode.imm, op_cmp), # 0xc9
+        (AddrMode.imp, op_dex), # 0xca
+        (AddrMode.abs, op_cpy), # 0xcc
+        (AddrMode.abs, op_cmp), # 0xcd
+        (AddrMode.abs, op_dec), # 0xce
+        (AddrMode.rel, op_bne), # 0xd0
+        (AddrMode.pindy, op_cmp), # 0xd1
+        (AddrMode.imp, op_und), # 0xd2
+        (AddrMode.imp, op_und), # 0xd4
+        (AddrMode.zpgx, op_cmp), # 0xd5
+        (AddrMode.zpgx, op_dec), # 0xd6
+        (AddrMode.imp, op_cld), # 0xd8
+        (AddrMode.absy, op_cmp), # 0xd9
+        (AddrMode.imp, op_und), # 0xda
+        (AddrMode.imp, op_und), # 0xdc
+        (AddrMode.absx, op_cmp), # 0xdd
+        (AddrMode.absx, op_dec), # 0xde
+        
+        (AddrMode.imm, op_cpx), # 0xe0
+        (AddrMode.pindx, op_sbc), # 0xe1
+        (AddrMode.imp, op_und), # 0xe2
+        (AddrMode.zpg, op_cpx), # 0xe4
+        (AddrMode.zpg, op_sbc), # 0xe5
+        (AddrMode.zpg, op_inc), # 0xe6
+        (AddrMode.imp, op_inx), # 0xe8
+        (AddrMode.imm, op_sbc), # 0xe9
+        (AddrMode.imp, op_nop), # 0xea
+        (AddrMode.abs, op_cpx), # 0xec
+        (AddrMode.abs, op_sbc), # 0xed
+        (AddrMode.abs, op_inc), # 0xee
+        (AddrMode.rel, op_beq), # 0xf0
+        (AddrMode.pindy, op_sbc), # 0xf1
+        (AddrMode.imp, op_und), # 0xf2
+        (AddrMode.imp, op_und), # 0xf4
+        (AddrMode.zpgx, op_sbc), # 0xf5
+        (AddrMode.zpgx, op_inc), # 0xf6
+        (AddrMode.imp, op_sed), # 0xf8
+        (AddrMode.absy, op_sbc), # 0xf9
+        (AddrMode.imp, op_und), # 0xfa
+        (AddrMode.imp, op_und), # 0xfc
+        (AddrMode.absx, op_sbc), # 0xfd
+        (AddrMode.absx, op_inc), # 0xfe
+    ]
     
+    ml.set_pc((ml.pc & 0xf00) + 0xa0 + ((ml.pc & 0xff) > 0xa0)*0x100)
+    decode_8_11_table = ml.pc
+    for i in range(0,96):
+        ml.byte(opcode_table[i*2][0].value |(opcode_table[i*2+1][0].value<<4))
+    decode_table = ml.pc
+    for i in range(0,192):
+        ml.byte(opcode_table[i][1] & 0xff)
+    decode_12_13_table = ml.pc
+    for i in range(0,48):
+        ml.byte(((opcode_table[i*4][1]>>8)&3) | (((opcode_table[i*4+1][1]>>8)&3)<<2) |
+                (((opcode_table[i*4+2][1]>>8)&3)<<4) | (((opcode_table[i*4+3][1]>>8)&3)<<6))
+    
+    op_adc = ml.pc
+    ml.bne(main_loop)
+
+    op_and = ml.pc
+    ml.bne(main_loop)
+
+    op_asl = ml.pc
+    ml.bne(main_loop)
+
+    op_bcc = ml.pc
+    ml.bne(main_loop)
+
+    op_bcs = ml.pc
+    ml.bne(main_loop)
+
+    op_beq = ml.pc
+    ml.bne(main_loop)
+
+    op_bit = ml.pc
+    ml.bne(main_loop)
+
+    op_bmi = ml.pc
+    ml.bne(main_loop)
+
+    op_bne = ml.pc
+    ml.bne(main_loop)
+
+    op_bpl = ml.pc
+    ml.bne(main_loop)
+
+    op_brk = ml.pc
+    ml.bne(main_loop)
+
+    op_bvc = ml.pc
+    ml.bne(main_loop)
+
+    op_bvs = ml.pc
+    ml.bne(main_loop)
+
+    op_clc = ml.pc
+    ml.bne(main_loop)
+
+    op_cld = ml.pc
+    ml.bne(main_loop)
+
+    op_cli = ml.pc
+    ml.bne(main_loop)
+
+    op_clv = ml.pc
+    ml.bne(main_loop)
+
+    op_cmp = ml.pc
+    ml.bne(main_loop)
+
+    op_cpx = ml.pc
+    ml.bne(main_loop)
+
+    op_cpy = ml.pc
+    ml.bne(main_loop)
+
+    op_dec = ml.pc
+    ml.bne(main_loop)
+
+    op_dex = ml.pc
+    ml.bne(main_loop)
+
+    op_dey = ml.pc
+    ml.bne(main_loop)
+
+    op_eor = ml.pc
+    ml.bne(main_loop)
+
+    op_inc = ml.pc
+    ml.bne(main_loop)
+
+    op_inx = ml.pc
+    ml.bne(main_loop)
+
+    op_iny = ml.pc
+    ml.bne(main_loop)
+
+    op_jmp = ml.pc
+    ml.bne(main_loop)
+
+    op_jmpind = ml.pc
+    ml.bne(main_loop)
+
+    op_jsr = ml.pc
+    ml.bne(main_loop)
+
+    op_lda = ml.pc
+    ml.bne(main_loop)
+
+    op_ldx = ml.pc
+    ml.bne(main_loop)
+
+    op_ldy = ml.pc
+    ml.bne(main_loop)
+
+    op_lsr = ml.pc
+    ml.bne(main_loop)
+
+    op_nop = ml.pc
+    ml.bne(main_loop)
+
+    op_ora = ml.pc
+    ml.bne(main_loop)
+
+    op_pha = ml.pc
+    ml.bne(main_loop)
+
+    op_php = ml.pc
+    ml.bne(main_loop)
+
+    op_pla = ml.pc
+    ml.bne(main_loop)
+
+    op_plp = ml.pc
+    ml.bne(main_loop)
+
+    op_rol = ml.pc
+    ml.bne(main_loop)
+
+    op_ror = ml.pc
+    ml.bne(main_loop)
+
+    op_rti = ml.pc
+    ml.bne(main_loop)
+
+    op_rts = ml.pc
+    ml.bne(main_loop)
+
+    op_sbc = ml.pc
+    ml.bne(main_loop)
+
+    op_sec = ml.pc
+    ml.bne(main_loop)
+
+    op_sed = ml.pc
+    ml.bne(main_loop)
+
+    op_sei = ml.pc
+    ml.bne(main_loop)
+
+    op_sta = ml.pc
+    ml.bne(main_loop)
+
+    op_stx = ml.pc
+    ml.bne(main_loop)
+
+    op_sty = ml.pc
+    ml.bne(main_loop)
+
+    op_tax = ml.pc
+    ml.bne(main_loop)
+
+    op_tay = ml.pc
+    ml.bne(main_loop)
+
+    op_tsx = ml.pc
+    ml.bne(main_loop)
+
+    op_txa = ml.pc
+    ml.bne(main_loop)
+
+    op_txs = ml.pc
+    ml.bne(main_loop)
+
+    op_tya = ml.pc
+    ml.bne(main_loop)
+    
+    op_crt = ml.pc
+    ml.bne(main_loop)
+    
+    op_stp = ml.pc
+    ml.bne(main_loop)
+
     return start
 
 ml.assemble(gencode)
