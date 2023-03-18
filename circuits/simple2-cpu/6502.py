@@ -838,9 +838,6 @@ def gencode():
     op_pull_ch = ml.pc
     ml.bcc(get_ret_page(op_pull), [False, True])
     
-    op_adc = ml.pc
-    ml.bne(main_loop)
-
     op_and = ml.pc
     ml.lda(nacc)
     ml.ana(mem_val)
@@ -1072,22 +1069,6 @@ def gencode():
     ml.clc()
     ml.bcc(set_cpu_nz)
 
-    op_lsr = ml.pc
-    ml.lda(0xffd)
-    ml.clc()
-    ml.ror()
-    ml.sta(0xffd)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
-    
-    op_lsr_a = ml.pc
-    ml.lda(nacc)
-    ml.clc()
-    ml.ror()
-    ml.sta(nacc)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
-
     op_brk = ml.pc
     op_jsr = ml.pc
     ml.lda(npc)
@@ -1172,6 +1153,22 @@ def gencode():
     ml.sta(npc+1)
     ml.bcc(main_loop)
     
+    op_lsr = ml.pc
+    ml.lda(0xffd)
+    ml.clc()
+    ml.ror()
+    ml.sta(0xffd)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_lsr_a = ml.pc
+    ml.lda(nacc)
+    ml.clc()
+    ml.ror()
+    ml.sta(nacc)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
     op_nop = ml.pc
     ml.bcc(main_loop)
 
@@ -1218,8 +1215,43 @@ def gencode():
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
 
+    op_adc_decimal = ml.pc
+    
+    ml.lda(mem_val)
+    ml.ana_imm(0xf)
+    ml.sta(temp1)
+    
+    ml.lda(nsr)
+    ml.ror()    # get carry
+    ml.lda(nacc)
+    ml.ana_imm(0xf)
+    ml.adc(temp1)
+    ml.sta(temp1)
+    # TODO: write decimal mode
+    
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_adc = ml.pc
+    ml.lda(nsr)
+    ml.ana_imm(8)   # decimal
+    ml.bne(op_adc_decimal)
+    ml.lda(nsr)
+    ml.ror()    # get carry
+    ml.lda(nacc)
+    ml.adc(mem_val)
+    ml.sta(nacc)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+
     op_sbc = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ror()    # get carry
+    ml.lda(nacc)
+    ml.adc(mem_val)
+    ml.sta(nacc)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
 
     op_sec = ml.pc
     ml.lda(nsr)
@@ -1285,10 +1317,11 @@ def gencode():
     ml.bcc(set_cpu_nz)
     
     op_crt = ml.pc
-    ml.bne(main_loop)
+    ml.spc_imm(0)
+    ml.bcc(main_loop)
     
     op_stp = ml.pc
-    ml.bne(main_loop)
+    ml.spc_imm(0)
     
     op_und = ml.pc
     ml.lda_imm(1)
