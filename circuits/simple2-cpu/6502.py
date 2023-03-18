@@ -1229,9 +1229,9 @@ def gencode():
     ml.lda(nacc)
     ml.ana_imm(0xf0)
     ml.clc()
-    ml.adc(temp2)
-    ml.clc()
     ml.adc(temp1)   # tmp <= 0x0f then (tmp&0xf) else (tmp&0xf) + 0x10
+    ml.clc()
+    ml.adc(temp2)
     ml.sta(temp1)
     ml.rol()
     ml.ana_imm(1)
