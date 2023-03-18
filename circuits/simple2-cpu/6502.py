@@ -1206,8 +1206,9 @@ def gencode():
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
 
+    ###################################
+    # ADC DECIMAL
     op_adc_decimal = ml.pc
-    
     ml.lda(mem_val)
     ml.ana_imm(0xf)
     ml.sta(temp1)       # low nibble
@@ -1300,10 +1301,10 @@ def gencode():
     ml.ana_imm(0xfe)
     ml.ora(temp2)
     ml.sta(nsr)
-    
-    # set carry
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
+    ml.clc()
+    ml.bcc(main_loop)
+    # END OF ADC DECIMAL
+    ##########################
     
     op_adc = ml.pc
     ml.lda(nsr)
@@ -1317,7 +1318,67 @@ def gencode():
     ml.bne(set_cpu_nzvc)
     ml.bpl(set_cpu_nzvc)
 
+    ###################################
+    # SBC DECIMAL
+    op_sbc_decimal = ml.pc
+    # calculate ACC
+    ml.lda(mem_val)
+    ml.ana_imm(0xf)
+    ml.sta(temp1)       # low nibble
+    ml.lda(nsr)
+    ml.ror()    # get carry
+    ml.lda(nacc)
+    ml.ana_imm(0xf)     # adc for low nibble
+    ml.sbc(temp1)
+    ml.sta(temp1)
+    # next step
+    ml.ana_imm(0x10)
+    ml.sta(temp3)
+    ml.bne(ml.pc+4) # skip next instr
+    ml.bpl(ml.pc+9) # skip tmp_a - 6
+    ml.lda(temp1)
+    ml.clc()
+    ml.sbc_imm(5)   # - 6
+    ml.sta(temp1)
+    # after -6
+    ml.lda(temp1)
+    ml.ana_imm(0xf)
+    ml.sta(temp1)
+    # after fix low nibble
+    ml.lda(mem_val)
+    ml.ana_imm(0xf0)
+    ml.sta(temp2)
+    ml.lda(nacc)
+    ml.ana_imm(0xf0)
+    ml.sec()
+    ml.sbc(temp2)
+    ml.sec()
+    ml.sbc(temp3)   # - 0x10
+    ml.ora(temp1)
+    ml.sta(nacc)
+    # fix high nibble
+    ml.bcc(ml.pc+5) # skip next instrs - if res&0x100 != 0
+    ml.clc()
+    ml.bcc(ml.pc+9) # skip fix of high nibble
+    ml.lda(nacc)
+    ml.sec()
+    ml.sbc_imm(0x60)
+    ml.sta(nacc)
+    
+    # flags are set from binary subtraction
+    ml.lda(nsr)
+    ml.ror()    # get carry
+    ml.lda(nacc)
+    ml.adc(mem_val)
+    ml.bne(set_cpu_nzvc)
+    ml.bpl(set_cpu_nzvc)
+    # END OF SBC DECIMAL
+    ##########################
+
     op_sbc = ml.pc
+    ml.lda(nsr)
+    ml.ana_imm(8)   # decimal
+    ml.bne(op_sbc_decimal)
     ml.lda(nsr)
     ml.ror()    # get carry
     ml.lda(nacc)
@@ -1445,5 +1506,5 @@ def gencode():
 
 ml.assemble(gencode)
 
-#print("mpc:", ml.pc)
-stdout.buffer.write(ml.dump())
+print("mpc:", ml.pc)
+#stdout.buffer.write(ml.dump())
