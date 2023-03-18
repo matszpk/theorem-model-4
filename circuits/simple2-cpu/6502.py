@@ -374,6 +374,7 @@ def gencode():
     call_op = ml.pc
     ml.bcc(0, [True, True])
     
+    ml.clc()
     ml.bcc(main_loop)
     
     # tables:
