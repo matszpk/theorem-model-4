@@ -778,6 +778,14 @@ def gencode():
     ###########################################
     # operations code
     
+    set_cpu_nzvc = ml.pc
+    ml.sta(temp1)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^0x40)
+    ml.bvc(ml.pc+4)
+    ml.ora_imm(0x40)
+    ml.sta(nsr)
+    # continue to set_cpu_nzc
     set_cpu_nzc = ml.pc
     ml.sta(temp1)
     ml.lda(nsr)
@@ -1046,7 +1054,6 @@ def gencode():
     ml.clc()
     ml.bcc(set_cpu_nz)
 
-    global op_jsr_brk_int
     op_brk = ml.pc
     op_jsr = ml.pc
     ml.lda(npc)
@@ -1197,16 +1204,35 @@ def gencode():
     
     ml.lda(mem_val)
     ml.ana_imm(0xf)
-    ml.sta(temp1)
-    
+    ml.sta(temp1)       # low nibble
     ml.lda(nsr)
     ml.ror()    # get carry
     ml.lda(nacc)
-    ml.ana_imm(0xf)
+    ml.ana_imm(0xf)     # adc for low nibble
     ml.adc(temp1)
     ml.sta(temp1)
     # TODO: write decimal mode
-    
+    # if higher than 9
+    ml.sec()
+    ml.sbc_imm(10)
+    ml.bcc(ml.pc+6)
+    # higher than 9
+    ml.adc_imm(5)   # add 6
+    ml.sta(temp1)
+    # next step
+    ml.lda(mem_val)
+    ml.ana_imm(0xf0)
+    ml.sta(temp2)
+    ml.lda(nacc)
+    ml.ana_imm(0xf0)
+    ml.clc()
+    ml.adc(temp2)
+    ml.clc()
+    ml.adc(temp1)   # tmp <= 0x0f then (tmp&0xf) else (tmp&0xf) + 0x10
+    ml.sta(temp1)
+    # set ZNV
+    # fix higher nibble
+    # set carry
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
@@ -1219,8 +1245,8 @@ def gencode():
     ml.lda(nacc)
     ml.adc(mem_val)
     ml.sta(nacc)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
+    ml.bne(set_cpu_nzvc)
+    ml.bpl(set_cpu_nzvc)
 
     op_sbc = ml.pc
     ml.lda(nsr)
@@ -1228,8 +1254,8 @@ def gencode():
     ml.lda(nacc)
     ml.adc(mem_val)
     ml.sta(nacc)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
+    ml.bne(set_cpu_nzvc)
+    ml.bpl(set_cpu_nzvc)
 
     op_sec = ml.pc
     ml.lda(nsr)
