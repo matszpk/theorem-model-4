@@ -245,7 +245,8 @@ def gencode():
     # skip opcodes that satisfies opcode&0x03 == 3. there are undefined
     ml.ana_imm(0x03)
     ml.xor_imm(0x03)
-    ml.bne(op_und)
+    ml.bne(ml.pc+4)
+    ml.bpl(op_und)
     # skip opcode&0x03 == 3 in table.
     ml.lda(nopcode)
     ml.clc()
