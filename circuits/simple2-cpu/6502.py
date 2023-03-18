@@ -288,7 +288,7 @@ def gencode():
     ml.ana_imm(0xf)
     ml.sta(addr_mode)   # addr mode
     
-    ml.lda(decode_ch1+1)
+    ml.lda(decode_ch2+1)
     ml.xor_imm(1)   # negate first bit
     ml.ror()
     decode_ch3 = ml.pc
@@ -299,7 +299,7 @@ def gencode():
     ml.rol()
     ml.rol()
     ml.sta(temp1)
-    ml.lda(decode_ch2+1)
+    ml.lda(decode_ch1+1)
     ml.ror()
     ml.lda(temp1)
     ml.bcc(ml.pc+4)
