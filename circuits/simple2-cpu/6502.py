@@ -803,104 +803,71 @@ def gencode():
     op_asl = ml.pc
     ml.bne(main_loop)
     
-    # TODO: optimize length of code for branches
-    op_bcc = ml.pc
+    branch_sr_flag = ml.pc
+    ml.byte(0, True)
+    op_branch_if_not_set = ml.pc
     ml.lda(nsr)
-    ml.ana_imm(1)
+    ml.ana(branch_sr_flag)
     ml.bne(main_loop)
+    branch_do = ml.pc
     ml.lda(mem_addr)
     ml.sta(npc)
     ml.lda(mem_addr+1)
     ml.sta(npc+1)
     ml.clc()
     ml.bcc(main_loop)
+
+    op_branch_if_set = ml.pc
+    ml.lda(nsr)
+    ml.ana(branch_sr_flag)
+    ml.bne(branch_do)
+    ml.bpl(main_loop)
+    
+    op_bcc = ml.pc
+    ml.lda_imm(1)
+    ml.sta(branch_sr_flag)
+    ml.bne(op_branch_if_not_set)
 
     op_bcs = ml.pc
-    ml.lda(nsr)
-    ml.ana_imm(1)
-    ml.bne(ml.pc+4)
-    ml.bpl(main_loop)
-    ml.lda(mem_addr)
-    ml.sta(npc)
-    ml.lda(mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
+    ml.lda_imm(1)
+    ml.sta(branch_sr_flag)
+    ml.bne(op_branch_if_set)
 
     op_beq = ml.pc
-    ml.lda(nsr)
-    ml.ana_imm(2)
-    ml.bne(ml.pc+4)
-    ml.bpl(main_loop)
-    ml.lda(mem_addr)
-    ml.sta(npc)
-    ml.lda(mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
+    ml.lda_imm(2)
+    ml.sta(branch_sr_flag)
+    ml.bne(op_branch_if_set)
 
     op_bit = ml.pc
     ml.bne(main_loop)
 
     op_bmi = ml.pc
-    ml.lda(nsr)
-    ml.ana_imm(0x80)
-    ml.bne(ml.pc+4)
-    ml.bpl(main_loop)
-    ml.lda(mem_addr)
-    ml.sta(npc)
-    ml.lda(mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
+    ml.lda_imm(0x80)
+    ml.sta(branch_sr_flag)
+    ml.bne(op_branch_if_set)
 
     op_bne = ml.pc
-    ml.lda(nsr)
-    ml.ana_imm(2)
-    ml.bne(main_loop)
-    ml.lda(mem_addr)
-    ml.sta(npc)
-    ml.lda(mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
+    ml.lda_imm(2)
+    ml.sta(branch_sr_flag)
+    ml.bne(op_branch_if_not_set)
 
     op_bpl = ml.pc
-    ml.lda(nsr)
-    ml.ana_imm(0x80)
-    ml.bne(main_loop)
-    ml.lda(mem_addr)
-    ml.sta(npc)
-    ml.lda(mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
+    ml.lda_imm(0x80)
+    ml.sta(branch_sr_flag)
+    ml.bne(op_branch_if_not_set)
 
     op_brk = ml.pc
     ml.bne(main_loop)
 
     op_bvc = ml.pc
-    ml.lda(nsr)
-    ml.ana_imm(0x40)
-    ml.bne(main_loop)
-    ml.lda(mem_addr)
-    ml.sta(npc)
-    ml.lda(mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
+    ml.lda_imm(0x40)
+    ml.sta(branch_sr_flag)
+    ml.bne(op_branch_if_not_set)
 
     op_bvs = ml.pc
-    ml.lda(nsr)
-    ml.ana_imm(0x40)
-    ml.bne(ml.pc+4)
-    ml.bpl(main_loop)
-    ml.lda(mem_addr)
-    ml.sta(npc)
-    ml.lda(mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
+    ml.lda_imm(0x40)
+    ml.sta(branch_sr_flag)
+    ml.bne(op_branch_if_set)
 
     op_clc = ml.pc
     ml.lda(nsr)
@@ -1138,5 +1105,5 @@ def gencode():
 
 ml.assemble(gencode)
 
-#print("mpc:", ml.pc)
-stdout.buffer.write(ml.dump())
+print("mpc:", ml.pc)
+#stdout.buffer.write(ml.dump())
