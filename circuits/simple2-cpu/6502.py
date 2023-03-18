@@ -1230,10 +1230,15 @@ def gencode():
     ml.ana_imm(0xf0)
     ml.clc()
     ml.adc(temp1)   # tmp <= 0x0f then (tmp&0xf) else (tmp&0xf) + 0x10
+    ml.sta(temp3)
+    ml.rol()
+    ml.sta(temp2)  # carry!
+    ml.lda(temp3)
     ml.clc()
     ml.adc(temp2)
     ml.sta(temp1)
     ml.rol()
+    ml.ora(temp2)
     ml.ana_imm(1)
     ml.sta(temp2) # carry!
     # set ZNV
