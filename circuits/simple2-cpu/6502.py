@@ -362,11 +362,9 @@ def gencode():
     ml.ora_imm(addr_mode_table & 0xf0)
     ml.sta(ml.pc+3)
     ml.lda(addr_mode_table & 0xf00, [False, True])
+    ml.clc()
     ml.sta(ml.pc+3)
-    if addr_mode_table & 0xf0 == 0:
-        ml.bpl(0, [False, True])
-    else:
-        ml.bne(0, [False, True])
+    ml.bcc(0, [False, True])
     addr_mode_end = ml.pc
     
     # call operation
@@ -633,7 +631,8 @@ def gencode():
     # addressing modes code
     addr_mode_code = ml.pc
     am_imp = ml.pc
-    ml.bne(addr_mode_end)
+    # start with carry off
+    ml.bcc(addr_mode_end)
     
     am_imm = ml.pc
     ml.bne(addr_mode_end)
