@@ -1307,7 +1307,7 @@ def gencode():
     ml.spc_imm(1)
     
     ops_code_end = ml.pc
-    print("opscode:", ops_code_start, ops_code_end, ops_code_end - (ops_code_start&0xf00))
+    #print("opscode:", ops_code_start, ops_code_end, ops_code_end - (ops_code_start&0xf00))
     if ops_code_end - (ops_code_start&0xf00) >= 0x400:
         raise(RuntimeError("Ops code out of range!"))
     
@@ -1350,5 +1350,5 @@ def gencode():
 
 ml.assemble(gencode)
 
-print("mpc:", ml.pc)
-#stdout.buffer.write(ml.dump())
+#print("mpc:", ml.pc)
+stdout.buffer.write(ml.dump())
