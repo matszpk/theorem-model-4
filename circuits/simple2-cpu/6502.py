@@ -239,8 +239,16 @@ def gencode():
     # these values are mapped into 8-11 bit of final value - it is addr mode
     # after main table (192 entries), we have 2-bit entries - 12-13 bits of final values.
     # it is extra bits of call address
-    ml.set_pc((ml.pc + 0xff) & 0xf00)
+    ml.set_pc((ml.pc & 0xf00) + 0xa0 + ((ml.pc & 0xff) > 0xa0)*0x100)
+    decode_8_11_table = ml.pc
+    for i in range(0,96):
+        ml.byte(1)
     decode_table = ml.pc
+    for i in range(0,192):
+        ml.byte(1)
+    decode_12_13_table = ml.pc
+    for i in range(0,48):
+        ml.byte(1)
     
     return start
 
