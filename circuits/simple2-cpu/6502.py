@@ -27,8 +27,6 @@ narghi = ml.pc # 0xfea:
 ml.byte(0x00, True)
 mem_val = ml.pc # 0xfeb
 ml.byte(0x00, True)
-mem_addr = ml.pc # 0xfec
-ml.word16(0x0000, [True,True])
 addr_mode = ml.pc # 0xfee
 ml.byte(0x00, True)
 op_index = ml.pc # 0xfef
@@ -39,6 +37,9 @@ temp1 = ml.pc # 0xff1:
 ml.byte(0x00, True)
 temp2 = ml.pc # 0xff2:
 ml.byte(0x00, True)
+
+mem_addr = 0xffe # 0xffe
+
 
 # addressing modes
 AddrMode = IntEnum('AddrMode',
@@ -635,34 +636,133 @@ def gencode():
     ml.bcc(addr_mode_end)
     
     am_imm = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.sta(mem_val)
+    # mem_addr shouldn't be used
+    ml.bcc(addr_mode_end)
     
     am_zpg = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.sta(0xffe)
+    ml.lda_imm(0)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(mem_val)
+    ml.bcc(addr_mode_end)
     
     am_zpgx = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.clc()
+    ml.adc(nxind)
+    ml.sta(0xffe)
+    ml.lda_imm(0)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(mem_val)
+    ml.clc()
+    ml.bcc(addr_mode_end)
     
     am_zpgy = ml.pc
+    ml.lda(narglo)
+    ml.clc()
+    ml.adc(nyind)
+    ml.sta(0xffe)
+    ml.lda_imm(0)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(mem_val)
+    ml.clc()
     ml.bne(addr_mode_end)
     
     am_pindx = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.clc()
+    ml.adc(nxind)
+    ml.sta(0xffe)
+    ml.lda_imm(0)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(narglo)
+    ml.lda(0xffe)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(0xffe)
+    ml.lda(narghi)
+    ml.clc()
+    # now we have address from 6502 zero page stored in narglo and narghi then just use
+    # routine to handle absy
+    ml.bcc(am_abs)
     
     am_pindy = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.sta(0xffe)
+    ml.lda_imm(0)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(narglo)
+    ml.lda(0xffe)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(0xffe)
+    ml.lda(0xffd)
+    ml.sta(narghi)
+    ml.clc()
+    # now we have address from 6502 zero page stored in narglo and narghi then just use
+    # routine to handle absy
+    ml.bcc(am_absy)
     
     am_rel = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.ror()
+    ml.lda_imm(0)
+    ml.bcc(ml.pc+4)
+    ml.lda_imm(0xff)    # finaly is sign extension
+    ml.sta(temp1)
+    ml.lda(npc)
+    ml.clc()
+    ml.adc(narglo)
+    ml.sta(0xffe)
+    ml.lda(npc+1)
+    ml.adc(temp1)
+    ml.sta(0xfff)
+    ml.clc()
+    ml.bcc(addr_mode_end)
     
     am_abs = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.sta(0xffe)
+    ml.lda(narghi)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(mem_val)
+    ml.bcc(addr_mode_end)
     
     am_absx = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.clc()
+    ml.adc(nxind)
+    ml.sta(0xffe)
+    ml.lda(narghi)
+    ml.adc_imm(0)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(mem_val)
+    ml.clc()
+    ml.bcc(addr_mode_end)
     
     am_absy = ml.pc
-    ml.bne(addr_mode_end)
+    ml.lda(narglo)
+    ml.clc()
+    ml.adc(nyind)
+    ml.sta(0xffe)
+    ml.lda(narghi)
+    ml.adc_imm(0)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.sta(mem_val)
+    ml.clc()
+    ml.bcc(addr_mode_end)
+    
     addr_mode_code_end = ml.pc
     if (addr_mode_code_end&0xf00) != (addr_mode_code&0xf00):
         raise(RuntimeError("Code across page boundary!"))
