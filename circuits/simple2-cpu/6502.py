@@ -48,6 +48,18 @@ AddrMode = IntEnum('AddrMode',
             'abs', 'absx', 'absy'
         ])
 
+am_imp = -10000
+am_imm = -10000
+am_zpg = -10000
+am_zpgx = -10000
+am_zpgy = -10000
+am_pindx = -10000
+am_pindy = -10000
+am_rel = -10000
+am_abs = -10000
+am_absx = -10000
+am_absy = -10000
+
 op_adc = -10000
 op_and = -10000
 op_asl = -10000
@@ -146,12 +158,27 @@ no_load_arg = -10000
 decode_table = -10000
 ops_code_start = -10000
 call_op = -10000
-addr_mode_len_table = -10000
+addr_mode_end = -10000
+addr_mode_table = -10000
 
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
     global no_load_arg
+    global addr_mode_end
+    global addr_mode_table
+    
+    global am_imp
+    global am_imm
+    global am_zpg
+    global am_zpgx
+    global am_zpgy
+    global am_pindx
+    global am_pindy
+    global am_rel
+    global am_abs
+    global am_absx
+    global am_absy
     
     global op_adc
     global op_and
@@ -311,6 +338,9 @@ def gencode():
     decode_end = ml.pc
     # end of decode it
     ##############################
+    
+    ###################################
+    # load args
     ml.lda(addr_mode)
     ml.bne(ml.pc+4) # skip next instr
     ml.bpl(no_load_arg) # skip loading if AddrMode.imp
@@ -320,14 +350,26 @@ def gencode():
     
     ml.lda(addr_mode)
     ml.ana_imm(8)
-    ml.bne(no_load_arg)
-    ml.xor_imm(3^AddrMode.absy)
+    ml.bne(ml.pc+4)
+    ml.bpl(no_load_arg)
     # load argument high
     call_proc_8b(load_inc_pc)
     ml.sta(narghi)
     
     no_load_arg = ml.pc
+    # process addressing mode
+    ml.lda(addr_mode)
+    ml.ora_imm(addr_mode_table & 0xf0)
+    ml.sta(ml.pc+3)
+    ml.lda(addr_mode_table & 0xf00, [False, True])
+    ml.sta(ml.pc+3)
+    if addr_mode_table & 0xf0 == 0:
+        ml.bpl(0, [False, True])
+    else:
+        ml.bne(0, [False, True])
+    addr_mode_end = ml.pc
     
+    # call operation
     ml.clc()
     call_op = ml.pc
     ml.bcc(0, [True, True])
@@ -553,7 +595,19 @@ def gencode():
     for i in range(0,48):
         ml.byte(((opcode_table[i*4][1]>>8)&3) | (((opcode_table[i*4+1][1]>>8)&3)<<2) |
                 (((opcode_table[i*4+2][1]>>8)&3)<<4) | (((opcode_table[i*4+3][1]>>8)&3)<<6))
-    addr_mode_len_table = ml.pc
+    
+    addr_mode_table = ml.pc
+    ml.byte(am_imp&0xff)
+    ml.byte(am_imm&0xff)
+    ml.byte(am_zpg&0xff)
+    ml.byte(am_zpgx&0xff)
+    ml.byte(am_zpgy&0xff)
+    ml.byte(am_pindx&0xff)
+    ml.byte(am_pindy&0xff)
+    ml.byte(am_rel&0xff)
+    ml.byte(am_abs&0xff)
+    ml.byte(am_absx&0xff)
+    ml.byte(am_absy&0xff)
     
     # main_prog subprogs
     
@@ -574,6 +628,47 @@ def gencode():
     load_inc_pc_ch = ml.pc
     ml.bcc(get_ret_page(load_inc_pc), [False, True])
     
+    ###########################################
+    # addressing modes code
+    addr_mode_code = ml.pc
+    am_imp = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_imm = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_zpg = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_zpgx = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_zpgy = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_pindx = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_pindy = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_rel = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_abs = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_absx = ml.pc
+    ml.bne(addr_mode_end)
+    
+    am_absy = ml.pc
+    ml.bne(addr_mode_end)
+    addr_mode_code_end = ml.pc
+    if (addr_mode_code_end&0xf00) != (addr_mode_code&0xf00):
+        raise(RuntimeError("Code across page boundary!"))
+    
+    ###########################################
+    # operations code
     ops_code_start = ml.pc
     
     op_adc = ml.pc
