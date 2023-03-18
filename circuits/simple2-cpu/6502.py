@@ -764,56 +764,167 @@ def gencode():
     # operations code
     ops_code_start = ml.pc
     
+    set_cpu_nz = ml.pc
+    ml.sta(temp1)
+    # set Z flag
+    ml.bne(ml.pc+13)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^0x2)
+    ml.clc()
+    ml.bcc(ml.pc+6)
+    ml.lda(nsr)
+    ml.ora_imm(0x2)
+    # store nsr
+    ml.sta(nsr)
+    # set N flag
+    ml.lda(temp1)
+    ml.bpl(ml.pc+13)
+    ml.lda(nsr)
+    ml.ana_imm(0x7f)
+    ml.clc()
+    ml.bne(ml.pc+6)
+    ml.lda(nsr)
+    ml.ora_imm(0x80)
+    # store nsr
+    ml.sta(nsr)
+    ml.clc()
+    ml.bcc(main_loop)
+    
     op_adc = ml.pc
     ml.bne(main_loop)
 
     op_and = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nacc)
+    ml.ana(mem_val)
+    ml.sta(nacc)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_asl = ml.pc
     ml.bne(main_loop)
-
+    
+    # TODO: optimize length of code for branches
     op_bcc = ml.pc
+    ml.lda(nsr)
+    ml.ana_imm(1)
     ml.bne(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_bcs = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ana_imm(1)
+    ml.bne(ml.pc+4)
+    ml.bpl(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_beq = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ana_imm(2)
+    ml.bne(ml.pc+4)
+    ml.bpl(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_bit = ml.pc
     ml.bne(main_loop)
 
     op_bmi = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ana_imm(0x80)
+    ml.bne(ml.pc+4)
+    ml.bpl(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_bne = ml.pc
+    ml.lda(nsr)
+    ml.ana_imm(2)
     ml.bne(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_bpl = ml.pc
+    ml.lda(nsr)
+    ml.ana_imm(0x80)
     ml.bne(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_brk = ml.pc
     ml.bne(main_loop)
 
     op_bvc = ml.pc
+    ml.lda(nsr)
+    ml.ana_imm(0x40)
     ml.bne(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_bvs = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ana_imm(0x40)
+    ml.bne(ml.pc+4)
+    ml.bpl(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_clc = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ana_imm(0xfe)
+    ml.sta(nsr)
+    ml.bcc(main_loop)
 
     op_cld = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^8)
+    ml.sta(nsr)
+    ml.bcc(main_loop)
 
     op_cli = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^4)
+    ml.sta(nsr)
+    ml.bcc(main_loop)
 
     op_clv = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^0x40)
+    ml.sta(nsr)
+    ml.bcc(main_loop)
 
     op_cmp = ml.pc
     ml.bne(main_loop)
@@ -828,49 +939,99 @@ def gencode():
     ml.bne(main_loop)
 
     op_dex = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nxind)
+    ml.clc()
+    ml.sbc_imm(0)
+    ml.sta(nxind)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_dey = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nyind)
+    ml.clc()
+    ml.sbc_imm(0)
+    ml.sta(nyind)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_eor = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nacc)
+    ml.xor(mem_val)
+    ml.sta(nacc)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_inc = ml.pc
     ml.bne(main_loop)
 
     op_inx = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nxind)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(nxind)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_iny = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nyind)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(nyind)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_jmp = ml.pc
-    ml.bne(main_loop)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.bcc(main_loop)
 
     op_jmpind = ml.pc
-    ml.bne(main_loop)
+    ml.lda(mem_addr)
+    ml.clc()
+    ml.adc_imm(0)
+    ml.lda(mem_addr)
+    ml.lda(0xffd)
+    ml.sta(npc+1)
+    ml.lda(mem_val)
+    ml.sta(npc)
+    ml.clc()
+    ml.bcc(main_loop)
 
     op_jsr = ml.pc
     ml.bne(main_loop)
 
     op_lda = ml.pc
-    ml.bne(main_loop)
+    ml.lda(mem_val)
+    ml.sta(nacc)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_ldx = ml.pc
-    ml.bne(main_loop)
+    ml.lda(mem_val)
+    ml.sta(nxind)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_ldy = ml.pc
-    ml.bne(main_loop)
+    ml.lda(mem_val)
+    ml.sta(nyind)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_lsr = ml.pc
     ml.bne(main_loop)
 
     op_nop = ml.pc
-    ml.bne(main_loop)
+    ml.bcc(main_loop)
 
     op_ora = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nacc)
+    ml.ora(mem_val)
+    ml.sta(nacc)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
 
     op_pha = ml.pc
     ml.bne(main_loop)
@@ -900,40 +1061,67 @@ def gencode():
     ml.bne(main_loop)
 
     op_sec = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ora_imm(1)
+    ml.sta(nsr)
+    ml.bcc(main_loop)
 
     op_sed = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ora_imm(8)
+    ml.sta(nsr)
+    ml.bcc(main_loop)
 
     op_sei = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ora_imm(4)
+    ml.sta(nsr)
+    ml.bcc(main_loop)
 
     op_sta = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nacc)
+    ml.sta(0xffd)
+    ml.bcc(main_loop)
 
     op_stx = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nxind)
+    ml.sta(0xffd)
+    ml.bcc(main_loop)
 
     op_sty = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nyind)
+    ml.sta(0xffd)
+    ml.bcc(main_loop)
 
     op_tax = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nacc)
+    ml.sta(nxind)
+    ml.bcc(set_cpu_nz)
 
     op_tay = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nacc)
+    ml.sta(nyind)
+    ml.bcc(set_cpu_nz)
 
     op_tsx = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nsp)
+    ml.sta(nxind)
+    ml.bcc(set_cpu_nz)
 
     op_txa = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nxind)
+    ml.sta(nacc)
+    ml.bcc(set_cpu_nz)
 
     op_txs = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nxind)
+    ml.sta(nsp)
+    ml.bcc(main_loop)
 
     op_tya = ml.pc
-    ml.bne(main_loop)
+    ml.lda(nyind)
+    ml.sta(nacc)
+    ml.bcc(set_cpu_nz)
     
     op_crt = ml.pc
     ml.bne(main_loop)
