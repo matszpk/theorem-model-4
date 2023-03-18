@@ -208,6 +208,8 @@ def gencode():
     global op_txs
     global op_tya
     global op_und
+    global op_crt
+    global op_stp
     
     start = 0
     ml.set_pc(start)
@@ -350,8 +352,8 @@ def gencode():
     opcode_table = [
         (AddrMode.imp, op_brk), # 0x00
         (AddrMode.pindx, op_ora), # 0x01
-        (AddrMode.imp, op_und), # 0x02
-        (AddrMode.imp, op_und), # 0x04
+        (AddrMode.imp, op_crt), # 0x02
+        (AddrMode.imp, op_stp), # 0x04
         (AddrMode.zpg, op_ora), # 0x05
         (AddrMode.zpg, op_asl), # 0x06
         (AddrMode.imp, op_php), # 0x08
@@ -730,6 +732,12 @@ def gencode():
     ml.bne(main_loop)
 
     op_tya = ml.pc
+    ml.bne(main_loop)
+    
+    op_crt = ml.pc
+    ml.bne(main_loop)
+    
+    op_stp = ml.pc
     ml.bne(main_loop)
 
     return start
