@@ -767,24 +767,22 @@ def gencode():
     set_cpu_nz = ml.pc
     ml.sta(temp1)
     # set Z flag
-    ml.bne(ml.pc+13)
-    ml.lda(nsr)
-    ml.ana_imm(0xff^0x2)
-    ml.clc()
-    ml.bcc(ml.pc+6)
+    ml.bne(ml.pc+8)
     ml.lda(nsr)
     ml.ora_imm(0x2)
+    ml.bne(ml.pc+6)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^0x2)
     # store nsr
     ml.sta(nsr)
     # set N flag
     ml.lda(temp1)
-    ml.bpl(ml.pc+13)
-    ml.lda(nsr)
-    ml.ana_imm(0x7f)
-    ml.clc()
-    ml.bcc(ml.pc+6)
+    ml.bpl(ml.pc+8)
     ml.lda(nsr)
     ml.ora_imm(0x80)
+    ml.bne(ml.pc+6)
+    ml.lda(nsr)
+    ml.ana_imm(0x7f)
     # store nsr
     ml.sta(nsr)
     ml.clc()
