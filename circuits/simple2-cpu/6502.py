@@ -39,6 +39,8 @@ temp2 = ml.pc # 0xff2:
 ml.byte(0x00, True)
 temp3 = ml.pc # 0xff2:
 ml.byte(0x00, True)
+temp4 = ml.pc # 0xff2:
+ml.byte(0x00, True)
 
 mem_addr = 0xffe # 0xffe
 
@@ -1232,13 +1234,13 @@ def gencode():
     ml.adc(temp1)   # tmp <= 0x0f then (tmp&0xf) else (tmp&0xf) + 0x10
     ml.sta(temp3)
     ml.rol()
-    ml.sta(temp2)  # carry!
+    ml.sta(temp4)  # carry!
     ml.lda(temp3)
     ml.clc()
     ml.adc(temp2)
     ml.sta(temp1)
     ml.rol()
-    ml.ora(temp2)
+    ml.ora(temp4)
     ml.ana_imm(1)
     ml.sta(temp2) # carry!
     # set ZNV
