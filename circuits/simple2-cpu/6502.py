@@ -1605,10 +1605,10 @@ def gencode():
     #print("opscode:", ops_code_start, ops_code_end, ops_code_end - (ops_code_start&0xf00))
     if ops_code_end - (ops_code_start&0xf00) >= 0x400:
         raise(RuntimeError("Ops code out of range!"))
-    return start
-
     native_machine = ml.pc
     ml.byte(0)
+    
+    return start
 
 ml.assemble(gencode)
 
