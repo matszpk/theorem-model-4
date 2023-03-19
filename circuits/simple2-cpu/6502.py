@@ -2,6 +2,8 @@ from simple2_cpu_asm import *
 from sys import stdout
 from enum import *
 
+commodore64 = True
+
 ml = Memory()
 
 ml.set_pc(0xfe0)
@@ -44,6 +46,10 @@ ml.byte(0x00, True)
 temp4 = ml.pc # 0xff5:
 ml.byte(0x00, True)
 mm_mem_val = ml.pc # 0xff6
+ml.byte(0x00, True)
+mm_mem_addr = ml.pc # 0xff7
+ml.word16(0, [True, True])
+mm_mem_temp = ml.pc # 0xff9
 ml.byte(0x00, True)
 
 child_mem_val = 0xffc
@@ -201,6 +207,16 @@ addr_load_mem_val = -10000
 addr_load_mem_val_call, addr_load_mem_val_call_ch = -10000, -10000 # call load mem val
 op_jmpind_cont = -10000
 op_brk_cont = -10000
+
+load_mem_val_c64_no_basic = -10000
+load_mem_val_c64_end = -10000
+load_mem_val_c64_mapping1 = -10000
+load_mem_val_c64_no_kernal = -10000
+load_mem_val_c64_no_deviochar = -10000
+
+store_mem_val_c64_no_basic = -10000
+store_mem_val_c64_no_kernal = -10000
+store_mem_val_c64_no_deviochar = -10000
 
 def gencode():
     global ret_pages
@@ -1661,6 +1677,8 @@ def gencode():
     if ops_code_end - (ops_code_start&0xf00) >= 0x400:
         raise(RuntimeError("Ops code out of range!"))
     
+    global load_mem_val_c64_no_basic, load_mem_val_c64_end, load_mem_val_c64_mapping1
+    global load_mem_val_c64_no_kernal, load_mem_val_c64_no_deviochar
     load_mem_val = ml.pc
     ml.sta(load_mem_val_ch+1)
     ml.lda(native_machine)
@@ -1672,13 +1690,89 @@ def gencode():
     
     load_mem_val_native = ml.pc
     
-    ml.lda(child_mem_val)
+    if commodore64:
+        ml.lda(child_mem_val)
+        ml.sta(mm_mem_val)  # default mem value
+        
+        ml.lda(child_mem_addr)
+        ml.sta(mm_mem_addr)
+        ml.lda(child_mem_addr+1)
+        ml.sta(mm_mem_addr+1)
+        
+        ml.lda_imm(1)
+        ml.sta(child_mem_addr)
+        ml.lda_imm(0)
+        ml.sta(child_mem_addr+1)
+        ml.lda(child_mem_val)
+        ml.sta(mm_mem_temp)
+        
+        ml.lda(mm_mem_addr)
+        ml.sta(child_mem_addr)
+        ml.lda(mm_mem_addr+1)
+        ml.sta(child_mem_addr+1)
+        
+        ml.ana_imm(0xe0)
+        ml.xor_imm(0xa0)
+        ml.bne(load_mem_val_c64_no_basic)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(3)
+        ml.xor_imm(3)   # BASIC not enabled in memconfig
+        ml.bne(load_mem_val_c64_no_basic)
+        load_mem_val_c64_mapping1 = ml.pc
+        ml.lda_imm(1)
+        ml.sta(child_mem_addr+2)
+        ml.lda(child_mem_val)
+        ml.sta(mm_mem_val)
+        ml.lda_imm(0)
+        ml.sta(child_mem_addr+2)
+        ml.bpl(load_mem_val_c64_end)
+        
+        load_mem_val_c64_no_basic = ml.pc
+        #----------
+        ml.lda(child_mem_addr+1)
+        ml.ana_imm(0xe0)
+        ml.xor_imm(0xe0)
+        ml.bne(load_mem_val_c64_no_kernal)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(2)
+        ml.xor_imm(2)   # BASIC not enabled in memconfig
+        ml.bne(load_mem_val_c64_no_kernal)
+        ml.bpl(load_mem_val_c64_mapping1)   # if kernal
+        #------------
+        load_mem_val_c64_no_kernal = ml.pc
+        ml.lda(child_mem_addr+1)
+        ml.ana_imm(0xf0)
+        ml.xor_imm(0xd0)
+        ml.bne(load_mem_val_c64_no_deviochar)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(3)
+        ml.bne(ml.pc+4)
+        ml.bpl(load_mem_val_c64_no_deviochar)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(4)
+        ml.bne(load_mem_val_c64_mapping1)   # mapping1 - is devio
+        ml.lda(child_mem_addr+1)
+        ml.ana_imm(0xef)
+        ml.sta(child_mem_addr+1)    # 0x1c000 are characters
+        ml.bne(load_mem_val_c64_mapping1)   # mapping2 - are haracters
+        
+        load_mem_val_c64_no_deviochar = ml.pc
+        load_mem_val_c64_end = ml.pc
+        ml.lda(mm_mem_addr+1)
+        ml.sta(child_mem_addr+1)    # restore old child_mem_addr
+        ml.lda(mm_mem_val)
+    else:
+        ml.lda(child_mem_val)
     
     load_mem_val_end = ml.pc
     ml.clc()
     load_mem_val_ch = ml.pc
     ml.bcc(get_ret_page(load_mem_val), [False, True])
     ############################
+    
+    global store_mem_val_c64_no_basic
+    global store_mem_val_c64_no_kernal
+    global store_mem_val_c64_no_deviochar
     
     store_mem_val = ml.pc
     ml.sta(store_mem_val_ch+1)
@@ -1692,8 +1786,72 @@ def gencode():
     
     store_mem_val_native = ml.pc
     
-    ml.lda(mm_mem_val)
-    ml.sta(child_mem_val)
+    if commodore64:
+        ml.lda(child_mem_addr)
+        ml.sta(mm_mem_addr)
+        ml.lda(child_mem_addr+1)
+        ml.sta(mm_mem_addr+1)
+        
+        ml.lda_imm(1)
+        ml.sta(child_mem_addr)
+        ml.lda_imm(0)
+        ml.sta(child_mem_addr+1)
+        ml.lda(child_mem_val)
+        ml.sta(mm_mem_temp)
+        
+        ml.lda(mm_mem_addr)
+        ml.sta(child_mem_addr)
+        ml.lda(mm_mem_addr+1)
+        ml.sta(child_mem_addr+1)
+        
+        ml.ana_imm(0xe0)
+        ml.xor_imm(0xa0)
+        ml.bne(store_mem_val_c64_no_basic)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(3)
+        ml.xor_imm(3)   # BASIC not enabled in memconfig
+        ml.bne(store_mem_val_c64_no_basic)
+        ml.bpl(store_mem_val_end)       # no-operation
+        
+        store_mem_val_c64_no_basic = ml.pc
+        ml.lda(child_mem_addr+1)
+        ml.ana_imm(0xe0)
+        ml.xor_imm(0xe0)
+        ml.bne(store_mem_val_c64_no_kernal)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(2)
+        ml.xor_imm(2)   # BASIC not enabled in memconfig
+        ml.bne(store_mem_val_c64_no_kernal)
+        ml.bpl(store_mem_val_end)   # if kernal
+        
+        store_mem_val_c64_no_kernal = ml.pc
+        ml.lda(child_mem_addr+1)
+        ml.ana_imm(0xf0)
+        ml.xor_imm(0xd0)
+        ml.bne(store_mem_val_c64_no_deviochar)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(3)
+        ml.bne(ml.pc+4)
+        ml.bpl(store_mem_val_c64_no_deviochar)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(4)
+        ml.bne(ml.pc+4)   # mapping1 - is devio
+        ml.bpl(store_mem_val_end)   # characters no operation
+        # devio access
+        ml.lda_imm(1)
+        ml.sta(child_mem_addr+2)
+        ml.lda(mm_mem_val)
+        ml.sta(child_mem_val)
+        ml.lda_imm(0)
+        ml.sta(child_mem_addr+2)
+        ml.bpl(store_mem_val_end)
+        
+        store_mem_val_c64_no_deviochar = ml.pc
+        ml.lda(mm_mem_val)
+        ml.sta(child_mem_val)
+    else:
+        ml.lda(mm_mem_val)
+        ml.sta(child_mem_val)
     
     store_mem_val_end = ml.pc
     ml.clc()
