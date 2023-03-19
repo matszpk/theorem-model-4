@@ -2,8 +2,6 @@ from simple2_cpu_asm import *
 from sys import stdout
 from enum import *
 
-# TODO: Add cycles counting
-
 ml = Memory()
 
 ml.set_pc(0xfe0)
