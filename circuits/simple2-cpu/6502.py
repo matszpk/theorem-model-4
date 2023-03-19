@@ -446,51 +446,7 @@ def gencode():
     
     global op_branch_if_not_set, op_branch_if_set, branch_sr_flag
     
-    branch_sr_flag = ml.pc
-    ml.byte(0, True)
-    
-    op_branch_if_not_set = ml.pc
-    ml.lda(nsr)
-    ml.ana(branch_sr_flag)
-    ml.bne(main_loop)
-    branch_do = ml.pc
-    ml.lda(instr_cycles)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(instr_cycles)
-    ml.lda(child_mem_addr)
-    ml.sta(npc)
-    ml.lda(child_mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
-    
-    op_branch_if_set = ml.pc
-    ml.lda(nsr)
-    ml.ana(branch_sr_flag)
-    ml.bne(branch_do)
-    ml.bpl(main_loop)
-    
     global op_push, op_push_ch
-    op_push = ml.pc
-    ml.sta(op_push_ch+1)
-    ml.lda(nsp)
-    ml.sta(child_mem_addr)
-    ml.lda_imm(1)
-    ml.sta(child_mem_addr+1)
-    ml.lda(temp1)
-    
-    ml.sta(mm_mem_val)
-    call_proc_8b(store_mem_val)
-    
-    ml.lda(nsp)
-    ml.clc()
-    ml.sbc_imm(0)
-    ml.sta(nsp)
-    ml.clc()
-    op_push_ch = ml.pc
-    ml.bcc(get_ret_page(op_push), [False, True])
-    
     global op_pull, op_pull_ch
     op_pull = ml.pc
     ml.sta(op_pull_ch+1)
@@ -508,6 +464,7 @@ def gencode():
     op_pull_ch = ml.pc
     ml.bcc(get_ret_page(op_pull), [False, True])
 
+    #print(ml.pc)
     # load byte from pc and increment pc
     load_inc_pc = ml.pc
     ml.sta(load_inc_pc_ch+1)
@@ -538,6 +495,33 @@ def gencode():
     call_proc_8b(load_mem_val)
     addr_load_mem_val_call_ch = ml.pc
     ml.bcc(get_ret_page(addr_load_mem_val_call), [False, True])
+    
+    #print(ml.pc)
+    
+    branch_sr_flag = ml.pc
+    ml.byte(0, True)
+    
+    op_branch_if_not_set = ml.pc
+    ml.lda(nsr)
+    ml.ana(branch_sr_flag)
+    ml.bne(main_loop)
+    branch_do = ml.pc
+    ml.lda(instr_cycles)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(instr_cycles)
+    ml.lda(child_mem_addr)
+    ml.sta(npc)
+    ml.lda(child_mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
+    
+    op_branch_if_set = ml.pc
+    ml.lda(nsr)
+    ml.ana(branch_sr_flag)
+    ml.bne(branch_do)
+    ml.bpl(main_loop)
     
     global set_cpu_nzc
     set_cpu_nzvc = ml.pc
@@ -951,9 +935,6 @@ def gencode():
     if (addr_mode_code_end&0xf00) != (addr_mode_code&0xf00):
         raise(RuntimeError("Code across page boundary!"))
     
-    for i in range(0,12):
-        ml.byte(0)
-    
     ###########################################
     # operations code
 
@@ -998,11 +979,100 @@ def gencode():
     ml.clc()
     ml.bcc(main_loop)
     
+    op_push = ml.pc
+    ml.sta(op_push_ch+1)
+    ml.lda(nsp)
+    ml.sta(child_mem_addr)
+    ml.lda_imm(1)
+    ml.sta(child_mem_addr+1)
+    ml.lda(temp1)
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
+    ml.lda(nsp)
+    ml.clc()
+    ml.sbc_imm(0)
+    ml.sta(nsp)
+    ml.clc()
+    op_push_ch = ml.pc
+    ml.bcc(get_ret_page(op_push), [False, True])
+    
     ##################################
     # OPS CODE START
     ops_code_start = ml.pc
     
     # TODO integrate with load_mem_val/store_mem_val
+    
+    op_asl = ml.pc
+    ml.lda(mem_val)
+    ml.clc()
+    ml.rol()
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_lsr = ml.pc
+    ml.lda(mem_val)
+    ml.clc()
+    ml.ror()
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_rol = ml.pc
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(mem_val)
+    ml.rol()
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_ror = ml.pc
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(mem_val)
+    ml.ror()
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
+    
+    op_sta = ml.pc
+    ml.lda(nacc)
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
+    ml.bcc(main_loop)
+
+    op_stx = ml.pc
+    ml.lda(nxind)
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
+    ml.bcc(main_loop)
+
+    op_sty = ml.pc
+    ml.lda(nyind)
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
+    ml.bcc(main_loop)
     
     op_and = ml.pc
     ml.lda(nacc)
@@ -1010,14 +1080,6 @@ def gencode():
     ml.sta(nacc)
     ml.clc()
     ml.bcc(set_cpu_nz)
-
-    op_asl = ml.pc
-    ml.lda(child_mem_val)
-    ml.clc()
-    ml.rol()
-    ml.sta(child_mem_val)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
     
     op_asl_a = ml.pc
     ml.lda(nacc)
@@ -1217,6 +1279,15 @@ def gencode():
     ml.sta(nyind)
     ml.clc()
     ml.bcc(set_cpu_nz)
+    
+    op_rti = ml.pc
+    call_proc_8b(op_pull)
+    ml.sta(nsr)
+    call_proc_8b(op_pull)
+    ml.sta(npc)
+    call_proc_8b(op_pull)
+    ml.sta(npc+1)
+    ml.bcc(main_loop)
 
     op_brk = ml.pc
     op_jsr = ml.pc
@@ -1289,23 +1360,6 @@ def gencode():
     ml.clc()
     ml.bcc(main_loop)
     
-    op_rti = ml.pc
-    call_proc_8b(op_pull)
-    ml.sta(nsr)
-    call_proc_8b(op_pull)
-    ml.sta(npc)
-    call_proc_8b(op_pull)
-    ml.sta(npc+1)
-    ml.bcc(main_loop)
-    
-    op_lsr = ml.pc
-    ml.lda(child_mem_val)
-    ml.clc()
-    ml.ror()
-    ml.sta(child_mem_val)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
-    
     op_lsr_a = ml.pc
     ml.lda(nacc)
     ml.clc()
@@ -1324,15 +1378,6 @@ def gencode():
     ml.clc()
     ml.bcc(set_cpu_nz)
 
-    op_rol = ml.pc
-    ml.lda(nsr)
-    ml.ror()
-    ml.lda(child_mem_val)
-    ml.rol()
-    ml.sta(child_mem_val)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
-    
     op_rol_a = ml.pc
     ml.lda(nsr)
     ml.ror()
@@ -1342,15 +1387,6 @@ def gencode():
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
 
-    op_ror = ml.pc
-    ml.lda(nsr)
-    ml.ror()
-    ml.lda(child_mem_val)
-    ml.ror()
-    ml.sta(child_mem_val)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
-    
     op_ror_a = ml.pc
     ml.lda(nsr)
     ml.ror()
@@ -1572,21 +1608,6 @@ def gencode():
     ml.sta(nsr)
     ml.bcc(main_loop)
 
-    op_sta = ml.pc
-    ml.lda(nacc)
-    ml.sta(child_mem_val)
-    ml.bcc(main_loop)
-
-    op_stx = ml.pc
-    ml.lda(nxind)
-    ml.sta(child_mem_val)
-    ml.bcc(main_loop)
-
-    op_sty = ml.pc
-    ml.lda(nyind)
-    ml.sta(child_mem_val)
-    ml.bcc(main_loop)
-
     op_tax = ml.pc
     ml.lda(nacc)
     ml.sta(nxind)
@@ -1682,6 +1703,7 @@ def gencode():
     store_mem_val_ch = ml.pc
     ml.bcc(get_ret_page(load_mem_val), [False, True])
     
+    ##########################################
     native_machine = ml.pc
     ml.byte(0)
     
@@ -1689,5 +1711,5 @@ def gencode():
 
 ml.assemble(gencode)
 
-#print("mpc:", ml.pc)
-stdout.buffer.write(ml.dump())
+print("mpc:", ml.pc)
+#stdout.buffer.write(ml.dump())
