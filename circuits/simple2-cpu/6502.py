@@ -188,6 +188,7 @@ sbc_dec_no_lo_fix, sbc_dec_no_hi_fix = -10000, -10000
 am_absx_cycle_fix, am_absy_cycle_fix = -10000, -10000
 am_rel_no_cycle_fix = -10000
 set_cpu_nzc = -10000
+native_machine = -10000
 
 def gencode():
     global ret_pages
@@ -195,6 +196,7 @@ def gencode():
     global no_load_arg
     global addr_mode_end
     global addr_mode_table
+    global native_machine
     
     global am_imp
     global am_imm
@@ -1579,10 +1581,16 @@ def gencode():
     ml.bcc(set_cpu_nz)
     
     op_crt = ml.pc
+    ml.lda(native_machine)
+    ml.bne(ml.pc+4)
+    ml.bpl(op_und)
     ml.spc_imm(0)
     ml.bcc(main_loop)
     
     op_stp = ml.pc
+    ml.lda(native_machine)
+    ml.bne(ml.pc+4)
+    ml.bpl(op_und)
     ml.spc_imm(0)
     
     op_und = ml.pc
@@ -1598,6 +1606,9 @@ def gencode():
     if ops_code_end - (ops_code_start&0xf00) >= 0x400:
         raise(RuntimeError("Ops code out of range!"))
     return start
+
+    native_machine = ml.pc
+    ml.byte(0)
 
 ml.assemble(gencode)
 
