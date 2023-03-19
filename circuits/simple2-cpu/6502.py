@@ -1708,6 +1708,6 @@ def gencode():
 
 ml.assemble(gencode)
 
-print("mpc:", ml.pc)
+#print("mpc:", ml.pc)
 stdout.buffer.write(ml.dump())
 #print(globals())
