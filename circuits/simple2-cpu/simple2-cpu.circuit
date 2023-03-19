@@ -19,7 +19,7 @@
 # B - BNE - branch if Z=0
 # C - BVC - branch if V=0
 # D - BPL - branch if N=0
-# E - SPC: mem: 0bxxxxxxx0 - create, 0bxxxxxxx1 - stop
+# E - SPC: mem: 0bxxxxxx00 - create, 0bxxxxxx01 - stop, 0bxxxxxx10 unsatisfied
 # F - SEC
 # phases:
 # 0 - instruction fetch
@@ -506,6 +506,7 @@ cpu_exec:
     if_last_instr = and_3 :3:cpu_instr_1
     cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit :4:cpu_instr_0
     mem_value_0_n = nand mem_value_0 mem_value_0
+    do_stop_mv = or mem_value_0 mem_value_1
     
     if_sec = and if_last_instr cpu_instr_0
     cpu_flag_c_tcdef = or if_sec cpu_flag_c
@@ -537,7 +538,7 @@ cpu_exec:
     # create
     o12 = and_3 if_last_instr cpu_instr_0_n mem_value_0_n
     # stop
-    o13 = and_3 if_last_instr cpu_instr_0_n mem_value_0
+    o13 = and_3 if_last_instr cpu_instr_0_n do_stop_mv
 
 # cpu instruction execution
 cpu_exec_0:

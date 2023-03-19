@@ -184,7 +184,8 @@ def cpu_exec(data):
     elif instr==instr_sec:
         outv = {'acc':acc, 'flags':set_flag_c(flags,True), 'create':0,'stop':0}
     elif instr==instr_spc:
-        outv = {'acc':acc, 'flags':flags, 'create':(mem_value&1)^1,'stop':mem_value&1}
+        outv = {'acc':acc, 'flags':flags, 'create':(mem_value&1)^1,
+                    'stop': (mem_value&1) | ((mem_value>>1)&1) }
     else:
         raise("Error panic")
     return bin_comp(cpu_exec_output_str, outv)
