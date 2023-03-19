@@ -495,6 +495,9 @@ impl PrimalMachine {
             }
 
             if get_bit(&output, output_len - 2) {
+                if stop {
+                    panic!("Unsatisfied execution!");
+                }
                 self.create(trace);
             }
 
