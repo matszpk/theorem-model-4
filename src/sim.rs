@@ -433,6 +433,7 @@ impl PrimalMachine {
 
     // input: [state, mem_value]
     // output: [state, mem_value, mem_rw:1bit, mem_address, create:1bit, stop:1bit]
+    // if either create and stop are set - then we have unsatisfied execution.
     pub fn run(&mut self, initial_state: &[u8], trace: bool, circuit_trace: bool) -> u64 {
         let input_len = self.circuit.input_len as usize;
         let output_len = self.circuit.output_len as usize;
