@@ -186,6 +186,8 @@ adc_dec_no_lo_fix, adc_dec_no_hi_fix, adc_dec_after_hi_fix = -10000, -10000, -10
 adc_dec_nz_z_zero, adc_dec_nz_z_store = -10000, -10000
 adc_dec_nz_n_zero, adc_dec_nz_n_store = -10000, -10000
 sbc_dec_no_lo_fix, sbc_dec_no_hi_fix = -10000, -10000
+am_absx_cycle_fix, am_absy_cycle_fix = -10000, -10000
+am_rel_no_cycle_fix = -10000
 
 def gencode():
     global ret_pages
@@ -358,6 +360,9 @@ def gencode():
     ml.ana_imm(7)
     ml.sta(instr_cycles)
     ml.lda(temp3)
+    ml.ror()
+    ml.ror()
+    ml.ror()    # 3bit to 0bit
     ml.ana_imm(8)
     ml.sta(extra_cycle)
     
@@ -472,7 +477,7 @@ def gencode():
         (AddrMode.abs, op_bit, 4), # 0x2c
         (AddrMode.abs, op_and, 4), # 0x2d
         (AddrMode.abs, op_rol, 6), # 0x2e
-        (AddrMode.rel, op_bmi, 2), # 0x30
+        (AddrMode.rel, op_bmi, 2|8), # 0x30
         (AddrMode.pindy, op_and, 5|8), # 0x31
         (AddrMode.imp, op_und, 2), # 0x32
         (AddrMode.imp, op_und, 2), # 0x34
@@ -497,7 +502,7 @@ def gencode():
         (AddrMode.abs, op_jmp, 3), # 0x4c
         (AddrMode.abs, op_eor, 4), # 0x4d
         (AddrMode.abs, op_lsr, 6), # 0x4e
-        (AddrMode.rel, op_bvc, 2), # 0x50
+        (AddrMode.rel, op_bvc, 2|8), # 0x50
         (AddrMode.pindy, op_eor, 5|8), # 0x51
         (AddrMode.imp, op_und, 2), # 0x52
         (AddrMode.imp, op_und, 2), # 0x54
@@ -522,7 +527,7 @@ def gencode():
         (AddrMode.abs, op_jmpind, 5), # 0x6c
         (AddrMode.abs, op_adc, 4), # 0x6d
         (AddrMode.abs, op_ror, 6), # 0x6e
-        (AddrMode.rel, op_bvs, 2), # 0x70
+        (AddrMode.rel, op_bvs, 2|8), # 0x70
         (AddrMode.pindy, op_adc, 5|8), # 0x71
         (AddrMode.imp, op_und, 2), # 0x72
         (AddrMode.imp, op_und, 2), # 0x74
@@ -547,7 +552,7 @@ def gencode():
         (AddrMode.abs, op_sty, 4), # 0x8c
         (AddrMode.abs, op_sta, 4), # 0x8d
         (AddrMode.abs, op_stx, 4), # 0x8e
-        (AddrMode.rel, op_bcc, 2), # 0x90
+        (AddrMode.rel, op_bcc, 2|8), # 0x90
         (AddrMode.pindy, op_sta, 6), # 0x91
         (AddrMode.imp, op_und, 2), # 0x92
         (AddrMode.zpgx, op_sty, 4), # 0x94
@@ -572,7 +577,7 @@ def gencode():
         (AddrMode.abs, op_ldy, 4), # 0xac
         (AddrMode.abs, op_lda, 4), # 0xad
         (AddrMode.abs, op_ldx, 4), # 0xae
-        (AddrMode.rel, op_bcs, 2), # 0xb0
+        (AddrMode.rel, op_bcs, 2|8), # 0xb0
         (AddrMode.pindy, op_lda, 5|8), # 0xb1
         (AddrMode.imp, op_und, 2), # 0xb2
         (AddrMode.zpgx, op_ldy, 4), # 0xb4
@@ -597,7 +602,7 @@ def gencode():
         (AddrMode.abs, op_cpy, 4), # 0xcc
         (AddrMode.abs, op_cmp, 4), # 0xcd
         (AddrMode.abs, op_dec, 6), # 0xce
-        (AddrMode.rel, op_bne, 2), # 0xd0
+        (AddrMode.rel, op_bne, 2|8), # 0xd0
         (AddrMode.pindy, op_cmp, 5|8), # 0xd1
         (AddrMode.imp, op_und, 2), # 0xd2
         (AddrMode.imp, op_und, 2), # 0xd4
@@ -622,7 +627,7 @@ def gencode():
         (AddrMode.abs, op_cpx, 4), # 0xec
         (AddrMode.abs, op_sbc, 4), # 0xed
         (AddrMode.abs, op_inc, 6), # 0xee
-        (AddrMode.rel, op_beq, 2), # 0xf0
+        (AddrMode.rel, op_beq, 2|8), # 0xf0
         (AddrMode.pindy, op_sbc, 5|8), # 0xf1
         (AddrMode.imp, op_und, 2), # 0xf2
         (AddrMode.imp, op_und, 2), # 0xf4
@@ -761,6 +766,7 @@ def gencode():
     # routine to handle absy
     ml.bcc(am_absy)
     
+    global am_rel_no_cycle_fix
     am_rel = ml.pc
     ml.lda(narglo)
     ml.ror()
@@ -773,9 +779,18 @@ def gencode():
     ml.adc(narglo)
     ml.sta(0xffe)
     ml.lda(npc+1)
+    ml.sta(temp2)   # npchi
     ml.adc(temp1)
     ml.sta(0xfff)
+    ml.xor(temp2)
+    ml.bne(ml.pc+4) # skip next instr
+    ml.bpl(am_rel_no_cycle_fix)
+    ml.lda(instr_cycles)
     ml.clc()
+    ml.adc_imm(1)
+    ml.sta(instr_cycles)
+    am_rel_no_cycle_fix = ml.pc
+    #ml.clc()
     ml.bcc(addr_mode_end)
     
     am_abs = ml.pc
@@ -787,11 +802,19 @@ def gencode():
     ml.sta(mem_val)
     ml.bcc(addr_mode_end)
     
+    global am_absx_cycle_fix
     am_absx = ml.pc
     ml.lda(narglo)
     ml.clc()
     ml.adc(nxind)
     ml.sta(0xffe)
+    ml.bcc(am_absx_cycle_fix)
+    ml.lda(instr_cycles)
+    ml.clc()
+    ml.adc(extra_cycle)
+    ml.sta(instr_cycles)
+    ml.sec()
+    am_absx_cycle_fix = ml.pc
     ml.lda(narghi)
     ml.adc_imm(0)
     ml.sta(0xfff)
@@ -800,11 +823,19 @@ def gencode():
     ml.clc()
     ml.bcc(addr_mode_end)
     
+    global am_absy_cycle_fix
     am_absy = ml.pc
     ml.lda(narglo)
     ml.clc()
     ml.adc(nyind)
     ml.sta(0xffe)
+    ml.bcc(am_absy_cycle_fix)
+    ml.lda(instr_cycles)
+    ml.clc()
+    ml.adc(extra_cycle)
+    ml.sta(instr_cycles)
+    ml.sec()
+    am_absy_cycle_fix = ml.pc
     ml.lda(narghi)
     ml.adc_imm(0)
     ml.sta(0xfff)
@@ -1533,6 +1564,10 @@ def gencode():
     ml.ana(branch_sr_flag)
     ml.bne(main_loop)
     branch_do = ml.pc
+    ml.lda(instr_cycles)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(instr_cycles)
     ml.lda(mem_addr)
     ml.sta(npc)
     ml.lda(mem_addr+1)
