@@ -43,6 +43,8 @@ temp3 = ml.pc # 0xff4:
 ml.byte(0x00, True)
 temp4 = ml.pc # 0xff5:
 ml.byte(0x00, True)
+mm_mem_val = ml.pc # 0xff6
+ml.byte(0x00, True)
 
 child_mem_val = 0xffc
 child_mem_addr = 0xffd
@@ -1639,14 +1641,14 @@ def gencode():
     ml.lda(native_machine)
     ml.bne(store_mem_val_native)
     
-    ml.lda(mem_val)
+    ml.lda(mm_mem_val)
     ml.sta(child_mem_val)
     ml.clc()
     ml.bcc(store_mem_val_end)
     
     store_mem_val_native = ml.pc
     
-    ml.lda(mem_val)
+    ml.lda(mm_mem_val)
     ml.sta(child_mem_val)
     
     store_mem_val_end
