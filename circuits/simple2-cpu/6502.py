@@ -429,6 +429,66 @@ def gencode():
     ml.clc()
     ml.bcc(main_loop)
     
+    global op_branch_if_not_set, op_branch_if_set, branch_sr_flag
+    
+    branch_sr_flag = ml.pc
+    ml.byte(0, True)
+    
+    op_branch_if_not_set = ml.pc
+    ml.lda(nsr)
+    ml.ana(branch_sr_flag)
+    ml.bne(main_loop)
+    branch_do = ml.pc
+    ml.lda(instr_cycles)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(instr_cycles)
+    ml.lda(mem_addr)
+    ml.sta(npc)
+    ml.lda(mem_addr+1)
+    ml.sta(npc+1)
+    ml.clc()
+    ml.bcc(main_loop)
+    
+    op_branch_if_set = ml.pc
+    ml.lda(nsr)
+    ml.ana(branch_sr_flag)
+    ml.bne(branch_do)
+    ml.bpl(main_loop)
+    
+    global op_push, op_push_ch
+    op_push = ml.pc
+    ml.sta(op_push_ch+1)
+    ml.lda(nsp)
+    ml.sta(0xffe)
+    ml.lda_imm(1)
+    ml.sta(0xfff)
+    ml.lda(temp1)
+    ml.sta(0xffd)
+    ml.lda(nsp)
+    ml.clc()
+    ml.sbc_imm(0)
+    ml.sta(nsp)
+    ml.clc()
+    op_push_ch = ml.pc
+    ml.bcc(get_ret_page(op_push), [False, True])
+    
+    global op_pull, op_pull_ch
+    op_pull = ml.pc
+    ml.sta(op_pull_ch+1)
+    ml.lda(nsp)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(nsp)
+    ml.sta(0xffe)
+    ml.lda_imm(1)
+    ml.sta(0xfff)
+    ml.lda(0xffd)
+    ml.clc()
+    op_pull_ch = ml.pc
+    ml.bcc(get_ret_page(op_pull), [False, True])
+
+    
     # tables:
     
     # before main table:
@@ -900,27 +960,9 @@ def gencode():
     ml.clc()
     ml.bcc(main_loop)
     
-    global op_push, op_push_ch
-    op_push = ml.pc
-    ml.sta(op_push_ch+1)
-    ml.lda(nsp)
-    ml.sta(0xffe)
-    ml.lda_imm(1)
-    ml.sta(0xfff)
-    ml.lda(temp1)
-    ml.sta(0xffd)
-    ml.lda(nsp)
-    ml.clc()
-    ml.sbc_imm(0)
-    ml.sta(nsp)
-    ml.clc()
-    op_push_ch = ml.pc
-    ml.bcc(get_ret_page(op_push), [False, True])
-    
-    global op_pull, op_pull_ch
-    
+    ##################################
+    # OPS CODE START
     ops_code_start = ml.pc
-    global op_branch_if_not_set, op_branch_if_set, branch_sr_flag
     
     op_and = ml.pc
     ml.lda(nacc)
@@ -1551,50 +1593,13 @@ def gencode():
     ml.sta(undef_instr)
     ml.spc_imm(1)
     
+    # OPS CODE END
+    ##################################
+    
     ops_code_end = ml.pc
     #print("opscode:", ops_code_start, ops_code_end, ops_code_end - (ops_code_start&0xf00))
     if ops_code_end - (ops_code_start&0xf00) >= 0x400:
         raise(RuntimeError("Ops code out of range!"))
-    
-    branch_sr_flag = ml.pc
-    ml.byte(0, True)
-    
-    op_branch_if_not_set = ml.pc
-    ml.lda(nsr)
-    ml.ana(branch_sr_flag)
-    ml.bne(main_loop)
-    branch_do = ml.pc
-    ml.lda(instr_cycles)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(instr_cycles)
-    ml.lda(mem_addr)
-    ml.sta(npc)
-    ml.lda(mem_addr+1)
-    ml.sta(npc+1)
-    ml.clc()
-    ml.bcc(main_loop)
-    
-    op_branch_if_set = ml.pc
-    ml.lda(nsr)
-    ml.ana(branch_sr_flag)
-    ml.bne(branch_do)
-    ml.bpl(main_loop)
-    
-    op_pull = ml.pc
-    ml.sta(op_pull_ch+1)
-    ml.lda(nsp)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(nsp)
-    ml.sta(0xffe)
-    ml.lda_imm(1)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
-    ml.clc()
-    op_pull_ch = ml.pc
-    ml.bcc(get_ret_page(op_pull), [False, True])
-
     return start
 
 ml.assemble(gencode)
