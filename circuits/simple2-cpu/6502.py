@@ -425,9 +425,6 @@ def gencode():
     call_op = ml.pc
     ml.bcc(0, [True, True])
     
-    ml.clc()
-    ml.bcc(main_loop)
-    
     global op_branch_if_not_set, op_branch_if_set, branch_sr_flag
     
     branch_sr_flag = ml.pc
