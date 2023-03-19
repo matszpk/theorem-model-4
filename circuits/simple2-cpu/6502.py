@@ -197,6 +197,9 @@ load_mem_val_native, load_mem_val_end = -10000, -10000
 store_mem_val, store_mem_val_ch = -10000, -10000
 store_mem_val_native, store_mem_val_end = -10000, -10000
 
+addr_load_mem_val = -10000
+addr_load_mem_val_call, addr_load_mem_val_call_ch = -10000, -10000 # call load mem val
+
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
@@ -208,6 +211,8 @@ def gencode():
     global store_mem_val, store_mem_val_ch
     global load_mem_val_native, load_mem_val_end
     global store_mem_val_native, store_mem_val_end
+    
+    global addr_load_mem_val, addr_load_mem_val_call, addr_load_mem_val_call_ch
     
     global am_imp
     global am_imm
@@ -474,7 +479,10 @@ def gencode():
     ml.lda_imm(1)
     ml.sta(child_mem_addr+1)
     ml.lda(temp1)
-    ml.sta(child_mem_val)
+    
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    
     ml.lda(nsp)
     ml.clc()
     ml.sbc_imm(0)
@@ -493,7 +501,9 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda_imm(1)
     ml.sta(child_mem_addr+1)
-    ml.lda(child_mem_val)
+    
+    call_proc_8b(load_mem_val)
+    
     ml.clc()
     op_pull_ch = ml.pc
     ml.bcc(get_ret_page(op_pull), [False, True])
@@ -510,10 +520,24 @@ def gencode():
     ml.sta(child_mem_addr+1)
     ml.adc_imm(0)
     ml.sta(npc+1)
-    ml.lda(child_mem_val)
+    
+    call_proc_8b(load_mem_val)
+    
     ml.clc()
     load_inc_pc_ch = ml.pc
     ml.bcc(get_ret_page(load_inc_pc), [False, True])
+    
+    addr_load_mem_val = ml.pc
+    call_proc_8b(load_mem_val)
+    
+    ml.sta(mem_val)
+    ml.bcc(addr_mode_end)
+    
+    addr_load_mem_val_call = ml.pc
+    ml.sta(addr_load_mem_val_call_ch+1)
+    call_proc_8b(load_mem_val)
+    addr_load_mem_val_call_ch = ml.pc
+    ml.bcc(get_ret_page(addr_load_mem_val_call), [False, True])
     
     global set_cpu_nzc
     set_cpu_nzvc = ml.pc
@@ -789,9 +813,7 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda_imm(0)
     ml.sta(child_mem_addr+1)
-    ml.lda(child_mem_val)
-    ml.sta(mem_val)
-    ml.bcc(addr_mode_end)
+    ml.bcc(addr_load_mem_val)
     
     am_zpgy = ml.pc
     ml.lda(narglo)
@@ -800,10 +822,8 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda_imm(0)
     ml.sta(child_mem_addr+1)
-    ml.lda(child_mem_val)
-    ml.sta(mem_val)
     ml.clc()
-    ml.bne(addr_mode_end)
+    ml.bcc(addr_load_mem_val)
     
     am_zpgx = ml.pc
     am_pindx = ml.pc
@@ -813,7 +833,9 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda_imm(0)
     ml.sta(child_mem_addr+1)
-    ml.lda(child_mem_val)
+    
+    call_proc_8b(addr_load_mem_val_call)
+    
     ml.sta(narglo)
     ml.sta(mem_val)
     ml.lda(addr_mode)
@@ -834,13 +856,17 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda_imm(0)
     ml.sta(child_mem_addr+1)
-    ml.lda(child_mem_val)
+    
+    call_proc_8b(addr_load_mem_val_call)
+    
     ml.sta(narglo)
     ml.lda(child_mem_addr)
     ml.sec()
     ml.adc_imm(0)
     ml.sta(child_mem_addr)
-    ml.lda(child_mem_val)
+    
+    call_proc_8b(addr_load_mem_val_call)
+    
     ml.sta(narghi)
     ml.clc()
     # now we have address from 6502 zero page stored in narglo and narghi then just use
@@ -879,9 +905,7 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda(narghi)
     ml.sta(child_mem_addr+1)
-    ml.lda(child_mem_val)
-    ml.sta(mem_val)
-    ml.bcc(addr_mode_end)
+    ml.bcc(addr_load_mem_val)
     
     global am_absx_cycle_fix
     am_absx = ml.pc
@@ -899,10 +923,8 @@ def gencode():
     ml.lda(narghi)
     ml.adc_imm(0)
     ml.sta(child_mem_addr+1)
-    ml.lda(child_mem_val)
-    ml.sta(mem_val)
     ml.clc()
-    ml.bcc(addr_mode_end)
+    ml.bcc(addr_load_mem_val)
     
     global am_absy_cycle_fix
     am_absy = ml.pc
@@ -920,15 +942,17 @@ def gencode():
     ml.lda(narghi)
     ml.adc_imm(0)
     ml.sta(child_mem_addr+1)
-    ml.lda(child_mem_val)
-    ml.sta(mem_val)
     ml.clc()
-    ml.bcc(addr_mode_end)
+    ml.bcc(addr_load_mem_val)
+    
     
     addr_mode_code_end = ml.pc
     #print("amcode:", addr_mode_code, addr_mode_code_end)
     if (addr_mode_code_end&0xf00) != (addr_mode_code&0xf00):
         raise(RuntimeError("Code across page boundary!"))
+    
+    for i in range(0,12):
+        ml.byte(0)
     
     ###########################################
     # operations code
@@ -977,6 +1001,8 @@ def gencode():
     ##################################
     # OPS CODE START
     ops_code_start = ml.pc
+    
+    # TODO integrate with load_mem_val/store_mem_val
     
     op_and = ml.pc
     ml.lda(nacc)
@@ -1633,7 +1659,7 @@ def gencode():
     load_mem_val_end = ml.pc
     ml.clc()
     load_mem_val_ch = ml.pc
-    ml.bcc(0, [False, True])
+    ml.bcc(get_ret_page(load_mem_val), [False, True])
     ############################
     
     store_mem_val = ml.pc
@@ -1654,7 +1680,7 @@ def gencode():
     store_mem_val_end
     ml.clc()
     store_mem_val_ch = ml.pc
-    ml.bcc(0, [False, True])
+    ml.bcc(get_ret_page(load_mem_val), [False, True])
     
     native_machine = ml.pc
     ml.byte(0)
