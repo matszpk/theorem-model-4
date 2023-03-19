@@ -33,18 +33,19 @@ op_index = ml.pc # 0xfef
 ml.byte(0x00, True)
 undef_instr = ml.pc # 0xff0
 ml.byte(0x00, True)
-extra_cycle = ml.pc # 0xff0
-temp1 = ml.pc # 0xff1:
+extra_cycle = ml.pc # 0xff1
 ml.byte(0x00, True)
-temp2 = ml.pc # 0xff2:
+temp1 = ml.pc # 0xff2:
 ml.byte(0x00, True)
-temp3 = ml.pc # 0xff2:
+temp2 = ml.pc # 0xff3:
 ml.byte(0x00, True)
-temp4 = ml.pc # 0xff2:
+temp3 = ml.pc # 0xff4:
+ml.byte(0x00, True)
+temp4 = ml.pc # 0xff5:
 ml.byte(0x00, True)
 
-mem_addr = 0xffe # 0xffe
-
+child_mem_val = 0xffc
+child_mem_addr = 0xffd
 
 # addressing modes
 AddrMode = IntEnum('AddrMode',
@@ -275,7 +276,7 @@ def gencode():
     start = 0
     ml.set_pc(start)
     # create 6502 machine - memory: 16-bit address, 8-bit cell
-    ml.lda_imm(0x10)
+    ml.lda_imm(0x11)
     ml.sta(0xffd)
     ml.lda_imm(0x30)
     ml.sta(0xffe)
@@ -439,9 +440,9 @@ def gencode():
     ml.sec()
     ml.adc_imm(0)
     ml.sta(instr_cycles)
-    ml.lda(mem_addr)
+    ml.lda(child_mem_addr)
     ml.sta(npc)
-    ml.lda(mem_addr+1)
+    ml.lda(child_mem_addr+1)
     ml.sta(npc+1)
     ml.clc()
     ml.bcc(main_loop)
@@ -456,11 +457,11 @@ def gencode():
     op_push = ml.pc
     ml.sta(op_push_ch+1)
     ml.lda(nsp)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda_imm(1)
-    ml.sta(0xfff)
+    ml.sta(child_mem_addr+1)
     ml.lda(temp1)
-    ml.sta(0xffd)
+    ml.sta(child_mem_val)
     ml.lda(nsp)
     ml.clc()
     ml.sbc_imm(0)
@@ -476,10 +477,10 @@ def gencode():
     ml.sec()
     ml.adc_imm(0)
     ml.sta(nsp)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda_imm(1)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
     ml.clc()
     op_pull_ch = ml.pc
     ml.bcc(get_ret_page(op_pull), [False, True])
@@ -488,15 +489,15 @@ def gencode():
     load_inc_pc = ml.pc
     ml.sta(load_inc_pc_ch+1)
     ml.lda(npc)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.sec()
     ml.adc_imm(0)
     ml.sta(npc)
     ml.lda(npc+1)
-    ml.sta(0xfff)
+    ml.sta(child_mem_addr+1)
     ml.adc_imm(0)
     ml.sta(npc+1)
-    ml.lda(0xffd)
+    ml.lda(child_mem_val)
     ml.clc()
     load_inc_pc_ch = ml.pc
     ml.bcc(get_ret_page(load_inc_pc), [False, True])
@@ -772,10 +773,10 @@ def gencode():
     
     am_zpg = ml.pc
     ml.lda(narglo)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda_imm(0)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
     ml.sta(mem_val)
     ml.bcc(addr_mode_end)
     
@@ -783,10 +784,10 @@ def gencode():
     ml.lda(narglo)
     ml.clc()
     ml.adc(nyind)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda_imm(0)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
     ml.sta(mem_val)
     ml.clc()
     ml.bne(addr_mode_end)
@@ -796,19 +797,19 @@ def gencode():
     ml.lda(narglo)
     ml.clc()
     ml.adc(nxind)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda_imm(0)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
     ml.sta(narglo)
     ml.sta(mem_val)
     ml.lda(addr_mode)
     ml.xor_imm(AddrMode.pindx)
     ml.bne(addr_mode_end)   # if not AddrMode.pindx (if AddrMode.zpgx)
-    ml.lda(0xffe)
+    ml.lda(child_mem_addr)
     ml.sec()
     ml.adc_imm(0)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda(narghi)
     ml.clc()
     # now we have address from 6502 zero page stored in narglo and narghi then just use
@@ -817,16 +818,16 @@ def gencode():
     
     am_pindy = ml.pc
     ml.lda(narglo)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda_imm(0)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
     ml.sta(narglo)
-    ml.lda(0xffe)
+    ml.lda(child_mem_addr)
     ml.sec()
     ml.adc_imm(0)
-    ml.sta(0xffe)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr)
+    ml.lda(child_mem_val)
     ml.sta(narghi)
     ml.clc()
     # now we have address from 6502 zero page stored in narglo and narghi then just use
@@ -844,11 +845,11 @@ def gencode():
     ml.lda(npc)
     ml.clc()
     ml.adc(narglo)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda(npc+1)
     ml.sta(temp2)   # npchi
     ml.adc(temp1)
-    ml.sta(0xfff)
+    ml.sta(child_mem_addr+1)
     ml.xor(temp2)
     ml.bne(ml.pc+4) # skip next instr
     ml.bpl(am_rel_no_cycle_fix)
@@ -862,10 +863,10 @@ def gencode():
     
     am_abs = ml.pc
     ml.lda(narglo)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda(narghi)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
     ml.sta(mem_val)
     ml.bcc(addr_mode_end)
     
@@ -874,7 +875,7 @@ def gencode():
     ml.lda(narglo)
     ml.clc()
     ml.adc(nxind)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.bcc(am_absx_cycle_fix)
     ml.lda(instr_cycles)
     ml.clc()
@@ -884,8 +885,8 @@ def gencode():
     am_absx_cycle_fix = ml.pc
     ml.lda(narghi)
     ml.adc_imm(0)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
     ml.sta(mem_val)
     ml.clc()
     ml.bcc(addr_mode_end)
@@ -895,7 +896,7 @@ def gencode():
     ml.lda(narglo)
     ml.clc()
     ml.adc(nyind)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.bcc(am_absy_cycle_fix)
     ml.lda(instr_cycles)
     ml.clc()
@@ -905,8 +906,8 @@ def gencode():
     am_absy_cycle_fix = ml.pc
     ml.lda(narghi)
     ml.adc_imm(0)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
     ml.sta(mem_val)
     ml.clc()
     ml.bcc(addr_mode_end)
@@ -972,10 +973,10 @@ def gencode():
     ml.bcc(set_cpu_nz)
 
     op_asl = ml.pc
-    ml.lda(0xffd)
+    ml.lda(child_mem_val)
     ml.clc()
     ml.rol()
-    ml.sta(0xffd)
+    ml.sta(child_mem_val)
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
@@ -1142,18 +1143,18 @@ def gencode():
     ml.bcc(set_cpu_nz)
 
     op_jmp = ml.pc
-    ml.lda(mem_addr)
+    ml.lda(child_mem_addr)
     ml.sta(npc)
-    ml.lda(mem_addr+1)
+    ml.lda(child_mem_addr+1)
     ml.sta(npc+1)
     ml.bcc(main_loop)
 
     op_jmpind = ml.pc
-    ml.lda(mem_addr)
+    ml.lda(child_mem_addr)
     ml.clc()
     ml.adc_imm(0)
-    ml.lda(mem_addr)
-    ml.lda(0xffd)
+    ml.sta(child_mem_addr)
+    ml.lda(child_mem_val)
     ml.sta(npc+1)
     ml.lda(mem_val)
     ml.sta(npc)
@@ -1203,17 +1204,13 @@ def gencode():
     ml.sta(nsr)
     # jump to fffe address
     ml.lda_imm(0xfe)
-    ml.sta(0xffe)
+    ml.sta(child_mem_addr)
     ml.lda_imm(0xff)
-    ml.sta(0xfff)
-    ml.lda(0xffd)
-    ml.sta(npc)
-    ml.lda_imm(0xff)
-    ml.sta(0xffe)
-    ml.lda(0xffd)
-    ml.sta(npc+1)
+    ml.sta(child_mem_addr+1)
+    ml.lda(child_mem_val)
+    ml.sta(mem_val)
     ml.clc()
-    ml.bcc(main_loop)
+    ml.bcc(op_jmpind)
     
     op_pha = ml.pc
     ml.lda(nacc)
@@ -1263,10 +1260,10 @@ def gencode():
     ml.bcc(main_loop)
     
     op_lsr = ml.pc
-    ml.lda(0xffd)
+    ml.lda(child_mem_val)
     ml.clc()
     ml.ror()
-    ml.sta(0xffd)
+    ml.sta(child_mem_val)
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
@@ -1291,9 +1288,9 @@ def gencode():
     op_rol = ml.pc
     ml.lda(nsr)
     ml.ror()
-    ml.lda(0xffd)
+    ml.lda(child_mem_val)
     ml.rol()
-    ml.sta(0xffd)
+    ml.sta(child_mem_val)
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
@@ -1309,9 +1306,9 @@ def gencode():
     op_ror = ml.pc
     ml.lda(nsr)
     ml.ror()
-    ml.lda(0xffd)
+    ml.lda(child_mem_val)
     ml.ror()
-    ml.sta(0xffd)
+    ml.sta(child_mem_val)
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
@@ -1538,17 +1535,17 @@ def gencode():
 
     op_sta = ml.pc
     ml.lda(nacc)
-    ml.sta(0xffd)
+    ml.sta(child_mem_val)
     ml.bcc(main_loop)
 
     op_stx = ml.pc
     ml.lda(nxind)
-    ml.sta(0xffd)
+    ml.sta(child_mem_val)
     ml.bcc(main_loop)
 
     op_sty = ml.pc
     ml.lda(nyind)
-    ml.sta(0xffd)
+    ml.sta(child_mem_val)
     ml.bcc(main_loop)
 
     op_tax = ml.pc
