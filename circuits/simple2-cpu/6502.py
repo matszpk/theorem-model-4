@@ -190,6 +190,11 @@ am_rel_no_cycle_fix = -10000
 set_cpu_nzc = -10000
 native_machine = -10000
 
+load_mem_val, load_mem_val_ch = -10000, -10000
+load_mem_val_native, load_mem_val_end = -10000, -10000
+store_mem_val, store_mem_val_ch = -10000, -10000
+store_mem_val_native, store_mem_val_end = -10000, -10000
+
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
@@ -197,6 +202,10 @@ def gencode():
     global addr_mode_end
     global addr_mode_table
     global native_machine
+    global load_mem_val, load_mem_val_ch
+    global store_mem_val, store_mem_val_ch
+    global load_mem_val_native, load_mem_val_end
+    global store_mem_val_native, store_mem_val_end
     
     global am_imp
     global am_imm
@@ -1605,6 +1614,46 @@ def gencode():
     #print("opscode:", ops_code_start, ops_code_end, ops_code_end - (ops_code_start&0xf00))
     if ops_code_end - (ops_code_start&0xf00) >= 0x400:
         raise(RuntimeError("Ops code out of range!"))
+    
+    load_mem_val = ml.pc
+    ml.sta(load_mem_val_ch+1)
+    ml.lda(native_machine)
+    ml.bne(load_mem_val_native)
+    
+    ml.lda(child_mem_val)
+    ml.clc()
+    ml.bcc(load_mem_val_end)
+    
+    load_mem_val_native = ml.pc
+    
+    ml.lda(child_mem_val)
+    
+    load_mem_val_end = ml.pc
+    ml.clc()
+    load_mem_val_ch = ml.pc
+    ml.bcc(0, [False, True])
+    ############################
+    
+    store_mem_val = ml.pc
+    ml.sta(store_mem_val_ch+1)
+    ml.lda(native_machine)
+    ml.bne(store_mem_val_native)
+    
+    ml.lda(mem_val)
+    ml.sta(child_mem_val)
+    ml.clc()
+    ml.bcc(store_mem_val_end)
+    
+    store_mem_val_native = ml.pc
+    
+    ml.lda(mem_val)
+    ml.sta(child_mem_val)
+    
+    store_mem_val_end
+    ml.clc()
+    store_mem_val_ch = ml.pc
+    ml.bcc(0, [False, True])
+    
     native_machine = ml.pc
     ml.byte(0)
     
