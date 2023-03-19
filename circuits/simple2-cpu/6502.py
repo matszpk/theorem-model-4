@@ -35,6 +35,7 @@ op_index = ml.pc # 0xfef
 ml.byte(0x00, True)
 undef_instr = ml.pc # 0xff0
 ml.byte(0x00, True)
+extra_cycle = ml.pc # 0xff0
 temp1 = ml.pc # 0xff1:
 ml.byte(0x00, True)
 temp2 = ml.pc # 0xff2:
@@ -166,9 +167,9 @@ def get_ret_page(proc):
 
 load_inc_pc, load_inc_pc_ch = -10000, -10000
 decode, decode_end = -10000, -10000
-decode_ch1, decode_ch2, decode_ch3 = -10000, -10000, -10000
+decode_ch1, decode_ch2, decode_ch3, decode_ch4 = -10000, -10000, -10000, -10000
 no_load_arg = -10000
-decode_table = -10000
+decode_table, cycle_table = -10000, -10000
 cycle_table = -10000
 ops_code_start = -10000
 call_op = -10000
@@ -290,8 +291,8 @@ def gencode():
     ##############################
     # decode it
     global call_op, ops_code_start
-    global decode, decode_end, decode_table
-    global decode_ch1, decode_ch2, decode_ch3
+    global decode, decode_end, decode_table, cycle_table
+    global decode_ch1, decode_ch2, decode_ch3, decode_ch4
     decode = ml.pc
     #-------------------------------
     ml.sta(nopcode)
@@ -318,8 +319,10 @@ def gencode():
     ml.clc()
     ml.adc_imm(0xa0)
     ml.sta(decode_ch2+1)
-    # carry off - A-X-1
-    ml.sbc_imm(0xa0-1)
+    ml.sbc_imm(0xa0-(cycle_table&0xff)-1)
+    ml.sta(decode_ch4+1)
+    # carry on - A-X
+    ml.sbc_imm(0x60)
     #ml.clc()
     ml.ror()    # enables 0x80 - but doesn't matter
     ml.ora_imm(0xc0)
@@ -340,6 +343,23 @@ def gencode():
     ml.ror()
     ml.ana_imm(0xf)
     ml.sta(addr_mode)   # addr mode
+    
+    ml.lda(decode_ch1+1)
+    ml.ror()
+    decode_ch4 = ml.pc
+    ml.lda((cycle_table & 0xf00), [False, True])
+    ml.bcc(ml.pc+6)    # if not higher nibble
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ana_imm(0xf)
+    ml.sta(temp3)
+    ml.ana_imm(7)
+    ml.sta(instr_cycles)
+    ml.lda(temp3)
+    ml.ana_imm(8)
+    ml.sta(extra_cycle)
     
     ml.lda(decode_ch2+1)
     ml.xor_imm(1)   # negate first bit
