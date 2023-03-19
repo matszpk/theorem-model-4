@@ -188,6 +188,7 @@ adc_dec_nz_n_zero, adc_dec_nz_n_store = -10000, -10000
 sbc_dec_no_lo_fix, sbc_dec_no_hi_fix = -10000, -10000
 am_absx_cycle_fix, am_absy_cycle_fix = -10000, -10000
 am_rel_no_cycle_fix = -10000
+set_cpu_nzc = -10000
 
 def gencode():
     global ret_pages
@@ -488,6 +489,34 @@ def gencode():
     op_pull_ch = ml.pc
     ml.bcc(get_ret_page(op_pull), [False, True])
 
+    # load byte from pc and increment pc
+    load_inc_pc = ml.pc
+    ml.sta(load_inc_pc_ch+1)
+    ml.lda(npc)
+    ml.sta(0xffe)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(npc)
+    ml.lda(npc+1)
+    ml.sta(0xfff)
+    ml.adc_imm(0)
+    ml.sta(npc+1)
+    ml.lda(0xffd)
+    ml.clc()
+    load_inc_pc_ch = ml.pc
+    ml.bcc(get_ret_page(load_inc_pc), [False, True])
+    
+    global set_cpu_nzc
+    set_cpu_nzvc = ml.pc
+    ml.sta(temp1)
+    ml.lda(nsr)
+    ml.ana_imm(0xff^SRFlags.V)
+    ml.bvc(ml.pc+4)
+    ml.ora_imm(SRFlags.V)
+    ml.sta(nsr)
+    ml.lda(temp1)
+    ml.bne(set_cpu_nzc)
+    ml.bpl(set_cpu_nzc)
     
     # tables:
     
@@ -731,24 +760,7 @@ def gencode():
     ml.byte(am_absx&0xff)
     ml.byte(am_absy&0xff)
     
-    # main_prog subprogs
-    
-    # load byte from pc and increment pc
-    load_inc_pc = ml.pc
-    ml.sta(load_inc_pc_ch+1)
-    ml.lda(npc)
-    ml.sta(0xffe)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(npc)
-    ml.lda(npc+1)
-    ml.sta(0xfff)
-    ml.adc_imm(0)
-    ml.sta(npc+1)
-    ml.lda(0xffd)
-    ml.clc()
-    load_inc_pc_ch = ml.pc
-    ml.bcc(get_ret_page(load_inc_pc), [False, True])
+    ml.set_pc((ml.pc + 15) & 0xff0)
     
     ###########################################
     # addressing modes code
@@ -905,6 +917,7 @@ def gencode():
     ml.bcc(addr_mode_end)
     
     addr_mode_code_end = ml.pc
+    #print("amcode:", addr_mode_code, addr_mode_code_end)
     if (addr_mode_code_end&0xf00) != (addr_mode_code&0xf00):
         raise(RuntimeError("Code across page boundary!"))
     
@@ -914,14 +927,6 @@ def gencode():
     global set_cpu_nz_z_zero, set_cpu_nz_z_store
     global set_cpu_nz_n_zero, set_cpu_nz_n_store
     
-    set_cpu_nzvc = ml.pc
-    ml.sta(temp1)
-    ml.lda(nsr)
-    ml.ana_imm(0xff^SRFlags.V)
-    ml.bvc(ml.pc+4)
-    ml.ora_imm(SRFlags.V)
-    ml.sta(nsr)
-    ml.lda(temp1)
     # continue to set_cpu_nzc
     set_cpu_nzc = ml.pc
     ml.sta(temp1)
