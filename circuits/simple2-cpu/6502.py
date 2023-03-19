@@ -1470,11 +1470,11 @@ def gencode():
     ml.bpl(adc_dec_nz_n_zero)
     ml.lda(nsr)
     ml.ora_imm(SRFlags.N)
-    ml.bne(adc_dec_nz_z_store)
+    ml.bne(adc_dec_nz_n_store)
     adc_dec_nz_n_zero = ml.pc
     ml.lda(nsr)
     ml.ana_imm(0xff^SRFlags.N)
-    adc_dec_nz_z_store = ml.pc
+    adc_dec_nz_n_store = ml.pc
     # store nsr
     ml.sta(nsr)
     
@@ -1695,7 +1695,7 @@ def gencode():
     ml.lda(mm_mem_val)
     ml.sta(child_mem_val)
     
-    store_mem_val_end
+    store_mem_val_end = ml.pc
     ml.clc()
     store_mem_val_ch = ml.pc
     ml.bcc(get_ret_page(load_mem_val), [False, True])
@@ -1708,5 +1708,6 @@ def gencode():
 
 ml.assemble(gencode)
 
-#print("mpc:", ml.pc)
+print("mpc:", ml.pc)
 stdout.buffer.write(ml.dump())
+#print(globals())
