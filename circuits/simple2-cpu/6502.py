@@ -469,6 +469,7 @@ def gencode():
     
     global op_push, op_push_ch
     global op_pull, op_pull_ch
+    # 'PULL from stack' operation
     op_pull = ml.pc
     ml.sta(op_pull_ch+1)
     ml.lda(nsp)
@@ -478,15 +479,14 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda_imm(1)
     ml.sta(child_mem_addr+1)
-    
     call_proc_8b(load_mem_val)
-    
     ml.clc()
     op_pull_ch = ml.pc
     ml.bcc(get_ret_page(op_pull), [False, True])
 
     #print(ml.pc)
     # load byte from pc and increment pc
+    # load_inc_pc - routine - load byte from 6502's PC
     load_inc_pc = ml.pc
     ml.sta(load_inc_pc_ch+1)
     ml.lda(npc)
@@ -498,19 +498,17 @@ def gencode():
     ml.sta(child_mem_addr+1)
     ml.adc_imm(0)
     ml.sta(npc+1)
-    
     call_proc_8b(load_mem_val)
-    
     ml.clc()
     load_inc_pc_ch = ml.pc
     ml.bcc(get_ret_page(load_inc_pc), [False, True])
     
     addr_load_mem_val = ml.pc
     call_proc_8b(load_mem_val)
-    
     ml.sta(mem_val)
     ml.bcc(addr_mode_end)
     
+    # routine helper for load_mem_call - for far routines
     addr_load_mem_val_call = ml.pc
     ml.sta(addr_load_mem_val_call_ch+1)
     call_proc_8b(load_mem_val)
@@ -1018,6 +1016,7 @@ def gencode():
     ml.clc()
     ml.bcc(main_loop)
     
+    # PUSH to stack operation
     op_push = ml.pc
     ml.sta(op_push_ch+1)
     ml.lda(nsp)
@@ -1025,10 +1024,8 @@ def gencode():
     ml.lda_imm(1)
     ml.sta(child_mem_addr+1)
     ml.lda(temp1)
-    
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
-    
     ml.lda(nsp)
     ml.clc()
     ml.sbc_imm(0)
@@ -1856,7 +1853,7 @@ def gencode():
     store_mem_val_end = ml.pc
     ml.clc()
     store_mem_val_ch = ml.pc
-    ml.bcc(get_ret_page(load_mem_val), [False, True])
+    ml.bcc(get_ret_page(store_mem_val), [False, True])
     
     ##########################################
     native_machine = ml.pc
