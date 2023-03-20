@@ -745,3 +745,34 @@ pub fn run_test_suite(
     );
     passed
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_set_bit() {
+        let bits: [u8; 3] = [0b1010111, 0b110001, 0b0101010];
+        assert_eq!(true, get_bit(bits.as_slice(), 2));
+        assert_eq!(false, get_bit(bits.as_slice(), 3));
+        assert_eq!(true, get_bit(bits.as_slice(), 4));
+        assert_eq!(true, get_bit(bits.as_slice(), 8));
+        assert_eq!(false, get_bit(bits.as_slice(), 9));
+        assert_eq!(true, get_bit(bits.as_slice(), 17));
+        assert_eq!(false, get_bit(bits.as_slice(), 18));
+
+        let mut bits: [u8; 3] = [0b1010111, 0b110001, 0b0101010];
+        set_bit(bits.as_mut_slice(), 1, false);
+        set_bit(bits.as_mut_slice(), 5, true);
+        set_bit(bits.as_mut_slice(), 8, false);
+        set_bit(bits.as_mut_slice(), 9, true);
+        set_bit(bits.as_mut_slice(), 16, true);
+        set_bit(bits.as_mut_slice(), 17, false);
+        assert_eq!(bits, [0b1110101, 0b110010, 0b0101001]);
+    }
+
+    #[test]
+    fn test_circuit_run() {
+        // TODO: write testcases
+    }
+}
