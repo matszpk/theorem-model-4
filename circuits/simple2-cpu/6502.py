@@ -40,27 +40,27 @@ narghi = ml.pc # 0xfea:
 ml.byte(0x00, True)
 mem_val = ml.pc # 0xfeb
 ml.byte(0x00, True)
-addr_mode = ml.pc # 0xfee
+addr_mode = ml.pc # 0xfec
 ml.byte(0x00, True)
-op_index = ml.pc # 0xfef
+op_index = ml.pc # 0xfed
 ml.byte(0x00, True)
-undef_instr = ml.pc # 0xff0
+undef_instr = ml.pc # 0xfee
 ml.byte(0x00, True)
-extra_cycle = ml.pc # 0xff1
+extra_cycle = ml.pc # 0xfef
 ml.byte(0x00, True)
-temp1 = ml.pc # 0xff2:
+temp1 = ml.pc # 0xff0:
 ml.byte(0x00, True)
-temp2 = ml.pc # 0xff3:
+temp2 = ml.pc # 0xff1:
 ml.byte(0x00, True)
-temp3 = ml.pc # 0xff4:
+temp3 = ml.pc # 0xff2:
 ml.byte(0x00, True)
-temp4 = ml.pc # 0xff5:
+temp4 = ml.pc # 0xff3:
 ml.byte(0x00, True)
-mm_mem_val = ml.pc # 0xff6
+mm_mem_val = ml.pc # 0xff4
 ml.byte(0x00, True)
-mm_mem_addr = ml.pc # 0xff7
+mm_mem_addr = ml.pc # 0xff5
 ml.word16(0, [True, True])
-mm_mem_temp = ml.pc # 0xff9
+mm_mem_temp = ml.pc # 0xff7
 ml.byte(0x00, True)
 
 child_mem_val = 0xffc
@@ -72,7 +72,7 @@ AddrMode = IntEnum('AddrMode',
             'imp',  # 1-byte
             'imm', 'zpg', 'zpgx', 'zpgy', 'pindx', 'pindy', 'rel', # 2-byte
             'abs', 'absx', 'absy'
-        ])
+        ], start=0)
 
 SRFlags = IntFlag('Flags', [ 'C', 'Z', 'I', 'D', 'B', '_', 'V', 'N' ]);
 
@@ -374,7 +374,7 @@ def gencode():
     ml.sbc_imm(0xa0-(cycle_table&0xff)-1)
     ml.sta(decode_ch4+1)
     # carry on - A-X
-    ml.sbc_imm(0x60)
+    ml.sbc_imm(cycle_table&0xff)
     #ml.clc()
     ml.ror()    # enables 0x80 - but doesn't matter
     ml.ora_imm(0xc0)
@@ -446,6 +446,7 @@ def gencode():
     ###################################
     # load args
     ml.lda(addr_mode)
+    #ml.spc(1)
     ml.bne(ml.pc+4) # skip next instr
     ml.bpl(no_load_arg) # skip loading if AddrMode.imp
     # load argument low
