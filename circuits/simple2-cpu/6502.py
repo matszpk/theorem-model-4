@@ -474,6 +474,7 @@ def gencode():
     ml.sta(ml.pc+3)
     ml.bcc(addr_mode_code&0xf00, [False, True])
     addr_mode_end = ml.pc
+    #ml.spc_imm(1)
     
     # call operation
     ml.clc()
@@ -874,17 +875,13 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda_imm(0)
     ml.sta(child_mem_addr+1)
-    
     call_proc_8b(addr_load_mem_val_call)
-    
     ml.sta(narglo)
     ml.lda(child_mem_addr)
     ml.sec()
     ml.adc_imm(0)
     ml.sta(child_mem_addr)
-    
     call_proc_8b(addr_load_mem_val_call)
-    
     ml.sta(narghi)
     ml.clc()
     # now we have address from 6502 zero page stored in narglo and narghi then just use
