@@ -1849,7 +1849,7 @@ def gencode():
     
     ##########################################
     native_machine = ml.pc
-    ml.byte(0)
+    ml.byte(0)      # set true for native machine
     
     return start
 
