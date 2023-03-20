@@ -1043,6 +1043,9 @@ def gencode():
     ml.rol()
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
+    ml.lda(mem_val)
+    ml.clc()
+    ml.rol()
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
@@ -1052,6 +1055,9 @@ def gencode():
     ml.ror()
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
+    ml.lda(mem_val)
+    ml.clc()
+    ml.ror()
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
@@ -1062,6 +1068,10 @@ def gencode():
     ml.rol()
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(mem_val)
+    ml.rol()
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
@@ -1072,6 +1082,10 @@ def gencode():
     ml.ror()
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(mem_val)
+    ml.ror()
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
