@@ -9,7 +9,7 @@ use clap::{Parser, Subcommand};
 
 use nom::error::convert_error;
 
-use std::fs::{read_to_string, File};
+use std::fs::{self, read_to_string, File};
 use std::io::{self, BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -74,6 +74,8 @@ struct RunMachineArgs {
     circuit_trace: bool,
     #[clap(short, long, help = "Set memory dump")]
     dump: bool,
+    #[clap(short, long, help = "Set memory dump to files")]
+    file_dump: Option<String>,
 }
 
 #[derive(Subcommand)]
@@ -294,6 +296,29 @@ fn main() -> ExitCode {
                     }
 
                     nesting_index += 1;
+                }
+            }
+            if let Some(out_files_str) = r.file_dump {
+                let mut out_files = out_files_str.split(',').collect::<Vec<_>>();
+                let mut memory = &pm.memory;
+                let mut sm_opt: Option<&Box<SecondMachine>> = None;
+                loop {
+                    if let Some(filename) = out_files.pop() {
+                        fs::write(filename, memory).unwrap();
+                    } else {
+                        break;
+                    }
+                    if let Some(ref sm) = sm_opt {
+                        sm_opt = sm.machine.as_ref();
+                    } else {
+                        sm_opt = pm.machine.as_ref();
+                    }
+                    // get memory from second machine
+                    if let Some(ref sm) = sm_opt {
+                        memory = &sm.memory;
+                    } else {
+                        break;
+                    }
                 }
             }
         }
