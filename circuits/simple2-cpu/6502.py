@@ -852,9 +852,7 @@ def gencode():
     ml.sta(child_mem_addr)
     ml.lda_imm(0)
     ml.sta(child_mem_addr+1)
-    
     call_proc_8b(addr_load_mem_val_call)
-    
     ml.sta(narglo)
     ml.sta(mem_val)
     ml.lda(addr_mode)
