@@ -1098,7 +1098,6 @@ def gencode():
     ml.lda(nacc)
     ml.ana(mem_val)
     ml.sta(nacc)
-    ml.clc()
     ml.bcc(set_cpu_nz)
     
     op_asl_a = ml.pc
@@ -1135,7 +1134,6 @@ def gencode():
     ml.ora(temp2)
     ml.sta(nsr)
     ml.lda(temp1)
-    ml.clc()
     ml.bcc(set_cpu_nz)
 
     op_bmi = ml.pc
@@ -1236,7 +1234,6 @@ def gencode():
     ml.lda(nacc)
     ml.xor(mem_val)
     ml.sta(nacc)
-    ml.clc()
     ml.bcc(set_cpu_nz)
 
     op_inc = ml.pc
@@ -1282,13 +1279,11 @@ def gencode():
     op_lda = ml.pc
     ml.lda(mem_val)
     ml.sta(nacc)
-    ml.clc()
     ml.bcc(set_cpu_nz)
 
     op_ldx = ml.pc
     ml.lda(mem_val)
     ml.sta(nxind)
-    ml.clc()
     ml.bcc(set_cpu_nz)
 
     op_rti = ml.pc
@@ -1323,7 +1318,6 @@ def gencode():
     ml.lda(nsr)
     ml.ora_imm(SRFlags.I)
     ml.sta(nsr)
-    ml.clc()
     ml.bcc(op_brk_cont)
     
     op_pha = ml.pc
@@ -1367,7 +1361,6 @@ def gencode():
     op_ldy = ml.pc
     ml.lda(mem_val)
     ml.sta(nyind)
-    ml.clc()
     ml.bcc(set_cpu_nz)
     
     op_lsr_a = ml.pc
@@ -1385,7 +1378,6 @@ def gencode():
     ml.lda(nacc)
     ml.ora(mem_val)
     ml.sta(nacc)
-    ml.clc()
     ml.bcc(set_cpu_nz)
 
     op_rol_a = ml.pc
