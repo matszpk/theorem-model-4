@@ -864,7 +864,6 @@ def gencode():
     ml.sta(child_mem_addr)
     call_proc_8b(addr_load_mem_val_call)
     ml.sta(narghi)
-    ml.clc()
     # now we have address from 6502 zero page stored in narglo and narghi then just use
     # routine to handle absy
     ml.bcc(am_abs)
@@ -882,7 +881,6 @@ def gencode():
     ml.sta(child_mem_addr)
     call_proc_8b(addr_load_mem_val_call)
     ml.sta(narghi)
-    ml.clc()
     # now we have address from 6502 zero page stored in narglo and narghi then just use
     # routine to handle absy
     ml.bcc(am_absy)
@@ -911,7 +909,7 @@ def gencode():
     ml.adc_imm(1)
     ml.sta(instr_cycles)
     am_rel_no_cycle_fix = ml.pc
-    ml.clc()
+    ml.clc()    # needed!
     ml.bcc(addr_mode_end)
     
     am_abs = ml.pc
@@ -949,6 +947,11 @@ def gencode():
     ml.bne(am_absx_cont)
     ml.bpl(am_absx_cont)
     
+    addr_mode_code_end = ml.pc
+    #print("amcode:", addr_mode_code, addr_mode_code_end)
+    if (addr_mode_code_end&0xf00) != (addr_mode_code&0xf00):
+        raise(RuntimeError("Code across page boundary!"))
+    
     # jump to fffe address
     op_brk_cont = ml.pc
     ml.lda_imm(0xfe)
@@ -967,11 +970,6 @@ def gencode():
     ml.sta(npc)
     ml.clc()
     ml.bcc(main_loop)
-    
-    addr_mode_code_end = ml.pc
-    #print("amcode:", addr_mode_code, addr_mode_code_end)
-    if (addr_mode_code_end&0xf00) != (addr_mode_code&0xf00):
-        raise(RuntimeError("Code across page boundary!"))
     
     ###########################################
     # operations code
