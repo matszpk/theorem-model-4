@@ -10,10 +10,12 @@ ap.add_argument('-x', '--xind', type=lambda x: int(x,0), default=0)
 ap.add_argument('-y', '--yind', type=lambda x: int(x,0), default=0)
 ap.add_argument('-s', '--sp', type=lambda x: int(x,0), default=255)
 ap.add_argument('-r', '--sr', type=lambda x: int(x,0), default=0)
+ap.add_argument('-N', '--native', action='store_true')
+ap.add_argument('-C', '--commodore64', action='store_true')
 
 args = ap.parse_args()
 
-commodore64 = True
+commodore64 = args.commodore64
 
 ml = Memory()
 
@@ -1862,7 +1864,7 @@ def gencode():
     
     ##########################################
     native_machine = ml.pc
-    ml.byte(0)      # set true for native machine
+    ml.byte(int(args.native))      # set true for native machine
     
     return start
 
