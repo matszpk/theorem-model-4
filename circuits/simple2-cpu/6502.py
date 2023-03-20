@@ -335,7 +335,7 @@ def gencode():
     ml.sta(0xffe)
     ml.lda_imm(0)
     ml.sta(0xfff)
-    ml.spc(0) # call it
+    ml.spc_imm(0) # call it
 
     main_loop = ml.pc
     ml.lda_imm(0)
