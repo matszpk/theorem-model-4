@@ -927,6 +927,7 @@ def gencode():
     ml.lda(narglo)
     ml.clc()
     ml.adc(nxind)
+    am_absx_cont = ml.pc
     ml.sta(child_mem_addr)
     ml.bcc(am_absx_cycle_fix)
     ml.lda(instr_cycles)
@@ -946,19 +947,8 @@ def gencode():
     ml.lda(narglo)
     ml.clc()
     ml.adc(nyind)
-    ml.sta(child_mem_addr)
-    ml.bcc(am_absy_cycle_fix)
-    ml.lda(instr_cycles)
-    ml.clc()
-    ml.adc(extra_cycle)
-    ml.sta(instr_cycles)
-    ml.sec()
-    am_absy_cycle_fix = ml.pc
-    ml.lda(narghi)
-    ml.adc_imm(0)
-    ml.sta(child_mem_addr+1)
-    ml.clc()
-    ml.bcc(addr_load_mem_val)
+    ml.bne(am_absx_cont)
+    ml.bpl(am_absx_cont)
     
     # jump to fffe address
     op_brk_cont = ml.pc
