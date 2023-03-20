@@ -766,3 +766,24 @@ ml.assemble(gencode)
 
 #print("decode len:", decode_end-decode)
 stdout.buffer.write(ml.dump())
+
+
+AddrMode = IntEnum('AddrMode',
+        [
+            # for ALU encoding (mask=0x1c)
+            'pindx','zpg','imm','abs','pindy','zpgx','absy','absx',
+            # other addressing modes
+            'rel','zpgy','imp'
+        ])
+        
+            0:'pindx':2,
+            1:'zpg':2,
+            2:'imm':2,
+            3:'abs':3,
+            4:'pindy':2,
+            5:'zpgx':2,
+            6:'absy':3,
+            7:'absx':3,
+            8:'rel':2,
+            9:'zpgy':2
+            10:'imp':1
