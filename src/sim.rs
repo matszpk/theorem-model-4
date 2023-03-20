@@ -559,10 +559,12 @@ impl SecondMachine {
         } else {
             1
         };
+        let mut memory = initial_memory.unwrap_or(vec![0u8; mem_len]);
+        memory.resize(mem_len, 0);
         Self {
             cell_len_bits,
             address_len,
-            memory: initial_memory.unwrap_or(vec![0u8; mem_len]),
+            memory,
             machine: None,
         }
     }
