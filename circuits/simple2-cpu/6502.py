@@ -862,7 +862,8 @@ def gencode():
     ml.sec()
     ml.adc_imm(0)
     ml.sta(child_mem_addr)
-    ml.lda(narghi)
+    call_proc_8b(addr_load_mem_val_call)
+    ml.sta(narghi)
     ml.clc()
     # now we have address from 6502 zero page stored in narglo and narghi then just use
     # routine to handle absy
