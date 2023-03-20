@@ -413,7 +413,7 @@ def gencode():
     ml.ror()
     ml.ror()
     ml.ror()    # 3bit to 0bit
-    ml.ana_imm(8)
+    ml.ana_imm(1)
     ml.sta(extra_cycle)
     
     ml.lda(decode_ch2+1)
