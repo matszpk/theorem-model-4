@@ -774,5 +774,20 @@ mod tests {
     #[test]
     fn test_circuit_run() {
         // TODO: write testcases
+        let circ1 = Circuit {
+            circuit: vec![
+                0, 0, // not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![],
+            input_len: 2,
+            output_len: 1,
+        };
+        for i in 0..4 {
+            assert_eq!(circ1.run(&[i], false)[0], ((i >> 1) ^ i) & 1);
+        }
     }
 }
