@@ -890,7 +890,7 @@ def gencode():
     global am_rel_no_cycle_fix
     am_rel = ml.pc
     ml.lda(narglo)
-    ml.ror()
+    ml.rol()
     ml.lda_imm(0)
     ml.bcc(ml.pc+4)
     ml.lda_imm(0xff)    # finaly is sign extension
@@ -911,7 +911,7 @@ def gencode():
     ml.adc_imm(1)
     ml.sta(instr_cycles)
     am_rel_no_cycle_fix = ml.pc
-    #ml.clc()
+    ml.clc()
     ml.bcc(addr_mode_end)
     
     am_abs = ml.pc
