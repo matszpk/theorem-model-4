@@ -229,6 +229,8 @@ store_mem_val_c64_no_basic = -10000
 store_mem_val_c64_no_kernal = -10000
 store_mem_val_c64_no_deviochar = -10000
 
+addr_mode_code = -10000
+
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
@@ -242,6 +244,7 @@ def gencode():
     global store_mem_val_native, store_mem_val_end
     
     global addr_load_mem_val, addr_load_mem_val_call, addr_load_mem_val_call_ch
+    global addr_mode_code
     
     global am_imp
     global am_imm
@@ -446,7 +449,7 @@ def gencode():
     ###################################
     # load args
     ml.lda(addr_mode)
-    #ml.spc(1)
+    #ml.spc_imm(1)
     ml.bne(ml.pc+4) # skip next instr
     ml.bpl(no_load_arg) # skip loading if AddrMode.imp
     # load argument low
@@ -469,7 +472,7 @@ def gencode():
     ml.lda(addr_mode_table & 0xf00, [False, True])
     ml.clc()
     ml.sta(ml.pc+3)
-    ml.bcc(0, [False, True])
+    ml.bcc(addr_mode_code&0xf00, [False, True])
     addr_mode_end = ml.pc
     
     # call operation
