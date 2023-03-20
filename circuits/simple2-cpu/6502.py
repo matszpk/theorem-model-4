@@ -1,6 +1,17 @@
 from simple2_cpu_asm import *
 from sys import stdout
 from enum import *
+import argparse
+
+ap = argparse.ArgumentParser(prog = '6502 simple2-cpu codegen')
+ap.add_argument('-p', '--pc', type=lambda x: int(x,0), default=0)
+ap.add_argument('-a', '--acc', type=lambda x: int(x,0), default=0)
+ap.add_argument('-x', '--xind', type=lambda x: int(x,0), default=0)
+ap.add_argument('-y', '--yind', type=lambda x: int(x,0), default=0)
+ap.add_argument('-s', '--sp', type=lambda x: int(x,0), default=255)
+ap.add_argument('-r', '--sr', type=lambda x: int(x,0), default=0)
+
+args = ap.parse_args()
 
 commodore64 = True
 
@@ -8,17 +19,17 @@ ml = Memory()
 
 ml.set_pc(0xfe0)
 npc = ml.pc # 0xfe0: program counter
-ml.word16(0x0000, [True,True])
+ml.word16(args.pc, [True,True])
 nsr = ml.pc # 0xfe2: processor status
-ml.byte(0x00, True)
+ml.byte(args.sr, True)
 nsp = ml.pc # 0xfe3: stack pointer
-ml.byte(0xff, True)
+ml.byte(args.sp, True)
 nacc = ml.pc # 0xfe4:
-ml.byte(0x00, True)
+ml.byte(args.acc, True)
 nxind = ml.pc # 0xfe5:
-ml.byte(0x00, True)
+ml.byte(args.xind, True)
 nyind = ml.pc # 0xfe6:
-ml.byte(0x00, True)
+ml.byte(args.yind, True)
 instr_cycles = ml.pc # 0xfe7:
 ml.byte(0x00, True)
 nopcode = ml.pc # 0xfe8:
