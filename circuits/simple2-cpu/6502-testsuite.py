@@ -223,6 +223,7 @@ try:
                 (1, yind_offset, 0),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 2),
+                (0, imm&0xff, 0),
             ],
             # instructions. last is undefined (stop)
             [ (0x200, [opcode&0xff, imm&0xff, 0x04]) ],
@@ -240,6 +241,7 @@ try:
                 (1, yind_offset, 0),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 2),
+                (0, imm&0xff, 0),
             ],
             # instructions. last is undefined (stop)
             [ (0x200, [opcode&0xff, imm&0xff, 0x04]) ],
@@ -257,6 +259,7 @@ try:
                 (1, yind_offset, new_yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 2),
+                (0, imm&0xff, 0),
             ],
             # instructions. last is undefined (stop)
             [ (0x200, [opcode&0xff, imm&0xff, 0x04]) ],
@@ -274,6 +277,7 @@ try:
                 (1, yind_offset, 1),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 3),
+                (0, addr&0xff, val),
             ],
             [
                 (addr&0xff, [val]),
@@ -294,6 +298,7 @@ try:
                 (1, yind_offset, 1),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 3),
+                (0, addr&0xff, val),
             ],
             [
                 (addr&0xff, [val]),
@@ -314,6 +319,7 @@ try:
                 (1, yind_offset, new_yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 3),
+                (0, addr&0xff, val),
             ],
             [
                 (addr&0xff, [val]),
@@ -335,6 +341,7 @@ try:
                 (1, yind_offset, 1),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
+                (0, (addr+xind)&0xff, val),
             ],
             [
                 ((addr+xind)&0xff, [val]),
@@ -356,6 +363,7 @@ try:
                 (1, yind_offset, new_yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
+                (0, (addr+xind)&0xff, val),
             ],
             [
                 ((addr+xind)&0xff, [val]),
@@ -377,6 +385,7 @@ try:
                 (1, yind_offset, yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
+                (0, (addr+yind)&0xff, val),
             ],
             [
                 ((addr+yind)&0xff, [val]),
@@ -397,6 +406,7 @@ try:
                 (1, yind_offset, 1),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, val),
             ],
             [
                 (addr&0xffff, [val]),
@@ -417,6 +427,7 @@ try:
                 (1, yind_offset, 1),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, val),
             ],
             [
                 (addr&0xffff, [val]),
@@ -437,6 +448,7 @@ try:
                 (1, yind_offset, new_yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, val),
             ],
             [
                 (addr&0xffff, [val]),
@@ -458,6 +470,7 @@ try:
                 (1, yind_offset, 1),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4 + int((addr&0xff)+xind >= 256)),
+                (0, (addr+xind)&0xffff, val),
             ],
             [
                 ((addr+xind)&0xffff, [val]),
@@ -479,6 +492,7 @@ try:
                 (1, yind_offset, new_yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4 + int((addr&0xff)+xind >= 256)),
+                (0, (addr+xind)&0xffff, val),
             ],
             [
                 ((addr+xind)&0xffff, [val]),
@@ -500,6 +514,7 @@ try:
                 (1, yind_offset, yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4 + int((addr&0xff)+yind >= 256)),
+                (0, (addr+yind)&0xffff, val),
             ],
             [
                 ((addr+yind)&0xffff, [val]),
@@ -521,6 +536,7 @@ try:
                 (1, yind_offset, yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4 + int((addr&0xff)+yind >= 256)),
+                (0, (addr+yind)&0xffff, val),
             ],
             [
                 ((addr+yind)&0xffff, [val]),
@@ -542,6 +558,7 @@ try:
                 (1, yind_offset, 1),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 6),
+                (0, addr2&0xffff, val),
             ],
             [
                 ((addr+xind)&0xff, [addr2&0xff]),
@@ -565,6 +582,7 @@ try:
                 (1, yind_offset, yind),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 5 + int((addr2&0xff)+yind >= 256)),
+                (0, (addr2+yind)&0xffff, val),
             ],
             [
                 ((addr)&0xff, [addr2&0xff]),
