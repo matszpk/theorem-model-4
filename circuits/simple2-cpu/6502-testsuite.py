@@ -269,6 +269,91 @@ try:
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
     
+    def test_read_op_abs(name, acc_op, opcode, acc, addr, val, sr):
+        new_acc, new_sr = acc_op(acc, val, sr)
+        run_testcase('{} abs acc={} addr={} val={} sr={}'.format(name, acc, addr, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                (addr&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=2, yind=1)
+    
+    def test_read_op_absx(name, acc_op, opcode, acc, addr, xind, val, sr):
+        new_acc, new_sr = acc_op(acc, val, sr)
+        run_testcase('{} absx acc={} addr={} xind={} val={} sr={}' \
+                     .format(name, acc, addr, xind, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4 + int((addr&0xff)+xind >= 256)),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr+xind)&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
+    
+    def test_read_op_absy(name, acc_op, opcode, acc, addr, yind, val, sr):
+        new_acc, new_sr = acc_op(acc, val, sr)
+        run_testcase('{} absy acc={} addr={} yind={} val={} sr={}' \
+                     .format(name, acc, addr, yind, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4 + int((addr&0xff)+yind >= 256)),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr+yind)&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=2, yind=yind)
+    
+    def test_read_op_pindx(name, acc_op, opcode, acc, addr, xind, addr2, val, sr):
+        new_acc, new_sr = acc_op(acc, val, sr)
+        run_testcase('{} pindx acc={} addr={} xind={} addr2={} val={} sr={}' \
+                     .format(name, acc, addr, xind, addr2, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 6),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr+xind)&0xff, [addr2&0xff]),
+                ((addr+xind+1)&0xff, [(addr2>>8)&0xff]),
+                (addr2&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -291,6 +376,14 @@ try:
         test_read_op_zpg('lda', lda_op, 0xa5, acc, addr, val, sr)
     def test_lda_zpgx(acc, addr, xind, val, sr):
         test_read_op_zpgx('lda', lda_op, 0xb5, acc, addr, xind, val, sr)
+    def test_lda_abs(acc, addr, val, sr):
+        test_read_op_abs('lda', lda_op, 0xad, acc, addr, val, sr)
+    def test_lda_absx(acc, addr, xind, val, sr):
+        test_read_op_absx('lda', lda_op, 0xbd, acc, addr, xind, val, sr)
+    def test_lda_absy(acc, addr, xind, val, sr):
+        test_read_op_absy('lda', lda_op, 0xb9, acc, addr, yind, val, sr)
+    def test_lda_pindx(acc, addr, xind, addr2, val, sr):
+        test_read_op_pindx('lda', lda_op, 0xa1, acc, addr, xind, addr2, val, sr)
     def test_and_imm(acc, imm, sr):
         test_read_op_imm('and', and_op, 0x29, acc, imm, sr)
     
@@ -300,7 +393,9 @@ try:
     sr_flags_values = [0, 1, 2, 3, 4, 6, 8, 16, 24, 32, 49, 64, 128, 129, 136, 192, 255]
     transfer_values = [0, 3, 5, 35, 128, 44, 196, 255, 251, 136, 138, 139, 160, 161, 162, 163]
     zpg_addr_values = [0, 12, 1, 55, 128, 64, 195, 231, 255]
-    zpgx_xind_values = [0, 3, 66, 12, 145, 255, 197, 217]
+    zpgx_xind_values = [0, 3, 66, 12, 145, 255, 197, 217, 191]
+    abs_addr_values = [0x1316, 0xffff, 0xfe11, 0xffe, 0x0451, 0xb5a1, 0x2988]
+    pindx_addr_values = [(0, 42), (54, 76), (187, 68), (200, 55), (178, 121)]
     small_nz_values = [0, 31, 128, 55]
     small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93 ]
     
@@ -322,22 +417,46 @@ try:
             test_tsx(i, sr)
             test_txs(i, sr)
     
-    for v in small_nz_values:
-        for i in transfer_values:
+    for i in transfer_values:
+        for v in small_nz_values:
             for sr in small_sr_nz_values:
                 test_lda_imm(i, v, sr)
     
     for i in transfer_values:
-        for v in small_nz_values:
-            for addr in zpg_addr_values:
+        for addr in zpg_addr_values:
+            for v in small_nz_values:
                 for sr in small_sr_nz_values:
                     test_lda_zpg(i, addr, v, sr)
     
-    for v in small_nz_values:
-        for addr in zpg_addr_values:
-            for xind in zpgx_xind_values:
+    for addr in zpg_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_nz_values:
                 for sr in small_sr_nz_values:
                     test_lda_zpgx(11, addr, xind, v, sr)
+    
+    for i in transfer_values:
+        for addr in abs_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_lda_abs(i, addr, v, sr)
+    
+    for addr in abs_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_lda_absx(11, addr, xind, v, sr)
+    
+    for addr in abs_addr_values:
+        for yind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_lda_absy(11, addr, yind, v, sr)
+    
+    for (addr, xind) in pindx_addr_values:
+        for addr2 in abs_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_lda_pindx(11, addr, xind, addr2, v, sr)
     
     """
     for i in transfer_values:
