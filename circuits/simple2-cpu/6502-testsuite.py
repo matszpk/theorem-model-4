@@ -17,6 +17,7 @@ sp_offset = 0xfe3
 acc_offset = 0xfe4
 xind_offset = 0xfe5
 yind_offset = 0xfe6
+instr_cycles_offset = 0xfe7
 
 def cleanup():
     for r in ['6502mem.raw', '6502membase.raw', '6502progbase.raw',
@@ -93,18 +94,37 @@ try:
     ####################
     # main tests
     
-    def test_clc(sr):
-        run_testcase('clc sr={}'.format(sr),
+    def test_chsr(name, opcode, bit, clr, sr):
+        run_testcase('{} sr={}'.format(name, sr),
             [
                 (1, pc_offset, (0x202)&0xff),
                 (1, pc_offset+1, ((0x202)>>8)&0xff),
-                (1, sr_offset, sr & (0xff ^ 0x1)),
+                (1, sr_offset, sr & (0xff ^ (1<<bit)) if clr else (sr | (1<<bit))),
+                (1, acc_offset, 0),
+                (1, xind_offset, 0),
+                (1, yind_offset, 0),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
             ],
-            [ (0x200, [0x18, 0x04]) ],   # instructions. last is undefined (stop)
+            [ (0x200, [opcode&0xff, 0x04]) ],   # instructions. last is undefined (stop)
             pc=0x200, acc=0, sr=sr)
+    
+    def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
+    def test_cld(sr): test_chsr('cld', 0xd8, 3, True, sr)
+    def test_cli(sr): test_chsr('cli', 0x58, 2, True, sr)
+    def test_clv(sr): test_chsr('clv', 0xb8, 6, True, sr)
+    def test_sec(sr): test_chsr('sec', 0x38, 0, False, sr)
+    def test_sed(sr): test_chsr('sed', 0xf8, 3, False, sr)
+    def test_sei(sr): test_chsr('sei', 0x78, 2, False, sr)
     
     for i in range(0,256):
         test_clc(i)
+        test_cld(i)
+        test_cli(i)
+        test_clv(i)
+        test_sec(i)
+        test_sed(i)
+        test_sei(i)
     
 finally:
     cleanup()
