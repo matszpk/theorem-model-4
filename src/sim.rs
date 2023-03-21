@@ -1179,4 +1179,83 @@ mod tests {
             assert_eq!(circ1.run(&[i], false)[0], i.wrapping_add(16));
         }
     }
+
+    fn set_cell_val1(pm: &mut PrimalMachine, addr0: usize, val: u16) {
+        for i in 0..4 {
+            let v = (val >> (i * 4)) & 0xf;
+            pm.set_cell_mem(addr0 + i, |j| ((v >> j) & 1) != 0);
+        }
+    }
+
+    fn set_cell_val2(pm: &mut PrimalMachine, addr1: usize, val: u32) {
+        set_cell_val1(pm, 0xfc, addr1.try_into().unwrap());
+        set_cell_val1(pm, 0xf8, (val & 0xffff).try_into().unwrap());
+        set_cell_val1(pm, 0xfc, (addr1 + 1).try_into().unwrap());
+        set_cell_val1(pm, 0xf8, (val >> 16).try_into().unwrap());
+    }
+
+    #[test]
+    fn test_get_set_cell_mem() {
+        let circ1 = Circuit {
+            circuit: vec![
+                0, 0, // not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![],
+            // define cell_len_bits=2, address_len=8
+            input_len: 6,
+            output_len: 6 + 3 + 8,
+        };
+        let mut pm = PrimalMachine::new(circ1, 2);
+        pm.set_cell_mem(112, |i| ((11 >> i) & 1) != 0);
+        assert_eq!(pm.memory[112 >> 1], 11);
+        pm.get_cell_mem(112, |i, v| assert_eq!((11 >> i) & 1 != 0, v));
+        pm.set_cell_mem(173, |i| ((5 >> i) & 1) != 0);
+        assert_eq!(pm.memory[173 >> 1], 5 << 4);
+        pm.get_cell_mem(173, |i, v| assert_eq!((5 >> i) & 1 != 0, v));
+
+        // create new machine: address_len=16, cell_len_bits=4
+        set_cell_val1(&mut pm, 0xfc, 0x0410);
+        pm.create(true);
+        set_cell_val1(&mut pm, 0xfc, 0x2341);
+        set_cell_val1(&mut pm, 0xf8, 0xacca);
+        let sm = pm.machine.as_mut().unwrap();
+        assert_eq!(sm.memory[(0x2341 << 1)], 0xca);
+        assert_eq!(sm.memory[(0x2341 << 1) + 1], 0xac);
+        sm.memory[(0xd4b7 << 1)] = 0x1a;
+        sm.memory[(0xd4b7 << 1) + 1] = 0xb5;
+        set_cell_val1(&mut pm, 0xfc, 0xd4b7);
+        for i in 0..4 {
+            let memval = 0xb51a >> (i * 4);
+            pm.get_cell_mem(248 + i, |j, v| assert_eq!((memval >> j) & 1 != 0, v));
+        }
+
+        // create new second machine: address_len=20, cell_len_bits=5
+        set_cell_val1(&mut pm, 0xfc, 0xfffe);
+        set_cell_val1(&mut pm, 0xf8, 20);
+        set_cell_val1(&mut pm, 0xfc, 0xffff);
+        set_cell_val1(&mut pm, 0xf8, 5);
+        pm.create(true);
+
+        set_cell_val2(&mut pm, 0xfffe, 0x14523);
+        set_cell_val2(&mut pm, 0xfffc, 0x12345678);
+        let sm2 = pm.machine.as_mut().unwrap().machine.as_mut().unwrap();
+        for (i, v) in [0x78, 0x56, 0x34, 0x12].iter().enumerate() {
+            assert_eq!(sm2.memory[(0x14523 << 2) + i], *v);
+        }
+        set_cell_val1(&mut pm, 0xfc, 0xfffe);
+        set_cell_val1(&mut pm, 0xf8, 0x4523);
+        set_cell_val1(&mut pm, 0xfc, 0xffff);
+        set_cell_val1(&mut pm, 0xf8, 0x1);
+        for i in 0..2 {
+            set_cell_val1(&mut pm, 0xfc, 0xfffc + i);
+            for j in 0..4 {
+                let memval = (0x12345678 >> (i * 16)) >> (j * 4);
+                pm.get_cell_mem(248 + j, |k, v| assert_eq!((memval >> k) & 1 != 0, v));
+            }
+        }
+    }
 }
