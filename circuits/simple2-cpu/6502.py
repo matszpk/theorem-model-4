@@ -64,6 +64,7 @@ mm_mem_addr = ml.pc # 0xff5
 ml.word16(0, [True, True])
 mm_mem_temp = ml.pc # 0xff7
 ml.byte(0x00, True)
+old_instr_cycles = ml.pc # 0xff8
 
 child_mem_val = 0xffc
 child_mem_addr = 0xffd
@@ -340,6 +341,8 @@ def gencode():
     ml.spc_imm(0) # call it
 
     main_loop = ml.pc
+    ml.lda(instr_cycles)
+    ml.sta(old_instr_cycles)
     ml.lda_imm(0)
     ml.sta(instr_cycles)
     
@@ -1657,21 +1660,19 @@ def gencode():
     
     op_crt = ml.pc
     ml.lda(native_machine)
-    ml.bne(ml.pc+4)
-    ml.bpl(op_und)
+    ml.bne(op_und)
     ml.spc_imm(0)
     ml.bcc(main_loop)
     
     op_stp = ml.pc
     ml.lda(native_machine)
-    ml.bne(ml.pc+4)
-    ml.bpl(op_und)
-    ml.spc_imm(0)
+    ml.bne(op_und)
+    ml.spc_imm(1)
     
     op_und = ml.pc
     ml.lda_imm(1)
     ml.sta(undef_instr)
-    ml.spc_imm(1)
+    ml.spc_imm(2)
     
     # OPS CODE END
     ##################################

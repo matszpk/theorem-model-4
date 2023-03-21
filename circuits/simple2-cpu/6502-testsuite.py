@@ -20,7 +20,7 @@ sp_offset = 0xfe3
 acc_offset = 0xfe4
 xind_offset = 0xfe5
 yind_offset = 0xfe6
-instr_cycles_offset = 0xfe7
+instr_cycles_offset = 0xff8
 
 tests_passed = 0
 tests_failed = 0
@@ -228,6 +228,28 @@ try:
             [ (0x200, [opcode&0xff, imm&0xff, 0x04]) ],
             pc=0x200, acc=acc, sr=sr)
     
+    def test_read_op_zpg(name, acc_op, opcode, acc, addr, val, sr):
+        new_acc, new_sr = acc_op(acc, val, sr)
+        run_testcase('{} zpg acc={} addr={} val={} sr={}'.format(name, acc, addr, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_acc),
+                (1, xind_offset, 0),
+                (1, yind_offset, 0),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 3),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                (addr&0xff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr)
+    
+    ################
+    
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
     def test_cld(sr): test_chsr('cld', 0xd8, 3, True, sr)
     def test_cli(sr): test_chsr('cli', 0x58, 2, True, sr)
@@ -244,6 +266,8 @@ try:
     
     def test_lda_imm(acc, imm, sr):
         test_read_op_imm('lda', lda_op, 0xa9, acc, imm, sr)
+    def test_lda_zpg(acc, addr, val, sr):
+        test_read_op_zpg('lda', lda_op, 0xa5, acc, addr, val, sr)
     def test_and_imm(acc, imm, sr):
         test_read_op_imm('and', and_op, 0x29, acc, imm, sr)
     
@@ -252,8 +276,8 @@ try:
     
     sr_flags_values = [0, 1, 2, 3, 4, 6, 8, 16, 24, 32, 49, 64, 128, 129, 136, 192, 255]
     transfer_values = [0, 3, 5, 35, 128, 44, 196, 255, 251, 136, 138, 139, 160, 161, 162, 163]
+    zpg_addr_values = [0, 12, 1, 55, 128, 64, 195, 255]
     
-    """
     for i in sr_flags_values:
         test_clc(i)
         test_cld(i)
@@ -290,13 +314,19 @@ try:
         test_txs(i, 0x91)
         test_txs(i, 0x13)
         test_txs(i, 0x93)
-    """
     
     for i in transfer_values:
         test_lda_imm(i, 0x31, 0x11)
         test_lda_imm(i, 0x31, 0x13)
         test_lda_imm(i, 0x31, 0x91)
         test_lda_imm(i, 0x31, 0x93)
+    
+    for i in transfer_values:
+        for addr in zpg_addr_values:
+            test_lda_zpg(i, addr, 0x31, 0x11)
+            test_lda_zpg(i, addr, 0x31, 0x13)
+            test_lda_zpg(i, addr, 0x31, 0x91)
+            test_lda_zpg(i, addr, 0x31, 0x93)
     
     for i in transfer_values:
         for j in transfer_values:
