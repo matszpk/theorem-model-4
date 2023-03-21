@@ -895,5 +895,168 @@ mod tests {
                     .unwrap()
             );
         }
+        // copy
+        let circ1 = Circuit {
+            circuit: vec![
+                128, 132, 4, // copy 4-bits
+                129, 132, 0, 132, 4, // xor bits
+                129, 132, 12, 132, 8, // xor next bits
+                130, 0, 4, 130, 1, 5, 130, 2, 6, 130, 3, 7, // xor-4bit
+                0, 0, // xor: not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 13,
+                    input_len: 4,
+                    output_len: 4,
+                },
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 13,
+                    input_len: 8,
+                    output_len: 4,
+                },
+                // xor
+                SubcircuitInfo {
+                    location: 25,
+                    input_len: 2,
+                    output_len: 1,
+                },
+            ],
+            input_len: 8,
+            output_len: 4,
+        };
+        for i in 0..=255 {
+            assert_eq!(
+                circ1.run(&[i], false)[0],
+                (((i >> 4) & 15) ^ ((i >> 4) & 15) ^ (i & 15))
+            );
+        }
+        // overlapping
+        // circuit:
+        //      main:
+        //     # pos = 0x8
+        //     one = nand zero zero
+        //     # pos = 0x9
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:i0 one .7:zero
+        //     # pos = 0x11
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x19
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x21
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x29
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x31
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x39
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x41
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x49
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x51
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x59
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x61
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x69
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x71
+        //     s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x79
+        //     x0 x1 x2 x3 = copy_4bit :4:s4
+        //     # pos = 0x7d
+        //     o0 o1 o2 o3 o4 o5 o6 o7 = adder_8bit :8:s0 one .7:zero
+        //     # pos = 0x5
+        // copy:
+        //     empty 1
+        // copy_4bit:
+        //     empty 4
+        // xor:
+        //     n0 = nand i0 i0
+        //     n1 = nand i1 i1
+        //     t0 = nand i0 n1
+        //     t1 = nand n0 i1
+        //     o0 = nand t0 t1
+        // full_adder:
+        //     s0 = xor i0 i1
+        //     a0 = nand i0 i1
+        //     a1 = nand s0 i2
+        //     o0 = xor s0 i2
+        //     # (i0 and i1) or (s0 and i2)
+        //     o1 = nand a0 a1
+        // # i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+        // carry_adder_4bit:
+        //     s0 c0 = full_adder i1 i5 i0
+        //     s1 c1 = full_adder i2 i6 c0
+        //     s2 c2 = full_adder i3 i7 c1
+        //     s3 c3 = full_adder i4 i8 c2
+        //     o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+        //     o4 = copy c3
+        // adder_8bit:
+        //     s0 s1 s2 s3 c4 = carry_adder_4bit zero :4:i0 :4:i8
+        //     s4 s5 s6 s7 ign = carry_adder_4bit c4 :4:i4 :4:i12
+        //     o0 o1 o2 o3 = copy_4bit :4:s0
+        //     o4 o5 o6 o7 = copy_4bit :4:s4
+        let circ1 = Circuit {
+            circuit: vec![
+                0x7f, 0x7f, 0x85, 0x88, 0x00, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x09, 0x08, 0xc7, 0x7f,
+                0x85, 0x88, 0x11, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x19, 0x08, 0xc7, 0x7f, 0x85, 0x88,
+                0x21, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x29, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x31, 0x08,
+                0xc7, 0x7f, 0x85, 0x88, 0x39, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x41, 0x08, 0xc7, 0x7f,
+                0x85, 0x88, 0x49, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x51, 0x08, 0xc7, 0x7f, 0x85, 0x88,
+                0x59, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x61, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x69, 0x08,
+                0xc7, 0x7f, 0x81, 0x84, 0x75, 0x85, 0x88, 0x71, 0x08, 0xc7, 0x7f, 0x00, 0x00, 0x01,
+                0x01, 0x00, 0x03, 0x02, 0x01, 0x04, 0x05, 0x82, 0x00, 0x01, 0x00, 0x01, 0x03, 0x02,
+                0x82, 0x03, 0x02, 0x04, 0x05, 0x83, 0x01, 0x05, 0x00, 0x83, 0x02, 0x06, 0x0a, 0x83,
+                0x03, 0x07, 0x0c, 0x83, 0x04, 0x08, 0x0e, 0x81, 0x09, 0x0b, 0x0d, 0x0f, 0x80, 0x10,
+                0x84, 0x7f, 0x84, 0x00, 0x84, 0x08, 0x84, 0x14, 0x84, 0x04, 0x84, 0x0c, 0x81, 0x84,
+                0x10, 0x81, 0x84, 0x15,
+            ],
+            subcircuits: vec![
+                SubcircuitInfo {
+                    location: 95,
+                    input_len: 1,
+                    output_len: 1,
+                },
+                SubcircuitInfo {
+                    location: 95,
+                    input_len: 4,
+                    output_len: 4,
+                },
+                SubcircuitInfo {
+                    location: 95,
+                    input_len: 2,
+                    output_len: 1,
+                },
+                SubcircuitInfo {
+                    location: 105,
+                    input_len: 3,
+                    output_len: 2,
+                },
+                SubcircuitInfo {
+                    location: 117,
+                    input_len: 9,
+                    output_len: 5,
+                },
+                SubcircuitInfo {
+                    location: 140,
+                    input_len: 16,
+                    output_len: 8,
+                },
+            ],
+            input_len: 8,
+            output_len: 8,
+        };
+        for i in 0..=255 {
+            assert_eq!(circ1.run(&[i], false)[0], i.wrapping_add(15));
+        }
     }
 }

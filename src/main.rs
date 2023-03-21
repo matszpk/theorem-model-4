@@ -126,6 +126,16 @@ fn main() -> ExitCode {
         Commands::Check(_) => {
             println!("Ok - Passed.");
             println!(
+                "Main: Input: {}, Output: {}",
+                circuit.circuit.input_len, circuit.circuit.output_len
+            );
+            for (i, sc) in circuit.circuit.subcircuits.iter().enumerate() {
+                println!(
+                    "  Subcircuit {}: Location: {}, Input: {}, Output: {}",
+                    i, sc.location, sc.input_len, sc.output_len
+                );
+            }
+            println!(
                 "Length: {}, Subcircuits: {}",
                 circuit.circuit.circuit.len(),
                 circuit.circuit.subcircuits.len()
