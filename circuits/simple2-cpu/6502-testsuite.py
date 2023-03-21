@@ -210,6 +210,24 @@ try:
             [ (0x200, [0x9a, 0x04]) ],   # instructions. last is undefined (stop)
             pc=0x200, sp=1 if xind==0 else 0, sr=sr, xind=xind)
     
+    # test addressing modes (reads)
+    def test_read_op_imm(name, acc_op, opcode, acc, imm, sr):
+        new_acc, new_sr = acc_op(acc, imm, sr)
+        run_testcase('{} imm acc={} imm={} sr={}'.format(name, acc, imm, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_acc),
+                (1, xind_offset, 0),
+                (1, yind_offset, 0),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            # instructions. last is undefined (stop)
+            [ (0x200, [opcode&0xff, imm&0xff, 0x04]) ],
+            pc=0x200, acc=acc, sr=sr)
+    
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
     def test_cld(sr): test_chsr('cld', 0xd8, 3, True, sr)
     def test_cli(sr): test_chsr('cli', 0x58, 2, True, sr)
@@ -218,8 +236,25 @@ try:
     def test_sed(sr): test_chsr('sed', 0xf8, 3, False, sr)
     def test_sei(sr): test_chsr('sei', 0x78, 2, False, sr)
     
+    def lda_op(acc, val, sr):
+        return val, (sr&(0xff^2^128)) | (0 if val!=0 else 2) | (val&0x80)
+    def and_op(acc, val, sr):
+        res = (acc & val) & 0xff
+        return res, (sr&(0xff^2^128)) | (0 if res!=0 else 2) | (res&0x80)
+    
+    def test_lda_imm(acc, imm, sr):
+        test_read_op_imm('lda', lda_op, 0xa9, acc, imm, sr)
+    def test_and_imm(acc, imm, sr):
+        test_read_op_imm('and', and_op, 0x29, acc, imm, sr)
+    
+    ###############################
+    # testsuite
+    
+    sr_flags_values = [0, 1, 2, 3, 4, 6, 8, 16, 24, 32, 49, 64, 128, 129, 136, 192, 255]
+    transfer_values = [0, 3, 5, 35, 128, 44, 196, 255, 251, 136, 138, 139, 160, 161, 162, 163]
+    
     """
-    for i in range(0,256):
+    for i in sr_flags_values:
         test_clc(i)
         test_cld(i)
         test_cli(i)
@@ -227,9 +262,8 @@ try:
         test_sec(i)
         test_sed(i)
         test_sei(i)
-    """
     
-    for i in range(0,256):
+    for i in transfer_values:
         test_tax(i, 0x11)
         test_tax(i, 0x91)
         test_tax(i, 0x13)
@@ -256,6 +290,20 @@ try:
         test_txs(i, 0x91)
         test_txs(i, 0x13)
         test_txs(i, 0x93)
+    """
+    
+    for i in transfer_values:
+        test_lda_imm(i, 0x31, 0x11)
+        test_lda_imm(i, 0x31, 0x13)
+        test_lda_imm(i, 0x31, 0x91)
+        test_lda_imm(i, 0x31, 0x93)
+    
+    for i in transfer_values:
+        for j in transfer_values:
+            test_and_imm(i, j, 0x11)
+            test_and_imm(i, j, 0x13)
+            test_and_imm(i, j, 0x91)
+            test_and_imm(i, j, 0x93)
     
     #########################
     # Summary
