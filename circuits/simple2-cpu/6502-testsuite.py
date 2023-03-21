@@ -354,6 +354,29 @@ try:
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
     
+    def test_read_op_pindy(name, acc_op, opcode, acc, addr, addr2, yind, val, sr):
+        new_acc, new_sr = acc_op(acc, val, sr)
+        run_testcase('{} pindy acc={} addr={} addr2={} yind={} val={} sr={}' \
+                     .format(name, acc, addr, addr2, yind, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 5 + int((addr2&0xff)+yind >= 256)),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr)&0xff, [addr2&0xff]),
+                ((addr+1)&0xff, [(addr2>>8)&0xff]),
+                ((addr2+yind)&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=2, yind=yind)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -384,6 +407,8 @@ try:
         test_read_op_absy('lda', lda_op, 0xb9, acc, addr, yind, val, sr)
     def test_lda_pindx(acc, addr, xind, addr2, val, sr):
         test_read_op_pindx('lda', lda_op, 0xa1, acc, addr, xind, addr2, val, sr)
+    def test_lda_pindy(acc, addr, addr2, yind, val, sr):
+        test_read_op_pindy('lda', lda_op, 0xb1, acc, addr, addr2, yind, val, sr)
     def test_and_imm(acc, imm, sr):
         test_read_op_imm('and', and_op, 0x29, acc, imm, sr)
     
@@ -396,6 +421,7 @@ try:
     zpgx_xind_values = [0, 3, 66, 12, 145, 255, 197, 217, 191]
     abs_addr_values = [0x1316, 0xffff, 0xfe11, 0xffe, 0x0451, 0xb5a1, 0x2988]
     pindx_addr_values = [(0, 42), (54, 76), (187, 68), (200, 55), (178, 121)]
+    pindy_addr2_values = [(0x34dd, 11), (0x828b, 141), (0xbd20, 55), (0x6b92, 0x6e)]
     small_nz_values = [0, 31, 128, 55]
     small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93 ]
     
@@ -457,6 +483,12 @@ try:
             for v in small_nz_values:
                 for sr in small_sr_nz_values:
                     test_lda_pindx(11, addr, xind, addr2, v, sr)
+    
+    for addr in zpg_addr_values:
+        for (addr2, yind) in pindy_addr2_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_lda_pindy(11, addr, addr2, yind, v, sr)
     
     """
     for i in transfer_values:
