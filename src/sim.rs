@@ -789,5 +789,111 @@ mod tests {
         for i in 0..4 {
             assert_eq!(circ1.run(&[i], false)[0], ((i >> 1) ^ i) & 1);
         }
+
+        let circ1 = Circuit {
+            circuit: vec![
+                128, 0, 1, 2, 3, 4, 5, 6, 7, // xor bits
+                128, 12, 13, 14, 15, 8, 9, 10, 11, // xor next bits
+                129, 0, 4, 129, 1, 5, 129, 2, 6, 129, 3, 7, // xor-4bit
+                0, 0, // xor: not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 18,
+                    input_len: 8,
+                    output_len: 4,
+                },
+                // xor
+                SubcircuitInfo {
+                    location: 30,
+                    input_len: 2,
+                    output_len: 1,
+                },
+            ],
+            input_len: 12,
+            output_len: 4,
+        };
+        for i in 0..1u16 << 12 {
+            assert_eq!(
+                circ1.run(&i.to_le_bytes(), false)[0],
+                ((i >> 8) ^ ((i >> 4) & 15) ^ (i & 15)).try_into().unwrap()
+            );
+        }
+
+        let circ1 = Circuit {
+            circuit: vec![
+                128, 132, 0, 132, 4, // xor bits
+                128, 132, 12, 132, 8, // xor next bits
+                129, 0, 4, 129, 1, 5, 129, 2, 6, 129, 3, 7, // xor-4bit
+                0, 0, // xor: not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 10,
+                    input_len: 8,
+                    output_len: 4,
+                },
+                // xor
+                SubcircuitInfo {
+                    location: 22,
+                    input_len: 2,
+                    output_len: 1,
+                },
+            ],
+            input_len: 12,
+            output_len: 4,
+        };
+        for i in 0..1u16 << 12 {
+            assert_eq!(
+                circ1.run(&i.to_le_bytes(), false)[0],
+                ((i >> 8) ^ ((i >> 4) & 15) ^ (i & 15)).try_into().unwrap()
+            );
+        }
+        let circ1 = Circuit {
+            circuit: vec![
+                128, 132, 0, 132, 4, // xor bits
+                128, 132, 9, 196, 8, // xor next bits
+                129, 0, 4, 129, 1, 5, 129, 2, 6, 129, 3, 7, // xor-4bit
+                0, 0, // xor: not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 10,
+                    input_len: 8,
+                    output_len: 4,
+                },
+                // xor
+                SubcircuitInfo {
+                    location: 22,
+                    input_len: 2,
+                    output_len: 1,
+                },
+            ],
+            input_len: 9,
+            output_len: 4,
+        };
+        for i in 0..1u16 << 9 {
+            assert_eq!(
+                circ1.run(&i.to_le_bytes(), false)[0],
+                (((i >> 8) * 15) ^ ((i >> 4) & 15) ^ (i & 15))
+                    .try_into()
+                    .unwrap()
+            );
+        }
     }
 }
