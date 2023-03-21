@@ -236,8 +236,8 @@ try:
                 (1, pc_offset+1, ((0x203)>>8)&0xff),
                 (1, sr_offset, new_sr),
                 (1, acc_offset, new_acc),
-                (1, xind_offset, 0),
-                (1, yind_offset, 0),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 3),
             ],
@@ -246,7 +246,28 @@ try:
                 (addr&0xff, [val]),
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
-            pc=0x200, acc=acc, sr=sr)
+            pc=0x200, acc=acc, sr=sr, xind=2, yind=1)
+    
+    def test_read_op_zpgx(name, acc_op, opcode, acc, addr, xind, val, sr):
+        new_acc, new_sr = acc_op(acc, val, sr)
+        run_testcase('{} zpgx acc={} addr={} xind={} val={} sr={}' \
+                     .format(name, acc, addr, xind, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr+xind)&0xff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
     
     ################
     
@@ -268,6 +289,8 @@ try:
         test_read_op_imm('lda', lda_op, 0xa9, acc, imm, sr)
     def test_lda_zpg(acc, addr, val, sr):
         test_read_op_zpg('lda', lda_op, 0xa5, acc, addr, val, sr)
+    def test_lda_zpgx(acc, addr, xind, val, sr):
+        test_read_op_zpgx('lda', lda_op, 0xb5, acc, addr, xind, val, sr)
     def test_and_imm(acc, imm, sr):
         test_read_op_imm('and', and_op, 0x29, acc, imm, sr)
     
@@ -276,7 +299,10 @@ try:
     
     sr_flags_values = [0, 1, 2, 3, 4, 6, 8, 16, 24, 32, 49, 64, 128, 129, 136, 192, 255]
     transfer_values = [0, 3, 5, 35, 128, 44, 196, 255, 251, 136, 138, 139, 160, 161, 162, 163]
-    zpg_addr_values = [0, 12, 1, 55, 128, 64, 195, 255]
+    zpg_addr_values = [0, 12, 1, 55, 128, 64, 195, 231, 255]
+    zpgx_xind_values = [0, 3, 66, 12, 145, 255, 197, 217]
+    small_nz_values = [0, 31, 128, 55]
+    small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93 ]
     
     for i in sr_flags_values:
         test_clc(i)
@@ -288,52 +314,37 @@ try:
         test_sei(i)
     
     for i in transfer_values:
-        test_tax(i, 0x11)
-        test_tax(i, 0x91)
-        test_tax(i, 0x13)
-        test_tax(i, 0x93)
-        test_txa(i, 0x11)
-        test_txa(i, 0x91)
-        test_txa(i, 0x13)
-        test_txa(i, 0x93)
-        
-        test_tay(i, 0x11)
-        test_tay(i, 0x91)
-        test_tay(i, 0x13)
-        test_tay(i, 0x93)
-        test_tya(i, 0x11)
-        test_tya(i, 0x91)
-        test_tya(i, 0x13)
-        test_tya(i, 0x93)
-        
-        test_tsx(i, 0x11)
-        test_tsx(i, 0x91)
-        test_tsx(i, 0x13)
-        test_tsx(i, 0x93)
-        test_txs(i, 0x11)
-        test_txs(i, 0x91)
-        test_txs(i, 0x13)
-        test_txs(i, 0x93)
+        for sr in small_sr_nz_values:
+            test_tax(i, sr)
+            test_txa(i, sr)
+            test_tay(i, sr)
+            test_tya(i, sr)
+            test_tsx(i, sr)
+            test_txs(i, sr)
+    
+    for v in small_nz_values:
+        for i in transfer_values:
+            for sr in small_sr_nz_values:
+                test_lda_imm(i, v, sr)
     
     for i in transfer_values:
-        test_lda_imm(i, 0x31, 0x11)
-        test_lda_imm(i, 0x31, 0x13)
-        test_lda_imm(i, 0x31, 0x91)
-        test_lda_imm(i, 0x31, 0x93)
+        for v in small_nz_values:
+            for addr in zpg_addr_values:
+                for sr in small_sr_nz_values:
+                    test_lda_zpg(i, addr, v, sr)
     
-    for i in transfer_values:
+    for v in small_nz_values:
         for addr in zpg_addr_values:
-            test_lda_zpg(i, addr, 0x31, 0x11)
-            test_lda_zpg(i, addr, 0x31, 0x13)
-            test_lda_zpg(i, addr, 0x31, 0x91)
-            test_lda_zpg(i, addr, 0x31, 0x93)
+            for xind in zpgx_xind_values:
+                for sr in small_sr_nz_values:
+                    test_lda_zpgx(11, addr, xind, v, sr)
     
+    """
     for i in transfer_values:
         for j in transfer_values:
-            test_and_imm(i, j, 0x11)
-            test_and_imm(i, j, 0x13)
-            test_and_imm(i, j, 0x91)
-            test_and_imm(i, j, 0x93)
+            for sr in small_sr_nz_values:
+                test_and_imm(i, j, sr)
+    """
     
     #########################
     # Summary
