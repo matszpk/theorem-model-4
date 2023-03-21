@@ -773,7 +773,6 @@ mod tests {
 
     #[test]
     fn test_circuit_run() {
-        // TODO: write testcases
         let circ1 = Circuit {
             circuit: vec![
                 0, 0, // not 2=i0
