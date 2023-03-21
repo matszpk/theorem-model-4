@@ -3,12 +3,15 @@
 #######
 
 import os
+import os.path
 import shutil
 import subprocess
 
-THEOREM_MODEL = './target/release/theorem-model-4'
-CIRCUIT = 'circuits/simple2-cpu/simple2-cpu.circuit'
-CG6502 = 'circuits/simple2-cpu/6502.py'
+PROJECT_PATH = os.path.split(os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])[0]
+
+THEOREM_MODEL = os.path.join(PROJECT_PATH, 'target/release/theorem-model-4')
+CIRCUIT =  os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/simple2-cpu.circuit')
+CG6502 =  os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/6502.py')
 PYTHON = '/usr/bin/python'
 
 pc_offset = 0xfe0
