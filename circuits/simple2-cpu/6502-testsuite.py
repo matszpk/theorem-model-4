@@ -275,9 +275,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 3),
             ],
-            # instructions. last is undefined (stop)
             [
                 (addr&0xff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=2, yind=1)
@@ -295,9 +295,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 3),
             ],
-            # instructions. last is undefined (stop)
             [
                 (addr&0xff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, xind=xind, sr=sr, acc=2, yind=1)
@@ -315,9 +315,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 3),
             ],
-            # instructions. last is undefined (stop)
             [
                 (addr&0xff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, yind=yind, sr=sr, acc=2, xind=1)
@@ -336,9 +336,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr+xind)&0xff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
@@ -357,9 +357,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr+xind)&0xff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, yind=yind, sr=sr, xind=xind, acc=1)
@@ -378,9 +378,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr+yind)&0xff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, xind=xind, sr=sr, yind=yind, acc=1)
@@ -398,9 +398,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
             ],
-            # instructions. last is undefined (stop)
             [
                 (addr&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=2, yind=1)
@@ -418,9 +418,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
             ],
-            # instructions. last is undefined (stop)
             [
                 (addr&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, xind=xind, sr=sr, acc=2, yind=1)
@@ -438,9 +438,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4),
             ],
-            # instructions. last is undefined (stop)
             [
                 (addr&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, yind=yind, sr=sr, acc=2, xind=1)
@@ -459,9 +459,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4 + int((addr&0xff)+xind >= 256)),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr+xind)&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
@@ -480,9 +480,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4 + int((addr&0xff)+xind >= 256)),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr+xind)&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, yind=yind, sr=sr, xind=xind, acc=1)
@@ -501,9 +501,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4 + int((addr&0xff)+yind >= 256)),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr+yind)&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=2, yind=yind)
@@ -522,9 +522,9 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 4 + int((addr&0xff)+yind >= 256)),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr+yind)&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, xind=xind, sr=sr, acc=2, yind=yind)
@@ -543,11 +543,11 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 6),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr+xind)&0xff, [addr2&0xff]),
                 ((addr+xind+1)&0xff, [(addr2>>8)&0xff]),
                 (addr2&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
@@ -566,11 +566,11 @@ try:
                 (1, sp_offset, 0xff),
                 (1, instr_cycles_offset, 5 + int((addr2&0xff)+yind >= 256)),
             ],
-            # instructions. last is undefined (stop)
             [
                 ((addr)&0xff, [addr2&0xff]),
                 ((addr+1)&0xff, [(addr2>>8)&0xff]),
                 ((addr2+yind)&0xffff, [val]),
+                # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=2, yind=yind)
