@@ -228,6 +228,40 @@ try:
             [ (0x200, [opcode&0xff, imm&0xff, 0x04]) ],
             pc=0x200, acc=acc, sr=sr)
     
+    def test_read_op_xind_imm(name, xind_op, opcode, xind, imm, sr):
+        new_xind, new_sr = xind_op(xind, imm, sr)
+        run_testcase('{} imm xind={} imm={} sr={}'.format(name, xind, imm, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 0),
+                (1, xind_offset, new_xind),
+                (1, yind_offset, 0),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            # instructions. last is undefined (stop)
+            [ (0x200, [opcode&0xff, imm&0xff, 0x04]) ],
+            pc=0x200, xind=xind, sr=sr)
+    
+    def test_read_op_yind_imm(name, yind_op, opcode, yind, imm, sr):
+        new_yind, new_sr = yind_op(yind, imm, sr)
+        run_testcase('{} imm yind={} imm={} sr={}'.format(name, yind, imm, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 0),
+                (1, xind_offset, 0),
+                (1, yind_offset, new_yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            # instructions. last is undefined (stop)
+            [ (0x200, [opcode&0xff, imm&0xff, 0x04]) ],
+            pc=0x200, yind=yind, sr=sr)
+    
     def test_read_op_zpg(name, acc_op, opcode, acc, addr, val, sr):
         new_acc, new_sr = acc_op(acc, val, sr)
         run_testcase('{} zpg acc={} addr={} val={} sr={}'.format(name, acc, addr, val, sr),
@@ -247,6 +281,46 @@ try:
                 (0x200, [opcode&0xff, addr&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=2, yind=1)
+    
+    def test_read_op_xind_zpg(name, xind_op, opcode, xind, addr, val, sr):
+        new_xind, new_sr = xind_op(xind, val, sr)
+        run_testcase('{} zpg xind={} addr={} val={} sr={}'.format(name, xind, addr, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, new_xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 3),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                (addr&0xff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, xind=xind, sr=sr, acc=2, yind=1)
+    
+    def test_read_op_yind_zpg(name, yind_op, opcode, yind, addr, val, sr):
+        new_yind, new_sr = yind_op(yind, val, sr)
+        run_testcase('{} zpg yind={} addr={} val={} sr={}'.format(name, yind, addr, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, 1),
+                (1, yind_offset, new_yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 3),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                (addr&0xff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, yind=yind, sr=sr, acc=2, xind=1)
     
     def test_read_op_zpgx(name, acc_op, opcode, acc, addr, xind, val, sr):
         new_acc, new_sr = acc_op(acc, val, sr)
@@ -269,6 +343,48 @@ try:
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
     
+    def test_read_op_yind_zpgx(name, yind_op, opcode, yind, addr, xind, val, sr):
+        new_yind, new_sr = yind_op(yind, val, sr)
+        run_testcase('{} zpgx yind={} addr={} xind={} val={} sr={}' \
+                     .format(name, yind, addr, xind, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 1),
+                (1, xind_offset, xind),
+                (1, yind_offset, new_yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr+xind)&0xff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, yind=yind, sr=sr, xind=xind, acc=1)
+    
+    def test_read_op_xind_zpgy(name, xind_op, opcode, xind, addr, yind, val, sr):
+        new_xind, new_sr = xind_op(xind, val, sr)
+        run_testcase('{} zpgy xind={} addr={} yind={} val={} sr={}' \
+                     .format(name, xind, addr, yind, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 1),
+                (1, xind_offset, new_xind),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr+yind)&0xff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, xind=xind, sr=sr, yind=yind, acc=1)
+    
     def test_read_op_abs(name, acc_op, opcode, acc, addr, val, sr):
         new_acc, new_sr = acc_op(acc, val, sr)
         run_testcase('{} abs acc={} addr={} val={} sr={}'.format(name, acc, addr, val, sr),
@@ -288,6 +404,46 @@ try:
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=2, yind=1)
+    
+    def test_read_op_xind_abs(name, xind_op, opcode, xind, addr, val, sr):
+        new_xind, new_sr = xind_op(xind, val, sr)
+        run_testcase('{} abs xind={} addr={} val={} sr={}'.format(name, xind, addr, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, new_xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                (addr&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, xind=xind, sr=sr, acc=2, yind=1)
+    
+    def test_read_op_yind_abs(name, yind_op, opcode, yind, addr, val, sr):
+        new_yind, new_sr = yind_op(yind, val, sr)
+        run_testcase('{} abs yind={} addr={} val={} sr={}'.format(name, yind, addr, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, 1),
+                (1, yind_offset, new_yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                (addr&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, yind=yind, sr=sr, acc=2, xind=1)
     
     def test_read_op_absx(name, acc_op, opcode, acc, addr, xind, val, sr):
         new_acc, new_sr = acc_op(acc, val, sr)
@@ -310,6 +466,27 @@ try:
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
     
+    def test_read_op_yind_absx(name, yind_op, opcode, yind, addr, xind, val, sr):
+        new_yind, new_sr = yind_op(yind, val, sr)
+        run_testcase('{} absx yind={} addr={} xind={} val={} sr={}' \
+                     .format(name, yind, addr, xind, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 1),
+                (1, xind_offset, xind),
+                (1, yind_offset, new_yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4 + int((addr&0xff)+xind >= 256)),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr+xind)&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, yind=yind, sr=sr, xind=xind, acc=1)
+    
     def test_read_op_absy(name, acc_op, opcode, acc, addr, yind, val, sr):
         new_acc, new_sr = acc_op(acc, val, sr)
         run_testcase('{} absy acc={} addr={} yind={} val={} sr={}' \
@@ -330,6 +507,27 @@ try:
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=sr, xind=2, yind=yind)
+    
+    def test_read_op_xind_absy(name, xind_op, opcode, xind, addr, yind, val, sr):
+        new_xind, new_sr = xind_op(xind, val, sr)
+        run_testcase('{} absy xind={} addr={} yind={} val={} sr={}' \
+                     .format(name, xind, addr, yind, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, new_xind),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4 + int((addr&0xff)+yind >= 256)),
+            ],
+            # instructions. last is undefined (stop)
+            [
+                ((addr+yind)&0xffff, [val]),
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, xind=xind, sr=sr, acc=2, yind=yind)
     
     def test_read_op_pindx(name, acc_op, opcode, acc, addr, xind, addr2, val, sr):
         new_acc, new_sr = acc_op(acc, val, sr)
@@ -409,6 +607,29 @@ try:
         test_read_op_pindx('lda', lda_op, 0xa1, acc, addr, xind, addr2, val, sr)
     def test_lda_pindy(acc, addr, addr2, yind, val, sr):
         test_read_op_pindy('lda', lda_op, 0xb1, acc, addr, addr2, yind, val, sr)
+    
+    def test_ldx_imm(xind, imm, sr):
+        test_read_op_xind_imm('ldx', lda_op, 0xa2, xind, imm, sr)
+    def test_ldx_zpg(xind, addr, val, sr):
+        test_read_op_xind_zpg('ldx', lda_op, 0xa6, xind, addr, val, sr)
+    def test_ldx_zpgy(xind, addr, yind, val, sr):
+        test_read_op_xind_zpgy('ldx', lda_op, 0xb6, xind, addr, yind, val, sr)
+    def test_ldx_abs(xind, addr, val, sr):
+        test_read_op_xind_abs('ldx', lda_op, 0xae, xind, addr, val, sr)
+    def test_ldx_absy(xind, addr, yind, val, sr):
+        test_read_op_xind_absy('ldx', lda_op, 0xbe, xind, addr, yind, val, sr)
+    
+    def test_ldy_imm(yind, imm, sr):
+        test_read_op_yind_imm('ldy', lda_op, 0xa0, yind, imm, sr)
+    def test_ldy_zpg(yind, addr, val, sr):
+        test_read_op_yind_zpg('ldy', lda_op, 0xa4, yind, addr, val, sr)
+    def test_ldy_zpgx(yind, addr, xind, val, sr):
+        test_read_op_yind_zpgx('ldy', lda_op, 0xb4, yind, addr, xind, val, sr)
+    def test_ldy_abs(yind, addr, val, sr):
+        test_read_op_yind_abs('ldy', lda_op, 0xac, yind, addr, val, sr)
+    def test_ldy_absx(yind, addr, xind, val, sr):
+        test_read_op_yind_absx('ldy', lda_op, 0xbc, yind, addr, xind, val, sr)
+    
     def test_and_imm(acc, imm, sr):
         test_read_op_imm('and', and_op, 0x29, acc, imm, sr)
     
@@ -489,6 +710,64 @@ try:
             for v in small_nz_values:
                 for sr in small_sr_nz_values:
                     test_lda_pindy(11, addr, addr2, yind, v, sr)
+    
+    for i in transfer_values:
+        for v in small_nz_values:
+            for sr in small_sr_nz_values:
+                test_ldx_imm(i, v, sr)
+    
+    for i in transfer_values:
+        for addr in zpg_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_ldx_zpg(i, addr, v, sr)
+    
+    for addr in zpg_addr_values:
+        for yind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_ldx_zpgy(11, addr, yind, v, sr)
+    
+    for i in transfer_values:
+        for addr in abs_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_ldx_abs(i, addr, v, sr)
+    
+    for addr in abs_addr_values:
+        for yind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_ldx_absy(11, addr, yind, v, sr)
+    
+    for i in transfer_values:
+        for v in small_nz_values:
+            for sr in small_sr_nz_values:
+                test_ldy_imm(i, v, sr)
+    
+    for i in transfer_values:
+        for addr in zpg_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_ldy_zpg(i, addr, v, sr)
+    
+    for addr in zpg_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_ldy_zpgx(11, addr, xind, v, sr)
+    
+    for i in transfer_values:
+        for addr in abs_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_ldy_abs(i, addr, v, sr)
+    
+    for addr in abs_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_ldy_absx(11, addr, xind, v, sr)
     
     """
     for i in transfer_values:
