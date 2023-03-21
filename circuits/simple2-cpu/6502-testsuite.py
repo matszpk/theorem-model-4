@@ -112,6 +112,21 @@ try:
             [ (0x200, [opcode&0xff, 0x04]) ],   # instructions. last is undefined (stop)
             pc=0x200, acc=0, sr=sr)
     
+    def test_tax(acc, sr):
+        run_testcase('tax acc={} sr={}'.format(acc, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, (sr&(0xff^2^128)) | (0 if acc!=0 else 2) | (acc&0x80)),
+                (1, acc_offset, acc),
+                (1, xind_offset, acc),
+                (1, yind_offset, 0),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            [ (0x200, [0xaa, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=acc, sr=sr, xind=1 if acc==0 else 0)
+    
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
     def test_cld(sr): test_chsr('cld', 0xd8, 3, True, sr)
     def test_cli(sr): test_chsr('cli', 0x58, 2, True, sr)
@@ -120,6 +135,7 @@ try:
     def test_sed(sr): test_chsr('sed', 0xf8, 3, False, sr)
     def test_sei(sr): test_chsr('sei', 0x78, 2, False, sr)
     
+    """
     for i in range(0,256):
         test_clc(i)
         test_cld(i)
@@ -128,6 +144,13 @@ try:
         test_sec(i)
         test_sed(i)
         test_sei(i)
+    """
+    
+    for i in range(0,256):
+        test_tax(i, 0x11)
+        test_tax(i, 0x91)
+        test_tax(i, 0x13)
+        test_tax(i, 0x93)
     
 finally:
     cleanup()
