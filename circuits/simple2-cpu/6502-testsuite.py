@@ -1250,6 +1250,31 @@ try:
             ],
             pc=start, acc=1, sr=sr, xind=2, yind=3, sp=sp)
     
+    def test_rts(ret, sp, sr):
+        run_testcase('rts ret={} sp={} sr={}'.format(ret, sp, sr),
+            [
+                (1, pc_offset, (ret+2)&0xff),
+                (1, pc_offset+1, ((ret+2)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, 3),
+                (1, xind_offset, 1),
+                (1, yind_offset, 2),
+                (1, sp_offset, (0x100+sp+2)&0xff),
+                (1, instr_cycles_offset, 6),
+                (0, 0x100 + (sp&0xff), 0),
+                (0, 0x100 + ((sp+1)&0xff), ret&0xff),
+                (0, 0x100 + ((sp+2)&0xff), (ret>>8)&0xff),
+            ],
+            [
+                # stack
+                (0x100 + ((sp+1)&0xff), [ret&0xff]),
+                (0x100 + ((sp+2)&0xff), [(ret>>8)&0xff]),
+                ((ret+1)&0xffff, [0x4]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x60, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=1, yind=2, sp=sp)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1526,6 +1551,7 @@ try:
                        (0x3ba, 0x2d), (0x3ba, 0x43), (0x3ba, 0x44), (0x3ba, 0x47)]
     small_cmp_values = [0, 11, 22, 93, 233, 252]
     sp_values = [255, 154, 31, 0, 3]
+    sp2_values = [255, 254, 154, 31, 61, 0, 3]
     jmp_ind_addr = [(0x3314, 0x42ba), (0x4bff, 0x5b11), (0xffff, 0x1ad5), (0x21, 0x241)]
     
     """
@@ -1971,13 +1997,18 @@ try:
                 for yind in small_nz_values:
                     for sr in small_sr_nz_values:
                         test_jmp_ind(addr, addr2, acc, xind, yind, sr)
-    """
     
     for start in [0x2b5, 0x2ff, 0x2fe]:
         for addr in abs_addr_values:
             for sp in sp_values:
                 for sr in small_sr_nz_values:
                     test_jsr(start, addr, sp, sr)
+    """
+    
+    for val in abs_addr_values:
+        for sp in sp2_values:
+            for sr in small_sr_nz_values:
+                test_rts(val, sp, sr)
     
     #########################
     # Summary
