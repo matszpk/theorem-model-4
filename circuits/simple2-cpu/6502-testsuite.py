@@ -1104,6 +1104,10 @@ try:
         res = (acc + (val^0xff) + 1) & 0xff
         c = ((acc + (val^0xff) + 1) >> 8) != 0
         return acc, set_sr_nzc(res, c, sr)
+    def bit_op(acc, val, sr):
+        res = (acc & val) & 0xff
+        sr_res = set_sr_nz(res, sr)
+        return acc, ((sr_res&(0xff^0xc0)) | (val&0xc0))
     
     def dec_op(val, sr):
         res = (256 + val - 1) & 0xff
@@ -1249,6 +1253,11 @@ try:
         test_read_op_yind_zpg('cpy', cmp_op, 0xc4, yind, addr, val, sr)
     def test_cpy_abs(yind, addr, val, sr):
         test_read_op_yind_abs('cpy', cmp_op, 0xcc, yind, addr, val, sr)
+    
+    def test_bit_zpg(acc, addr, val, sr):
+        test_read_op_zpg('bit', bit_op, 0x24, acc, addr, val, sr)
+    def test_bit_abs(acc, addr, val, sr):
+        test_read_op_abs('bit', bit_op, 0x2c, acc, addr, val, sr)
     
     def test_dec_zpg(addr, val, sr):
         test_read_write_op_zpg('dec', dec_op, 0xc6, addr, val, sr)
@@ -1718,7 +1727,6 @@ try:
             for v in small_cmp_values:
                 for sr in small_sr_nz_values:
                     test_cmp_pindy(0x1c, addr, addr2, yind, v, sr)
-    """
     
     for i in transfer_values:
         for j in transfer_values:
@@ -1739,6 +1747,19 @@ try:
                 for sr in small_sr_nz_values:
                     test_cpx_abs(i, addr, v, sr)
                     test_cpy_abs(i, addr, v, sr)
+    """
+    
+    for i in transfer_values:
+        for addr in zpg_addr_values:
+            for v in transfer_values:
+                for sr in small_sr_nz_values:
+                    test_bit_zpg(i, addr, v, sr)
+    
+    for i in transfer_values:
+        for addr in abs_addr_values:
+            for v in transfer_values:
+                for sr in small_sr_nz_values:
+                    test_bit_abs(i, addr, v, sr)
     
     #########################
     # Summary

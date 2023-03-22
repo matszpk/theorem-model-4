@@ -1166,14 +1166,19 @@ def gencode():
     ml.lda(nacc)
     ml.ana(mem_val)
     ml.sta(temp1)
-    ml.ana_imm(SRFlags.V)
+    ml.lda(mem_val)
+    ml.ana_imm(SRFlags.V|SRFlags.N)
     ml.sta(temp2)
     ml.lda(nsr)
-    ml.ana_imm(0xff^SRFlags.V)
+    ml.ana_imm(0xff^SRFlags.V^SRFlags.N^SRFlags.Z)
     ml.ora(temp2)
     ml.sta(nsr)
     ml.lda(temp1)
-    ml.bcc(set_cpu_nz)
+    ml.bne(main_loop)
+    ml.lda(nsr)
+    ml.ora_imm(SRFlags.Z)
+    ml.sta(nsr)
+    ml.bne(main_loop)
 
     op_bmi = ml.pc
     ml.lda_imm(SRFlags.N)
@@ -1283,21 +1288,6 @@ def gencode():
     ml.clc()
     ml.bcc(set_cpu_nz)
 
-    op_jmp = ml.pc
-    ml.lda(child_mem_addr)
-    ml.sta(npc)
-    ml.lda(child_mem_addr+1)
-    ml.sta(npc+1)
-    ml.bcc(main_loop)
-
-    op_jmpind = ml.pc
-    ml.lda(child_mem_addr)
-    ml.clc()
-    ml.adc_imm(0)
-    ml.sta(child_mem_addr)
-    ml.clc()
-    ml.bcc(op_jmpind_cont)
-    
     op_rti = ml.pc
     call_proc_8b(op_pull)
     ml.sta(nsr)
@@ -1369,6 +1359,21 @@ def gencode():
     ml.sta(npc+1)
     ml.clc()
     ml.bcc(main_loop)
+    
+    op_jmp = ml.pc
+    ml.lda(child_mem_addr)
+    ml.sta(npc)
+    ml.lda(child_mem_addr+1)
+    ml.sta(npc+1)
+    ml.bcc(main_loop)
+
+    op_jmpind = ml.pc
+    ml.lda(child_mem_addr)
+    ml.clc()
+    ml.adc_imm(0)
+    ml.sta(child_mem_addr)
+    ml.clc()
+    ml.bcc(op_jmpind_cont)
     
     op_lda = ml.pc
     ml.lda(mem_val)
