@@ -1226,6 +1226,30 @@ try:
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=yind)
     
+    def test_jsr(addr, sp, sr):
+        ret_addr = 0x2b5+2
+        run_testcase('jsr abs addr={} sp={} sr={}'.format(addr, sp, sr),
+            [
+                (1, pc_offset, (addr+1)&0xff),
+                (1, pc_offset+1, ((addr+1)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, 1),
+                (1, xind_offset, 2),
+                (1, yind_offset, 3),
+                (1, sp_offset, (0x100+sp-2)&0xff),
+                (1, instr_cycles_offset, 6),
+                (0, addr&0xffff, 0x04),
+                (0, 0x100 + ((0x100+sp-2)&0xff), 0),
+                (0, 0x100 + ((0x100+sp-1)&0xff), ret_addr&0xff),
+                (0, 0x100 + (sp&0xff), (ret_addr>>8)&0xff),
+            ],
+            [
+                (addr&0xffff, [0x04]),
+                # instructions. last is undefined (stop)
+                (0x2b5, [0x20, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x2b5, acc=1, sr=sr, xind=2, yind=3, sp=sp)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1940,7 +1964,6 @@ try:
                 for yind in small_nz_values:
                     for sr in small_sr_nz_values:
                         test_jmp(addr, acc, xind, yind, sr)
-    """
     
     for (addr, addr2) in jmp_ind_addr:
         for acc in small_nz_values:
@@ -1948,6 +1971,12 @@ try:
                 for yind in small_nz_values:
                     for sr in small_sr_nz_values:
                         test_jmp_ind(addr, addr2, acc, xind, yind, sr)
+    """
+    
+    for addr in abs_addr_values:
+        for sp in sp_values:
+            for sr in small_sr_nz_values:
+                test_jsr(addr, sp, sr)
     
     #########################
     # Summary

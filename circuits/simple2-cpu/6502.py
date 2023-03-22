@@ -1272,22 +1272,6 @@ def gencode():
     ml.sta(nacc)
     ml.bcc(set_cpu_nz)
 
-    op_inx = ml.pc
-    ml.lda(nxind)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(nxind)
-    ml.clc()
-    ml.bcc(set_cpu_nz)
-
-    op_iny = ml.pc
-    ml.lda(nyind)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(nyind)
-    ml.clc()
-    ml.bcc(set_cpu_nz)
-
     op_rti = ml.pc
     call_proc_8b(op_pull)
     ml.sta(nsr)
@@ -1296,12 +1280,29 @@ def gencode():
     call_proc_8b(op_pull)
     ml.sta(npc+1)
     ml.bcc(main_loop)
-
-    op_brk = ml.pc
+    
     op_jsr = ml.pc
     ml.lda(npc)
+    ml.clc()
+    ml.sbc_imm(0)   # old_pc+2
+    ml.sta(temp2)
+    ml.lda(npc+1)
+    ml.sbc_imm(0)
+    ml.sta(temp1)
+    ml.lda(child_mem_addr)
+    ml.sta(npc)
+    ml.lda(child_mem_addr+1)
+    ml.sta(npc+1)
+    call_proc_8b(op_push)
+    ml.lda(temp2)
+    ml.sta(temp1)
+    call_proc_8b(op_push)
+    ml.bcc(main_loop)
+
+    op_brk = ml.pc
+    ml.lda(npc)
     ml.sec()
-    ml.adc_imm(1)   # add 2 to pc
+    ml.adc_imm(0)   # old_pc+2
     ml.sta(temp2)
     ml.lda(npc+1)
     ml.adc_imm(0)
@@ -1310,8 +1311,6 @@ def gencode():
     ml.lda(temp2)
     ml.sta(temp1)
     call_proc_8b(op_push)
-    ml.lda(nopcode)
-    ml.bne(op_jmp)
     # brk
     ml.lda(nsr)
     ml.ora_imm(SRFlags.B)
@@ -1359,6 +1358,22 @@ def gencode():
     ml.sta(npc+1)
     ml.clc()
     ml.bcc(main_loop)
+    
+    op_inx = ml.pc
+    ml.lda(nxind)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(nxind)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
+
+    op_iny = ml.pc
+    ml.lda(nyind)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(nyind)
+    ml.clc()
+    ml.bcc(set_cpu_nz)
     
     op_jmp = ml.pc
     ml.lda(child_mem_addr)
