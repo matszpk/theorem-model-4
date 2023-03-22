@@ -595,6 +595,113 @@ try:
     
     ################
     
+    def test_sta_zpg(acc, addr, sr):
+        opcode = 0x85
+        run_testcase('sta zpg acc={} addr={} sr={}'.format(acc, addr, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 3),
+                (0, addr&0xff, acc),
+            ],
+            [
+                (addr&0xff, [0 if acc!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=2, yind=1)
+    
+    def test_sta_zpgx(acc, addr, xind, sr):
+        opcode = 0x95
+        run_testcase('sta zpgx acc={} addr={} xind={} sr={}'.format(acc, addr, xind, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+                (0, (addr+xind)&0xff, acc),
+            ],
+            [
+                ((addr+xind)&0xff, [0 if acc!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
+    
+    def test_sta_abs(acc, addr, sr):
+        opcode = 0x8d
+        run_testcase('sta abs acc={} addr={} sr={}'.format(acc, addr, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, acc),
+            ],
+            [
+                (addr&0xffff, [0 if acc!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=2, yind=1)
+    
+    def test_sta_absx(acc, addr, xind, sr):
+        opcode = 0x9d
+        run_testcase('sta absx acc={} addr={} xind={} sr={}'.format(acc, addr, xind, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 5),
+                (0, (addr+xind)&0xffff, acc),
+            ],
+            [
+                ((addr+xind)&0xffff, [0 if acc!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
+    
+    def test_sta_absy(acc, addr, yind, sr):
+        opcode = 0x99
+        run_testcase('sta absy acc={} addr={} yind={} sr={}'.format(acc, addr, yind, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 5),
+                (0, (addr+yind)&0xffff, acc),
+            ],
+            [
+                ((addr+yind)&0xffff, [0 if acc!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, yind=yind, xind=2)
+    
+    ################
+    
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
     def test_cld(sr): test_chsr('cld', 0xd8, 3, True, sr)
     def test_cli(sr): test_chsr('cli', 0x58, 2, True, sr)
@@ -664,6 +771,7 @@ try:
     small_nz_values = [0, 31, 128, 55]
     small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93 ]
     
+    """
     for i in sr_flags_values:
         test_clc(i)
         test_cld(i)
@@ -786,6 +894,35 @@ try:
             for v in small_nz_values:
                 for sr in small_sr_nz_values:
                     test_ldy_absx(11, addr, xind, v, sr)
+    
+    for acc in transfer_values:
+        for addr in zpg_addr_values:
+            for sr in small_sr_nz_values:
+                test_sta_zpg(acc, addr, sr)
+    
+    for acc in small_nz_values:
+        for addr in zpg_addr_values:
+            for xind in zpgx_xind_values:
+                for sr in small_sr_nz_values:
+                    test_sta_zpgx(acc, addr, xind, sr)
+    
+    for acc in transfer_values:
+        for addr in abs_addr_values:
+            for sr in small_sr_nz_values:
+                test_sta_abs(acc, addr, sr)
+    """
+    
+    for acc in small_nz_values:
+        for addr in abs_addr_values:
+            for xind in zpgx_xind_values:
+                for sr in small_sr_nz_values:
+                    test_sta_absx(acc, addr, xind, sr)
+    
+    for acc in small_nz_values:
+        for addr in abs_addr_values:
+            for yind in zpgx_xind_values:
+                for sr in small_sr_nz_values:
+                    test_sta_absy(acc, addr, yind, sr)
     
     """
     for i in transfer_values:
