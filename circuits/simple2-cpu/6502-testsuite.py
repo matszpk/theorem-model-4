@@ -1079,6 +1079,65 @@ try:
             ],
             pc=start, acc=3, sr=sr, xind=2, yind=1)
     
+    def test_nop(acc, xind, yind, sr):
+        run_testcase('nop acc={} xind={} yind={} sr={}'.format(acc, xind, yind, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            [ (0x200, [0xea, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=yind)
+    
+    def test_pha(acc, sp, sr):
+        run_testcase('pha acc={} sp={} sr={}'.format(acc, sp, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, 1),
+                (1, yind_offset, 2),
+                (1, sp_offset, (0x100+sp-1)&0xff),
+                (1, instr_cycles_offset, 3),
+                (0, 0x100 + ((0x100+sp-1)&0xff), 0),
+                (0, 0x100 + (sp&0xff), acc),
+            ],
+            [
+                # stack
+                (0x100 + (sp&0xff), [0 if acc!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x48, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=1, yind=2, sp=sp)
+    
+    def test_pla(val, sp, sr):
+        run_testcase('pla val={} sp={} sr={}'.format(val, sp, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, set_sr_nz(val, sr)),
+                (1, acc_offset, val),
+                (1, xind_offset, 1),
+                (1, yind_offset, 2),
+                (1, sp_offset, (0x100+sp+1)&0xff),
+                (1, instr_cycles_offset, 4),
+                (0, 0x100 + (sp&0xff), 0),
+                (0, 0x100 + ((sp+1)&0xff), val),
+            ],
+            [
+                # stack
+                (0x100 + ((sp+1)&0xff), [val]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x68, 0x04])
+            ],
+            pc=0x200, acc=0 if val!=0 else 1, sr=sr, xind=1, yind=2, sp=sp)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1354,6 +1413,7 @@ try:
     rel_jump_values = [(0x341, 0x31), (0x33b, 0xc3), (0x33b, 0xc2), (0x33b, 0xba),
                        (0x3ba, 0x2d), (0x3ba, 0x43), (0x3ba, 0x44), (0x3ba, 0x47)]
     small_cmp_values = [0, 11, 22, 93, 233, 252]
+    sp_values = [255, 154, 31, 0, 3]
     
     """
     for i in sr_flags_values:
@@ -1747,7 +1807,6 @@ try:
                 for sr in small_sr_nz_values:
                     test_cpx_abs(i, addr, v, sr)
                     test_cpy_abs(i, addr, v, sr)
-    """
     
     for i in transfer_values:
         for addr in zpg_addr_values:
@@ -1760,6 +1819,23 @@ try:
             for v in transfer_values:
                 for sr in small_sr_nz_values:
                     test_bit_abs(i, addr, v, sr)
+    
+    for i in small_nz_values:
+        for j in small_nz_values:
+            for k in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_nop(i, j, k, sr)
+    
+    for acc in transfer_values:
+        for sp in sp_values:
+            for sr in small_sr_nz_values:
+                test_pha(acc, sp, sr)
+    """
+    
+    for val in transfer_values:
+        for sp in sp_values:
+            for sr in small_sr_nz_values:
+                test_pla(val, sp, sr)
     
     #########################
     # Summary
