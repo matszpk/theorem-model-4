@@ -207,7 +207,7 @@ adc_dec_no_lo_fix, adc_dec_no_hi_fix, adc_dec_after_hi_fix = -10000, -10000, -10
 adc_dec_nz_z_zero, adc_dec_nz_z_store = -10000, -10000
 adc_dec_nz_n_zero, adc_dec_nz_n_store = -10000, -10000
 sbc_dec_no_lo_fix, sbc_dec_no_hi_fix = -10000, -10000
-am_absx_cycle_fix, am_absy_cycle_fix = -10000, -10000
+am_absx_cycle_fix = -10000
 am_rel_no_cycle_fix = -10000
 set_cpu_nzc = -10000
 native_machine = -10000
@@ -944,7 +944,6 @@ def gencode():
     ml.clc()
     ml.bcc(addr_load_mem_val)
     
-    global am_absy_cycle_fix
     am_absy = ml.pc
     ml.lda(narglo)
     ml.clc()
@@ -1094,6 +1093,22 @@ def gencode():
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
+    op_dec = ml.pc
+    ml.lda(mem_val)
+    ml.clc()
+    ml.sbc_imm(0)
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    ml.bcc(set_cpu_nz)
+    
+    op_inc = ml.pc
+    ml.lda(mem_val)
+    ml.sec()
+    ml.adc_imm(0)
+    ml.sta(mm_mem_val)
+    call_proc_8b(store_mem_val)
+    ml.bcc(set_cpu_nz)
+    
     op_sta = ml.pc
     ml.lda(nacc)
     ml.sta(mm_mem_val)
@@ -1224,14 +1239,6 @@ def gencode():
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
 
-    op_dec = ml.pc
-    ml.lda(0xffd)
-    ml.clc()
-    ml.sbc_imm(0)
-    ml.sta(0xffd)
-    ml.clc()
-    ml.bcc(set_cpu_nz)
-
     op_dex = ml.pc
     ml.lda(nxind)
     ml.clc()
@@ -1252,14 +1259,6 @@ def gencode():
     ml.lda(nacc)
     ml.xor(mem_val)
     ml.sta(nacc)
-    ml.bcc(set_cpu_nz)
-
-    op_inc = ml.pc
-    ml.lda(0xffd)
-    ml.sec()
-    ml.adc_imm(0)
-    ml.sta(0xffd)
-    ml.clc()
     ml.bcc(set_cpu_nz)
 
     op_inx = ml.pc
@@ -1293,17 +1292,6 @@ def gencode():
     ml.clc()
     ml.bcc(op_jmpind_cont)
     
-
-    op_lda = ml.pc
-    ml.lda(mem_val)
-    ml.sta(nacc)
-    ml.bcc(set_cpu_nz)
-
-    op_ldx = ml.pc
-    ml.lda(mem_val)
-    ml.sta(nxind)
-    ml.bcc(set_cpu_nz)
-
     op_rti = ml.pc
     call_proc_8b(op_pull)
     ml.sta(nsr)
@@ -1375,6 +1363,16 @@ def gencode():
     ml.sta(npc+1)
     ml.clc()
     ml.bcc(main_loop)
+    
+    op_lda = ml.pc
+    ml.lda(mem_val)
+    ml.sta(nacc)
+    ml.bcc(set_cpu_nz)
+
+    op_ldx = ml.pc
+    ml.lda(mem_val)
+    ml.sta(nxind)
+    ml.bcc(set_cpu_nz)
     
     op_ldy = ml.pc
     ml.lda(mem_val)

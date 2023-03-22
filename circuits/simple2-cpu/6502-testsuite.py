@@ -943,6 +943,27 @@ try:
             ],
             pc=0x200, yind=yind, sr=sr, acc=2, xind=1)
     
+    def test_read_write_op_zpg(name, mem_op, opcode, addr, val, sr):
+        new_val, new_sr = mem_op(val, sr)
+        run_testcase('{} zpg addr={} val={} sr={}'.format(name, addr, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 3),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 5),
+                (0, addr&0xff, new_val),
+            ],
+            [
+                (addr&0xff, [val]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=2, yind=1)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -957,6 +978,13 @@ try:
         return val, (sr&(0xff^2^128)) | (0 if val!=0 else 2) | (val&0x80)
     def and_op(acc, val, sr):
         res = (acc & val) & 0xff
+        return res, (sr&(0xff^2^128)) | (0 if res!=0 else 2) | (res&0x80)
+    
+    def dec_op(val, sr):
+        res = (256 + val - 1) & 0xff
+        return res, (sr&(0xff^2^128)) | (0 if res!=0 else 2) | (res&0x80)
+    def inc_op(val, sr):
+        res = (val + 1) & 0xff
         return res, (sr&(0xff^2^128)) | (0 if res!=0 else 2) | (res&0x80)
     
     def test_lda_imm(acc, imm, sr):
@@ -1000,6 +1028,12 @@ try:
     
     def test_and_imm(acc, imm, sr):
         test_read_op_imm('and', and_op, 0x29, acc, imm, sr)
+    
+    def test_dec_zpg(addr, val, sr):
+        test_read_write_op_zpg('dec', dec_op, 0xc6, addr, val, sr)
+    
+    def test_inc_zpg(addr, val, sr):
+        test_read_write_op_zpg('inc', inc_op, 0xe6, addr, val, sr)
     
     ###############################
     # testsuite
@@ -1218,6 +1252,12 @@ try:
             for sr in small_sr_nz_values:
                 test_sty_abs(yind, addr, sr)
     """
+    
+    for addr in zpg_addr_values:
+        for v in small_nz_values:
+            for sr in small_sr_nz_values:
+                test_dec_zpg(addr, v, sr)
+                test_inc_zpg(addr, v, sr)
     
     """
     for i in transfer_values:
