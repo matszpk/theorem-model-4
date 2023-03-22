@@ -103,6 +103,10 @@ try:
         f.write(b'\x00'*(1<<16))
     
     ####################
+    def set_sr_nz(val, sr):
+        return (sr&(0xff^2^128)) | (0 if val!=0 else 2) | (val&0x80)
+    
+    ####################
     # main tests
     
     def test_chsr(name, opcode, bit, clr, sr):
@@ -125,7 +129,7 @@ try:
             [
                 (1, pc_offset, (0x202)&0xff),
                 (1, pc_offset+1, ((0x202)>>8)&0xff),
-                (1, sr_offset, (sr&(0xff^2^128)) | (0 if acc!=0 else 2) | (acc&0x80)),
+                (1, sr_offset, set_sr_nz(acc, sr)),
                 (1, acc_offset, acc),
                 (1, xind_offset, acc),
                 (1, yind_offset, 0),
@@ -140,7 +144,7 @@ try:
             [
                 (1, pc_offset, (0x202)&0xff),
                 (1, pc_offset+1, ((0x202)>>8)&0xff),
-                (1, sr_offset, (sr&(0xff^2^128)) | (0 if xind!=0 else 2) | (xind&0x80)),
+                (1, sr_offset, set_sr_nz(xind, sr)),
                 (1, acc_offset, xind),
                 (1, xind_offset, xind),
                 (1, yind_offset, 0),
@@ -155,7 +159,7 @@ try:
             [
                 (1, pc_offset, (0x202)&0xff),
                 (1, pc_offset+1, ((0x202)>>8)&0xff),
-                (1, sr_offset, (sr&(0xff^2^128)) | (0 if acc!=0 else 2) | (acc&0x80)),
+                (1, sr_offset, set_sr_nz(acc, sr)),
                 (1, acc_offset, acc),
                 (1, xind_offset, 0),
                 (1, yind_offset, acc),
@@ -170,7 +174,7 @@ try:
             [
                 (1, pc_offset, (0x202)&0xff),
                 (1, pc_offset+1, ((0x202)>>8)&0xff),
-                (1, sr_offset, (sr&(0xff^2^128)) | (0 if yind!=0 else 2) | (yind&0x80)),
+                (1, sr_offset, set_sr_nz(yind, sr)),
                 (1, acc_offset, yind),
                 (1, xind_offset, 0),
                 (1, yind_offset, yind),
@@ -185,7 +189,7 @@ try:
             [
                 (1, pc_offset, (0x202)&0xff),
                 (1, pc_offset+1, ((0x202)>>8)&0xff),
-                (1, sr_offset, (sr&(0xff^2^128)) | (0 if sp!=0 else 2) | (sp&0x80)),
+                (1, sr_offset, set_sr_nz(sp, sr)),
                 (1, acc_offset, 0),
                 (1, xind_offset, sp),
                 (1, yind_offset, 0),
@@ -213,7 +217,7 @@ try:
     # increment/decrement
     def test_dex(xind, sr):
         new_xind = (256+xind-1)&0xff
-        new_sr = (sr&(0xff^2^128)) | (0 if new_xind!=0 else 2) | (new_xind&0x80)
+        new_sr = set_sr_nz(new_xind, sr)
         run_testcase('dex xind={} sr={}'.format(xind, sr),
             [
                 (1, pc_offset, (0x202)&0xff),
@@ -230,7 +234,7 @@ try:
     
     def test_dey(yind, sr):
         new_yind = (256+yind-1)&0xff
-        new_sr = (sr&(0xff^2^128)) | (0 if new_yind!=0 else 2) | (new_yind&0x80)
+        new_sr = set_sr_nz(new_yind, sr)
         run_testcase('dey yind={} sr={}'.format(yind, sr),
             [
                 (1, pc_offset, (0x202)&0xff),
@@ -247,7 +251,7 @@ try:
     
     def test_inx(xind, sr):
         new_xind = (256+xind+1)&0xff
-        new_sr = (sr&(0xff^2^128)) | (0 if new_xind!=0 else 2) | (new_xind&0x80)
+        new_sr = set_sr_nz(new_xind, sr)
         run_testcase('inx xind={} sr={}'.format(xind, sr),
             [
                 (1, pc_offset, (0x202)&0xff),
@@ -264,7 +268,7 @@ try:
     
     def test_iny(yind, sr):
         new_yind = (256+yind+1)&0xff
-        new_sr = (sr&(0xff^2^128)) | (0 if new_yind!=0 else 2) | (new_yind&0x80)
+        new_sr = set_sr_nz(new_yind, sr)
         run_testcase('iny yind={} sr={}'.format(yind, sr),
             [
                 (1, pc_offset, (0x202)&0xff),
@@ -975,17 +979,17 @@ try:
     def test_sei(sr): test_chsr('sei', 0x78, 2, False, sr)
     
     def lda_op(acc, val, sr):
-        return val, (sr&(0xff^2^128)) | (0 if val!=0 else 2) | (val&0x80)
+        return val, set_sr_nz(val, sr)
     def and_op(acc, val, sr):
         res = (acc & val) & 0xff
-        return res, (sr&(0xff^2^128)) | (0 if res!=0 else 2) | (res&0x80)
+        return res, set_sr_nz(res, sr)
     
     def dec_op(val, sr):
         res = (256 + val - 1) & 0xff
-        return res, (sr&(0xff^2^128)) | (0 if res!=0 else 2) | (res&0x80)
+        return res, set_sr_nz(res, sr)
     def inc_op(val, sr):
         res = (val + 1) & 0xff
-        return res, (sr&(0xff^2^128)) | (0 if res!=0 else 2) | (res&0x80)
+        return res, set_sr_nz(res, sr)
     
     def test_lda_imm(acc, imm, sr):
         test_read_op_imm('lda', lda_op, 0xa9, acc, imm, sr)
@@ -1049,7 +1053,6 @@ try:
     small_nz_values = [0, 31, 128, 55]
     small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93, 0x10 ]
     
-    """
     for i in sr_flags_values:
         test_clc(i)
         test_cld(i)
@@ -1251,7 +1254,6 @@ try:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_sty_abs(yind, addr, sr)
-    """
     
     for addr in zpg_addr_values:
         for v in small_nz_values:
@@ -1259,12 +1261,10 @@ try:
                 test_dec_zpg(addr, v, sr)
                 test_inc_zpg(addr, v, sr)
     
-    """
     for i in transfer_values:
         for j in transfer_values:
             for sr in small_sr_nz_values:
                 test_and_imm(i, j, sr)
-    """
     
     #########################
     # Summary
