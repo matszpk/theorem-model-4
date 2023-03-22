@@ -105,6 +105,8 @@ try:
     ####################
     def set_sr_nz(val, sr):
         return (sr&(0xff^2^128)) | (0 if val!=0 else 2) | (val&0x80)
+    def set_sr_nzc(val, c, sr):
+        return (sr&(0xff^2^128^1)) | (0 if val!=0 else 2) | (val&0x80) | int(c)
     
     ####################
     # main tests
@@ -1056,6 +1058,23 @@ try:
         res = (val + 1) & 0xff
         return res, set_sr_nz(res, sr)
     
+    def asl_op(val, sr):
+        res = (val << 1) & 0xff
+        c = (val&0x80) != 0
+        return res, set_sr_nzc(res, c, sr)
+    def lsr_op(val, sr):
+        res = (val >> 1) & 0xff
+        c = (val&0x1) != 0
+        return res, set_sr_nzc(res, c, sr)
+    def rol_op(val, sr):
+        res = ((val << 1) & 0xff) + (sr&1)
+        c = (val&0x80) != 0
+        return res, set_sr_nzc(res, c, sr)
+    def ror_op(val, sr):
+        res = ((val >> 1) & 0xff) + ((sr&1)<<7)
+        c = (val&0x1) != 0
+        return res, set_sr_nzc(res, c, sr)
+    
     def test_lda_imm(acc, imm, sr):
         test_read_op_imm('lda', lda_op, 0xa9, acc, imm, sr)
     def test_lda_zpg(acc, addr, val, sr):
@@ -1115,6 +1134,42 @@ try:
         test_read_write_op_abs('inc', inc_op, 0xee, addr, val, sr)
     def test_inc_absx(addr, xind, val, sr):
         test_read_write_op_absx('inc', inc_op, 0xfe, addr, xind, val, sr)
+    
+    def test_asl_zpg(addr, val, sr):
+        test_read_write_op_zpg('asl', asl_op, 0x06, addr, val, sr)
+    def test_asl_zpgx(addr, xind, val, sr):
+        test_read_write_op_zpgx('asl', asl_op, 0x16, addr, xind, val, sr)
+    def test_asl_abs(addr, val, sr):
+        test_read_write_op_abs('asl', asl_op, 0x0e, addr, val, sr)
+    def test_asl_absx(addr, xind, val, sr):
+        test_read_write_op_absx('asl', asl_op, 0x1e, addr, xind, val, sr)
+    
+    def test_lsr_zpg(addr, val, sr):
+        test_read_write_op_zpg('lsr', lsr_op, 0x46, addr, val, sr)
+    def test_lsr_zpgx(addr, xind, val, sr):
+        test_read_write_op_zpgx('lsr', lsr_op, 0x56, addr, xind, val, sr)
+    def test_lsr_abs(addr, val, sr):
+        test_read_write_op_abs('lsr', lsr_op, 0x4e, addr, val, sr)
+    def test_lsr_absx(addr, xind, val, sr):
+        test_read_write_op_absx('lsr', lsr_op, 0x5e, addr, xind, val, sr)
+    
+    def test_rol_zpg(addr, val, sr):
+        test_read_write_op_zpg('rol', rol_op, 0x26, addr, val, sr)
+    def test_rol_zpgx(addr, xind, val, sr):
+        test_read_write_op_zpgx('rol', rol_op, 0x36, addr, xind, val, sr)
+    def test_rol_abs(addr, val, sr):
+        test_read_write_op_abs('rol', rol_op, 0x2e, addr, val, sr)
+    def test_rol_absx(addr, xind, val, sr):
+        test_read_write_op_absx('rol', rol_op, 0x3e, addr, xind, val, sr)
+    
+    def test_ror_zpg(addr, val, sr):
+        test_read_write_op_zpg('ror', ror_op, 0x66, addr, val, sr)
+    def test_ror_zpgx(addr, xind, val, sr):
+        test_read_write_op_zpgx('ror', ror_op, 0x76, addr, xind, val, sr)
+    def test_ror_abs(addr, val, sr):
+        test_read_write_op_abs('ror', ror_op, 0x6e, addr, val, sr)
+    def test_ror_absx(addr, xind, val, sr):
+        test_read_write_op_absx('ror', ror_op, 0x7e, addr, xind, val, sr)
     
     ###############################
     # testsuite
@@ -1332,12 +1387,17 @@ try:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_sty_abs(yind, addr, sr)
+    """
     
     for addr in zpg_addr_values:
         for v in small_nz_values:
             for sr in small_sr_nz_values:
                 test_dec_zpg(addr, v, sr)
                 test_inc_zpg(addr, v, sr)
+                test_asl_zpg(addr, v, sr)
+                test_lsr_zpg(addr, v, sr)
+                test_rol_zpg(addr, v, sr)
+                test_ror_zpg(addr, v, sr)
     
     for addr in zpg_addr_values:
         for xind in zpgx_xind_values:
@@ -1345,13 +1405,20 @@ try:
                 for sr in small_sr_nz_values:
                     test_dec_zpgx(addr, xind, v, sr)
                     test_inc_zpgx(addr, xind, v, sr)
-    """
+                    test_asl_zpgx(addr, xind, v, sr)
+                    test_lsr_zpgx(addr, xind, v, sr)
+                    test_rol_zpgx(addr, xind, v, sr)
+                    test_ror_zpgx(addr, xind, v, sr)
     
     for addr in abs_addr_values:
         for v in small_nz_values:
             for sr in small_sr_nz_values:
                 test_dec_abs(addr, v, sr)
                 test_inc_abs(addr, v, sr)
+                test_asl_abs(addr, v, sr)
+                test_lsr_abs(addr, v, sr)
+                test_rol_abs(addr, v, sr)
+                test_ror_abs(addr, v, sr)
     
     for addr in abs_addr_values:
         for xind in zpgx_xind_values:
@@ -1359,6 +1426,10 @@ try:
                 for sr in small_sr_nz_values:
                     test_dec_absx(addr, xind, v, sr)
                     test_inc_absx(addr, xind, v, sr)
+                    test_asl_absx(addr, xind, v, sr)
+                    test_lsr_absx(addr, xind, v, sr)
+                    test_rol_absx(addr, xind, v, sr)
+                    test_ror_absx(addr, xind, v, sr)
     
     """
     for i in transfer_values:
