@@ -1315,10 +1315,11 @@ def gencode():
     # brk
     ml.lda(nsr)
     ml.ora_imm(SRFlags.B)
+    ml.sta(temp1)
     call_proc_8b(op_push)
     # set I
     ml.lda(nsr)
-    ml.ora_imm(SRFlags.I)
+    ml.ora_imm(SRFlags.I|SRFlags.B)
     ml.sta(nsr)
     ml.bcc(op_brk_cont)
     

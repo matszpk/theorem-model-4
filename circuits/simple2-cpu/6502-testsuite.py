@@ -1275,6 +1275,32 @@ try:
             ],
             pc=0x200, acc=3, sr=sr, xind=1, yind=2, sp=sp)
     
+    def test_brk(start, vecfffe, sp, sr):
+        ret_addr = start+2
+        run_testcase('brk start={} fffe={} sp={} sr={}'.format(start, vecfffe, sp, sr),
+            [
+                (1, pc_offset, (vecfffe+1)&0xff),
+                (1, pc_offset+1, ((vecfffe+1)>>8)&0xff),
+                (1, sr_offset, sr|0x14),
+                (1, acc_offset, 1),
+                (1, xind_offset, 2),
+                (1, yind_offset, 3),
+                (1, sp_offset, (0x100+sp-3)&0xff),
+                (1, instr_cycles_offset, 7),
+                (0, vecfffe&0xffff, 0x04),
+                (0, 0x100 + ((0x100+sp-3)&0xff), 0),
+                (0, 0x100 + ((0x100+sp-2)&0xff), sr|0x10),
+                (0, 0x100 + ((0x100+sp-1)&0xff), ret_addr&0xff),
+                (0, 0x100 + (sp&0xff), (ret_addr>>8)&0xff),
+            ],
+            [
+                (0xfffe, [vecfffe&0xff, (vecfffe>>8)&0xff]),
+                (vecfffe&0xffff, [0x04]),
+                # instructions. last is undefined (stop)
+                (start, [0x00, 0x04])
+            ],
+            pc=start, acc=1, sr=sr, xind=2, yind=3, sp=sp)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1553,6 +1579,7 @@ try:
     sp_values = [255, 154, 31, 0, 3]
     sp2_values = [255, 254, 154, 31, 61, 0, 3]
     jmp_ind_addr = [(0x3314, 0x42ba), (0x4bff, 0x5b11), (0xffff, 0x1ad5), (0x21, 0x241)]
+    vecfffe_values = [0x1316, 0xfffc, 0xfe11, 0xffe, 0x0451, 0xb5a1, 0x2988]
     
     """
     for i in sr_flags_values:
@@ -2003,12 +2030,18 @@ try:
             for sp in sp_values:
                 for sr in small_sr_nz_values:
                     test_jsr(start, addr, sp, sr)
-    """
     
     for val in abs_addr_values:
         for sp in sp2_values:
             for sr in small_sr_nz_values:
                 test_rts(val, sp, sr)
+    """
+    
+    for start in [0x2b5, 0x2ff, 0x2fe]:
+        for vecfffe in vecfffe_values:
+            for sp in sp_values:
+                for sr in sr_flags_values:
+                    test_brk(start, vecfffe, sp, sr)
     
     #########################
     # Summary
