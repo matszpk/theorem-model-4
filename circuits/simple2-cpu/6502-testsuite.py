@@ -1094,6 +1094,12 @@ try:
     def and_op(acc, val, sr):
         res = (acc & val) & 0xff
         return res, set_sr_nz(res, sr)
+    def ora_op(acc, val, sr):
+        res = (acc | val) & 0xff
+        return res, set_sr_nz(res, sr)
+    def eor_op(acc, val, sr):
+        res = (acc ^ val) & 0xff
+        return res, set_sr_nz(res, sr)
     
     def dec_op(val, sr):
         res = (256 + val - 1) & 0xff
@@ -1160,6 +1166,54 @@ try:
     
     def test_and_imm(acc, imm, sr):
         test_read_op_imm('and', and_op, 0x29, acc, imm, sr)
+    def test_and_zpg(acc, addr, val, sr):
+        test_read_op_zpg('and', and_op, 0x25, acc, addr, val, sr)
+    def test_and_zpgx(acc, addr, xind, val, sr):
+        test_read_op_zpgx('and', and_op, 0x35, acc, addr, xind, val, sr)
+    def test_and_abs(acc, addr, val, sr):
+        test_read_op_abs('and', and_op, 0x2d, acc, addr, val, sr)
+    def test_and_absx(acc, addr, xind, val, sr):
+        test_read_op_absx('and', and_op, 0x3d, acc, addr, xind, val, sr)
+    def test_and_absy(acc, addr, xind, val, sr):
+        test_read_op_absy('and', and_op, 0x39, acc, addr, yind, val, sr)
+    def test_and_pindx(acc, addr, xind, addr2, val, sr):
+        test_read_op_pindx('and', and_op, 0x21, acc, addr, xind, addr2, val, sr)
+    def test_and_pindy(acc, addr, addr2, yind, val, sr):
+        test_read_op_pindy('and', and_op, 0x31, acc, addr, addr2, yind, val, sr)
+    
+    def test_ora_imm(acc, imm, sr):
+        test_read_op_imm('ora', ora_op, 0x09, acc, imm, sr)
+    def test_ora_zpg(acc, addr, val, sr):
+        test_read_op_zpg('ora', ora_op, 0x05, acc, addr, val, sr)
+    def test_ora_zpgx(acc, addr, xind, val, sr):
+        test_read_op_zpgx('ora', ora_op, 0x15, acc, addr, xind, val, sr)
+    def test_ora_abs(acc, addr, val, sr):
+        test_read_op_abs('ora', ora_op, 0x0d, acc, addr, val, sr)
+    def test_ora_absx(acc, addr, xind, val, sr):
+        test_read_op_absx('ora', ora_op, 0x1d, acc, addr, xind, val, sr)
+    def test_ora_absy(acc, addr, xind, val, sr):
+        test_read_op_absy('ora', ora_op, 0x19, acc, addr, yind, val, sr)
+    def test_ora_pindx(acc, addr, xind, addr2, val, sr):
+        test_read_op_pindx('ora', ora_op, 0x01, acc, addr, xind, addr2, val, sr)
+    def test_ora_pindy(acc, addr, addr2, yind, val, sr):
+        test_read_op_pindy('ora', ora_op, 0x11, acc, addr, addr2, yind, val, sr)
+    
+    def test_eor_imm(acc, imm, sr):
+        test_read_op_imm('eor', eor_op, 0x49, acc, imm, sr)
+    def test_eor_zpg(acc, addr, val, sr):
+        test_read_op_zpg('eor', eor_op, 0x45, acc, addr, val, sr)
+    def test_eor_zpgx(acc, addr, xind, val, sr):
+        test_read_op_zpgx('eor', eor_op, 0x55, acc, addr, xind, val, sr)
+    def test_eor_abs(acc, addr, val, sr):
+        test_read_op_abs('eor', eor_op, 0x4d, acc, addr, val, sr)
+    def test_eor_absx(acc, addr, xind, val, sr):
+        test_read_op_absx('eor', eor_op, 0x5d, acc, addr, xind, val, sr)
+    def test_eor_absy(acc, addr, xind, val, sr):
+        test_read_op_absy('eor', eor_op, 0x59, acc, addr, yind, val, sr)
+    def test_eor_pindx(acc, addr, xind, addr2, val, sr):
+        test_read_op_pindx('eor', eor_op, 0x41, acc, addr, xind, addr2, val, sr)
+    def test_eor_pindy(acc, addr, addr2, yind, val, sr):
+        test_read_op_pindy('eor', eor_op, 0x51, acc, addr, addr2, yind, val, sr)
     
     def test_dec_zpg(addr, val, sr):
         test_read_write_op_zpg('dec', dec_op, 0xc6, addr, val, sr)
@@ -1507,7 +1561,6 @@ try:
             test_lsr_imp(v, sr)
             test_rol_imp(v, sr)
             test_ror_imp(v, sr)
-    """
     
     for (start, rel) in rel_jump_values:
         for sr in sr_flags_values:
@@ -1519,13 +1572,70 @@ try:
             test_bpl_rel(start, rel, sr)
             test_bvc_rel(start, rel, sr)
             test_bvs_rel(start, rel, sr)
-    
     """
+    
     for i in transfer_values:
         for j in transfer_values:
             for sr in small_sr_nz_values:
                 test_and_imm(i, j, sr)
-    """
+                test_ora_imm(i, j, sr)
+                test_eor_imm(i, j, sr)
+    
+    for i in transfer_values:
+        for addr in zpg_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_and_zpg(i, addr, v, sr)
+                    test_ora_zpg(i, addr, v, sr)
+                    test_eor_zpg(i, addr, v, sr)
+    
+    for addr in zpg_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_and_zpgx(0xba, addr, xind, v, sr)
+                    test_ora_zpgx(0x1c, addr, xind, v, sr)
+                    test_eor_zpgx(0x1c, addr, xind, v, sr)
+    
+    for i in transfer_values:
+        for addr in abs_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_and_abs(i, addr, v, sr)
+                    test_ora_abs(i, addr, v, sr)
+                    test_eor_abs(i, addr, v, sr)
+    
+    for addr in abs_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_and_absx(0xba, addr, xind, v, sr)
+                    test_ora_absx(0x1c, addr, xind, v, sr)
+                    test_eor_absx(0x1c, addr, xind, v, sr)
+    
+    for addr in abs_addr_values:
+        for yind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_and_absy(0xba, addr, yind, v, sr)
+                    test_ora_absy(0x1c, addr, yind, v, sr)
+                    test_eor_absy(0x1c, addr, yind, v, sr)
+    
+    for (addr, xind) in pindx_addr_values:
+        for addr2 in abs_addr_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_and_pindx(0xba, addr, xind, addr2, v, sr)
+                    test_ora_pindx(0x1c, addr, xind, addr2, v, sr)
+                    test_eor_pindx(0x1c, addr, xind, addr2, v, sr)
+    
+    for addr in zpg_addr_values:
+        for (addr2, yind) in pindy_addr2_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_and_pindy(0xba, addr, addr2, yind, v, sr)
+                    test_ora_pindy(0x1c, addr, addr2, yind, v, sr)
+                    test_eor_pindy(0x1c, addr, addr2, yind, v, sr)
     
     #########################
     # Summary
