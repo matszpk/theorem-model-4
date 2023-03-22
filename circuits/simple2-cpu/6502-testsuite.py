@@ -1226,9 +1226,9 @@ try:
             ],
             pc=0x200, acc=acc, sr=sr, xind=xind, yind=yind)
     
-    def test_jsr(addr, sp, sr):
-        ret_addr = 0x2b5+2
-        run_testcase('jsr abs addr={} sp={} sr={}'.format(addr, sp, sr),
+    def test_jsr(start, addr, sp, sr):
+        ret_addr = start+2
+        run_testcase('jsr abs start={} addr={} sp={} sr={}'.format(start, addr, sp, sr),
             [
                 (1, pc_offset, (addr+1)&0xff),
                 (1, pc_offset+1, ((addr+1)>>8)&0xff),
@@ -1246,9 +1246,9 @@ try:
             [
                 (addr&0xffff, [0x04]),
                 # instructions. last is undefined (stop)
-                (0x2b5, [0x20, addr&0xff, (addr>>8)&0xff, 0x04])
+                (start, [0x20, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
-            pc=0x2b5, acc=1, sr=sr, xind=2, yind=3, sp=sp)
+            pc=start, acc=1, sr=sr, xind=2, yind=3, sp=sp)
     
     ################
     
@@ -1973,10 +1973,11 @@ try:
                         test_jmp_ind(addr, addr2, acc, xind, yind, sr)
     """
     
-    for addr in abs_addr_values:
-        for sp in sp_values:
-            for sr in small_sr_nz_values:
-                test_jsr(addr, sp, sr)
+    for start in [0x2b5, 0x2ff, 0x2fe]:
+        for addr in abs_addr_values:
+            for sp in sp_values:
+                for sr in small_sr_nz_values:
+                    test_jsr(start, addr, sp, sr)
     
     #########################
     # Summary
