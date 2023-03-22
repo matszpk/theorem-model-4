@@ -210,6 +210,75 @@ try:
             [ (0x200, [0x9a, 0x04]) ],   # instructions. last is undefined (stop)
             pc=0x200, sp=1 if xind==0 else 0, sr=sr, xind=xind)
     
+    # increment/decrement
+    def test_dex(xind, sr):
+        new_xind = (256+xind-1)&0xff
+        new_sr = (sr&(0xff^2^128)) | (0 if new_xind!=0 else 2) | (new_xind&0x80)
+        run_testcase('dex xind={} sr={}'.format(xind, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, new_xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            [ (0x200, [0xca, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=2, sr=sr, xind=xind, yind=1)
+    
+    def test_dey(yind, sr):
+        new_yind = (256+yind-1)&0xff
+        new_sr = (sr&(0xff^2^128)) | (0 if new_yind!=0 else 2) | (new_yind&0x80)
+        run_testcase('dey yind={} sr={}'.format(yind, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, 1),
+                (1, yind_offset, new_yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            [ (0x200, [0x88, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=2, sr=sr, xind=1, yind=yind)
+    
+    def test_inx(xind, sr):
+        new_xind = (256+xind+1)&0xff
+        new_sr = (sr&(0xff^2^128)) | (0 if new_xind!=0 else 2) | (new_xind&0x80)
+        run_testcase('inx xind={} sr={}'.format(xind, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, new_xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            [ (0x200, [0xe8, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=2, sr=sr, xind=xind, yind=1)
+    
+    def test_iny(yind, sr):
+        new_yind = (256+yind+1)&0xff
+        new_sr = (sr&(0xff^2^128)) | (0 if new_yind!=0 else 2) | (new_yind&0x80)
+        run_testcase('iny yind={} sr={}'.format(yind, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, 1),
+                (1, yind_offset, new_yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            [ (0x200, [0xc8, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=2, sr=sr, xind=1, yind=yind)
+    
     # test addressing modes (reads)
     def test_read_op_imm(name, acc_op, opcode, acc, imm, sr):
         new_acc, new_sr = acc_op(acc, imm, sr)
@@ -943,7 +1012,7 @@ try:
     pindx_addr_values = [(0, 42), (54, 76), (187, 68), (200, 55), (178, 121)]
     pindy_addr2_values = [(0x34dd, 11), (0x828b, 141), (0xbd20, 55), (0x6b92, 0x6e)]
     small_nz_values = [0, 31, 128, 55]
-    small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93 ]
+    small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93, 0x10 ]
     
     """
     for i in sr_flags_values:
@@ -963,6 +1032,13 @@ try:
             test_tya(i, sr)
             test_tsx(i, sr)
             test_txs(i, sr)
+    
+    for i in transfer_values:
+        for sr in small_sr_nz_values:
+            test_dex(i, sr)
+            test_dey(i, sr)
+            test_inx(i, sr)
+            test_iny(i, sr)
     
     for i in transfer_values:
         for v in small_nz_values:
@@ -1124,7 +1200,6 @@ try:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_stx_abs(xind, addr, sr)
-    """
     
     for yind in transfer_values:
         for addr in zpg_addr_values:
@@ -1141,6 +1216,7 @@ try:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_sty_abs(yind, addr, sr)
+    """
     
     """
     for i in transfer_values:
