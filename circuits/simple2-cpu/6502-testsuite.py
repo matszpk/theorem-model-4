@@ -1005,7 +1005,8 @@ try:
     # testsuite
     
     sr_flags_values = [0, 1, 2, 3, 4, 6, 8, 16, 24, 32, 49, 64, 128, 129, 136, 192, 255]
-    transfer_values = [0, 3, 5, 35, 128, 44, 196, 255, 251, 136, 138, 139, 160, 161, 162, 163]
+    transfer_values = [0, 3, 5, 35, 127, 128, 44, 196, 255, 251,
+                       136, 138, 139, 160, 161, 162, 163]
     zpg_addr_values = [0, 12, 1, 55, 128, 64, 195, 231, 255]
     zpgx_xind_values = [0, 3, 66, 12, 145, 255, 197, 217, 191]
     abs_addr_values = [0x1316, 0xffff, 0xfe11, 0xffe, 0x0451, 0xb5a1, 0x2988]
@@ -1032,14 +1033,14 @@ try:
             test_tya(i, sr)
             test_tsx(i, sr)
             test_txs(i, sr)
-    
+
     for i in transfer_values:
         for sr in small_sr_nz_values:
             test_dex(i, sr)
             test_dey(i, sr)
             test_inx(i, sr)
             test_iny(i, sr)
-    
+
     for i in transfer_values:
         for v in small_nz_values:
             for sr in small_sr_nz_values:
