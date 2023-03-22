@@ -1100,6 +1100,10 @@ try:
     def eor_op(acc, val, sr):
         res = (acc ^ val) & 0xff
         return res, set_sr_nz(res, sr)
+    def cmp_op(acc, val, sr):
+        res = (acc + (val^0xff) + 1) & 0xff
+        c = ((acc + (val^0xff) + 1) >> 8) != 0
+        return acc, set_sr_nzc(res, c, sr)
     
     def dec_op(val, sr):
         res = (256 + val - 1) & 0xff
@@ -1215,6 +1219,37 @@ try:
     def test_eor_pindy(acc, addr, addr2, yind, val, sr):
         test_read_op_pindy('eor', eor_op, 0x51, acc, addr, addr2, yind, val, sr)
     
+    def test_cmp_imm(acc, imm, sr):
+        test_read_op_imm('cmp', cmp_op, 0xc9, acc, imm, sr)
+    def test_cmp_zpg(acc, addr, val, sr):
+        test_read_op_zpg('cmp', cmp_op, 0xc5, acc, addr, val, sr)
+    def test_cmp_zpgx(acc, addr, xind, val, sr):
+        test_read_op_zpgx('cmp', cmp_op, 0xd5, acc, addr, xind, val, sr)
+    def test_cmp_abs(acc, addr, val, sr):
+        test_read_op_abs('cmp', cmp_op, 0xcd, acc, addr, val, sr)
+    def test_cmp_absx(acc, addr, xind, val, sr):
+        test_read_op_absx('cmp', cmp_op, 0xdd, acc, addr, xind, val, sr)
+    def test_cmp_absy(acc, addr, xind, val, sr):
+        test_read_op_absy('cmp', cmp_op, 0xd9, acc, addr, yind, val, sr)
+    def test_cmp_pindx(acc, addr, xind, addr2, val, sr):
+        test_read_op_pindx('cmp', cmp_op, 0xc1, acc, addr, xind, addr2, val, sr)
+    def test_cmp_pindy(acc, addr, addr2, yind, val, sr):
+        test_read_op_pindy('cmp', cmp_op, 0xd1, acc, addr, addr2, yind, val, sr)
+    
+    def test_cpx_imm(xind, imm, sr):
+        test_read_op_xind_imm('cpx', cmp_op, 0xe0, xind, imm, sr)
+    def test_cpx_zpg(xind, addr, val, sr):
+        test_read_op_xind_zpg('cpx', cmp_op, 0xe4, xind, addr, val, sr)
+    def test_cpx_abs(xind, addr, val, sr):
+        test_read_op_xind_abs('cpx', cmp_op, 0xec, xind, addr, val, sr)
+    
+    def test_cpy_imm(yind, imm, sr):
+        test_read_op_yind_imm('cpy', cmp_op, 0xc0, yind, imm, sr)
+    def test_cpy_zpg(yind, addr, val, sr):
+        test_read_op_yind_zpg('cpy', cmp_op, 0xc4, yind, addr, val, sr)
+    def test_cpy_abs(yind, addr, val, sr):
+        test_read_op_yind_abs('cpy', cmp_op, 0xcc, yind, addr, val, sr)
+    
     def test_dec_zpg(addr, val, sr):
         test_read_write_op_zpg('dec', dec_op, 0xc6, addr, val, sr)
     def test_dec_zpgx(addr, xind, val, sr):
@@ -1309,6 +1344,7 @@ try:
     small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93, 0x10 ]
     rel_jump_values = [(0x341, 0x31), (0x33b, 0xc3), (0x33b, 0xc2), (0x33b, 0xba),
                        (0x3ba, 0x2d), (0x3ba, 0x43), (0x3ba, 0x44), (0x3ba, 0x47)]
+    small_cmp_values = [0, 11, 22, 93, 233, 252]
     
     """
     for i in sr_flags_values:
@@ -1572,7 +1608,6 @@ try:
             test_bpl_rel(start, rel, sr)
             test_bvc_rel(start, rel, sr)
             test_bvs_rel(start, rel, sr)
-    """
     
     for i in transfer_values:
         for j in transfer_values:
@@ -1636,6 +1671,74 @@ try:
                     test_and_pindy(0xba, addr, addr2, yind, v, sr)
                     test_ora_pindy(0x1c, addr, addr2, yind, v, sr)
                     test_eor_pindy(0x1c, addr, addr2, yind, v, sr)
+    
+    for i in transfer_values:
+        for j in transfer_values:
+            for sr in small_sr_nz_values:
+                test_cmp_imm(i, j, sr)
+    
+    for i in transfer_values:
+        for addr in zpg_addr_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cmp_zpg(i, addr, v, sr)
+    
+    for addr in zpg_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cmp_zpgx(0x1c, addr, xind, v, sr)
+    
+    for i in transfer_values:
+        for addr in abs_addr_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cmp_abs(i, addr, v, sr)
+    
+    for addr in abs_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cmp_absx(0x1c, addr, xind, v, sr)
+    
+    for addr in abs_addr_values:
+        for yind in zpgx_xind_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cmp_absy(0x1c, addr, yind, v, sr)
+    
+    for (addr, xind) in pindx_addr_values:
+        for addr2 in abs_addr_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cmp_pindx(0x1c, addr, xind, addr2, v, sr)
+    
+    for addr in zpg_addr_values:
+        for (addr2, yind) in pindy_addr2_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cmp_pindy(0x1c, addr, addr2, yind, v, sr)
+    """
+    
+    for i in transfer_values:
+        for j in transfer_values:
+            for sr in small_sr_nz_values:
+                test_cpx_imm(i, j, sr)
+                test_cpy_imm(i, j, sr)
+    
+    for i in transfer_values:
+        for addr in zpg_addr_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cpx_zpg(i, addr, v, sr)
+                    test_cpy_zpg(i, addr, v, sr)
+    
+    for i in transfer_values:
+        for addr in abs_addr_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nz_values:
+                    test_cpx_abs(i, addr, v, sr)
+                    test_cpy_abs(i, addr, v, sr)
     
     #########################
     # Summary
