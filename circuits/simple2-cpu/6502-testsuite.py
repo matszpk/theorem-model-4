@@ -1301,6 +1301,33 @@ try:
             ],
             pc=start, acc=1, sr=sr, xind=2, yind=3, sp=sp)
     
+    def test_rti(ret, ret_sr, sp, sr):
+        run_testcase('rti ret={} ret_sr={} sp={} sr={}'.format(ret, ret_sr, sp, sr),
+            [
+                (1, pc_offset, (ret+1)&0xff),
+                (1, pc_offset+1, ((ret+1)>>8)&0xff),
+                (1, sr_offset, ret_sr),
+                (1, acc_offset, 3),
+                (1, xind_offset, 1),
+                (1, yind_offset, 2),
+                (1, sp_offset, (0x100+sp+3)&0xff),
+                (1, instr_cycles_offset, 6),
+                (0, 0x100 + (sp&0xff), 0),
+                (0, 0x100 + ((sp+1)&0xff), ret_sr&0xff),
+                (0, 0x100 + ((sp+2)&0xff), ret&0xff),
+                (0, 0x100 + ((sp+3)&0xff), (ret>>8)&0xff),
+            ],
+            [
+                # stack
+                (0x100 + ((sp+1)&0xff), [ret_sr&0xff]),
+                (0x100 + ((sp+2)&0xff), [ret&0xff]),
+                (0x100 + ((sp+3)&0xff), [(ret>>8)&0xff]),
+                (ret&0xffff, [0x4]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x40, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=1, yind=2, sp=sp)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -2035,13 +2062,19 @@ try:
         for sp in sp2_values:
             for sr in small_sr_nz_values:
                 test_rts(val, sp, sr)
-    """
     
     for start in [0x2b5, 0x2ff, 0x2fe]:
         for vecfffe in vecfffe_values:
             for sp in sp_values:
                 for sr in sr_flags_values:
                     test_brk(start, vecfffe, sp, sr)
+    """
+    
+    for val in abs_addr_values:
+        for ret_sr in sr_flags_values:
+            for sp in sp2_values:
+                for sr in small_sr_nz_values:
+                    test_rti(val, ret_sr, sp, sr)
     
     #########################
     # Summary
