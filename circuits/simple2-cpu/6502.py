@@ -234,6 +234,8 @@ store_mem_val_c64_no_deviochar = -10000
 
 addr_mode_code = -10000
 
+branch_dont = -10000
+
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
@@ -537,14 +539,14 @@ def gencode():
     ml.bcc(get_ret_page(addr_load_mem_val_call), [False, True])
     
     #print(ml.pc)
-    
+    global branch_dont
     branch_sr_flag = ml.pc
     ml.byte(0, True)
     
     op_branch_if_not_set = ml.pc
     ml.lda(nsr)
     ml.ana(branch_sr_flag)
-    ml.bne(main_loop)
+    ml.bne(branch_dont)
     branch_do = ml.pc
     ml.lda(instr_cycles)
     ml.sec()
@@ -556,12 +558,16 @@ def gencode():
     ml.sta(npc+1)
     ml.clc()
     ml.bcc(main_loop)
+    branch_dont = ml.pc
+    ml.lda_imm(2)
+    ml.sta(instr_cycles)
+    ml.bne(main_loop)
     
     op_branch_if_set = ml.pc
     ml.lda(nsr)
     ml.ana(branch_sr_flag)
     ml.bne(branch_do)
-    ml.bpl(main_loop)
+    ml.bpl(branch_dont)
     
     global set_cpu_nzc
     set_cpu_nzvc = ml.pc

@@ -1054,6 +1054,31 @@ try:
             ],
             pc=0x200, acc=val, sr=sr, xind=2, yind=1)
     
+    def test_op_branch(name, set_sr, sr_flag, opcode, start, rel, sr):
+        do_jump = set_sr if (sr&sr_flag)!=0 else not set_sr
+        rel_addr = start+2+(rel&0x7f) if rel<0x80 else start+2+(rel-0x100)
+        final_pc = (rel_addr if do_jump else start+2) + 1
+        run_testcase('{} rel sr_flag={} start={} rel={} sr={}' \
+                .format(name, sr_flag, start, rel, sr),
+            [
+                (1, pc_offset, (final_pc)&0xff),
+                (1, pc_offset+1, ((final_pc)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, 3),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2 + int(do_jump) +
+                        int(do_jump and ((start+2)&0xff00)!=(rel_addr&0xff00))),
+            ],
+            [
+                # instructions. last is undefined (stop)
+                (start, [opcode&0xff, rel&0xff, 0x04]),
+                 # if jump done
+                (rel_addr, [0x04]),
+            ],
+            pc=start, acc=3, sr=sr, xind=2, yind=1)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1198,6 +1223,23 @@ try:
     def test_ror_absx(addr, xind, val, sr):
         test_read_write_op_absx('ror', ror_op, 0x7e, addr, xind, val, sr)
     
+    def test_bcc_rel(start, rel, sr):
+        test_op_branch('bcc', False, 1, 0x90, start, rel, sr)
+    def test_bcs_rel(start, rel, sr):
+        test_op_branch('bcs', True, 1, 0xb0, start, rel, sr)
+    def test_beq_rel(start, rel, sr):
+        test_op_branch('beq', True, 2, 0xf0, start, rel, sr)
+    def test_bmi_rel(start, rel, sr):
+        test_op_branch('bmi', True, 0x80, 0x30, start, rel, sr)
+    def test_bne_rel(start, rel, sr):
+        test_op_branch('bne', False, 2, 0xd0, start, rel, sr)
+    def test_bpl_rel(start, rel, sr):
+        test_op_branch('bpl', False, 0x80, 0x10, start, rel, sr)
+    def test_bvc_rel(start, rel, sr):
+        test_op_branch('bvc', False, 0x40, 0x50, start, rel, sr)
+    def test_bvs_rel(start, rel, sr):
+        test_op_branch('bvs', True, 0x40, 0x70, start, rel, sr)
+    
     ###############################
     # testsuite
     
@@ -1211,6 +1253,8 @@ try:
     pindy_addr2_values = [(0x34dd, 11), (0x828b, 141), (0xbd20, 55), (0x6b92, 0x6e)]
     small_nz_values = [0, 31, 128, 55]
     small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93, 0x10 ]
+    rel_jump_values = [(0x341, 0x31), (0x33b, 0xc3), (0x33b, 0xc2), (0x33b, 0xba),
+                       (0x3ba, 0x2d), (0x3ba, 0x43), (0x3ba, 0x44), (0x3ba, 0x47)]
     
     """
     for i in sr_flags_values:
@@ -1414,7 +1458,6 @@ try:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_sty_abs(yind, addr, sr)
-    """
     
     for addr in zpg_addr_values:
         for v in transfer_values:
@@ -1464,6 +1507,18 @@ try:
             test_lsr_imp(v, sr)
             test_rol_imp(v, sr)
             test_ror_imp(v, sr)
+    """
+    
+    for (start, rel) in rel_jump_values:
+        for sr in sr_flags_values:
+            test_bcc_rel(start, rel, sr)
+            test_bcs_rel(start, rel, sr)
+            test_beq_rel(start, rel, sr)
+            test_bmi_rel(start, rel, sr)
+            test_bne_rel(start, rel, sr)
+            test_bpl_rel(start, rel, sr)
+            test_bvc_rel(start, rel, sr)
+            test_bvs_rel(start, rel, sr)
     
     """
     for i in transfer_values:
