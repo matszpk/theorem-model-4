@@ -811,6 +811,69 @@ try:
             ],
             pc=0x200, xind=xind, sr=sr, acc=2, yind=1)
     
+    def test_sty_zpg(yind, addr, sr):
+        opcode = 0x84
+        run_testcase('sty zpg yind={} addr={} sr={}'.format(yind, addr, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, 1),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 3),
+                (0, addr&0xff, yind),
+            ],
+            [
+                (addr&0xff, [0 if yind!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, yind=yind, sr=sr, acc=2, xind=1)
+    
+    def test_sty_zpgx(yind, addr, xind, sr):
+        opcode = 0x94
+        run_testcase('sty zpgx yind={} addr={} xind={} sr={}'.format(yind, addr, xind, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, xind),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+                (0, (addr+xind)&0xff, yind),
+            ],
+            [
+                ((addr+xind)&0xff, [0 if yind!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=2, sr=sr, xind=xind, yind=yind)
+    
+    def test_sty_abs(yind, addr, sr):
+        opcode = 0x8c
+        run_testcase('sty abs yind={} addr={} sr={}'.format(yind, addr, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, 2),
+                (1, xind_offset, 1),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, yind),
+            ],
+            [
+                (addr&0xffff, [0 if yind!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, yind=yind, sr=sr, acc=2, xind=1)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1056,12 +1119,28 @@ try:
             for yind in zpgx_xind_values:
                 for sr in small_sr_nz_values:
                     test_stx_zpgy(xind, addr, yind, sr)
-    """
     
     for xind in transfer_values:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_stx_abs(xind, addr, sr)
+    """
+    
+    for yind in transfer_values:
+        for addr in zpg_addr_values:
+            for sr in small_sr_nz_values:
+                test_sty_zpg(yind, addr, sr)
+    
+    for yind in small_nz_values:
+        for addr in zpg_addr_values:
+            for xind in zpgx_xind_values:
+                for sr in small_sr_nz_values:
+                    test_sty_zpgx(yind, addr, xind, sr)
+    
+    for yind in transfer_values:
+        for addr in abs_addr_values:
+            for sr in small_sr_nz_values:
+                test_sty_abs(yind, addr, sr)
     
     """
     for i in transfer_values:
