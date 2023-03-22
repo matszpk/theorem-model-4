@@ -1138,6 +1138,50 @@ try:
             ],
             pc=0x200, acc=0 if val!=0 else 1, sr=sr, xind=1, yind=2, sp=sp)
     
+    def test_php(sp, sr):
+        run_testcase('php sp={} sr={}'.format(sp, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, 3),
+                (1, xind_offset, 1),
+                (1, yind_offset, 2),
+                (1, sp_offset, (0x100+sp-1)&0xff),
+                (1, instr_cycles_offset, 3),
+                (0, 0x100 + ((0x100+sp-1)&0xff), 0),
+                (0, 0x100 + (sp&0xff), sr|0x10),
+            ],
+            [
+                # stack
+                (0x100 + (sp&0xff), [0 if sr!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x08, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=1, yind=2, sp=sp)
+    
+    def test_plp(val, sp, sr):
+        run_testcase('plp val={} sp={} sr={}'.format(val, sp, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, val),
+                (1, acc_offset, 3),
+                (1, xind_offset, 1),
+                (1, yind_offset, 2),
+                (1, sp_offset, (0x100+sp+1)&0xff),
+                (1, instr_cycles_offset, 4),
+                (0, 0x100 + (sp&0xff), 0),
+                (0, 0x100 + ((sp+1)&0xff), val),
+            ],
+            [
+                # stack
+                (0x100 + ((sp+1)&0xff), [val]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x28, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=1, yind=2, sp=sp)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1830,12 +1874,21 @@ try:
         for sp in sp_values:
             for sr in small_sr_nz_values:
                 test_pha(acc, sp, sr)
-    """
     
     for val in transfer_values:
         for sp in sp_values:
             for sr in small_sr_nz_values:
                 test_pla(val, sp, sr)
+    
+    for sp in sp_values:
+        for sr in transfer_values:
+            test_php(sp, sr)
+    """
+    
+    for val in transfer_values:
+        for sp in sp_values:
+            for sr in transfer_values:
+                test_plp(val, sp, sr)
     
     #########################
     # Summary
