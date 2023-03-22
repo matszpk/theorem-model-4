@@ -1293,6 +1293,7 @@ def gencode():
     ml.sta(npc)
     ml.lda(child_mem_addr+1)
     ml.sta(npc+1)
+    ml.lda(temp1)
     call_proc_8b(op_push)
     ml.lda(temp2)
     ml.sta(temp1)
