@@ -1035,6 +1035,25 @@ try:
             ],
             pc=0x200, acc=3, sr=sr, xind=xind, yind=1)
     
+    def test_acc_op_imp(name, mem_op, opcode, val, sr):
+        new_val, new_sr = mem_op(val, sr)
+        run_testcase('{} imp val={} sr={}'.format(name, val, sr),
+            [
+                (1, pc_offset, (0x202)&0xff),
+                (1, pc_offset+1, ((0x202)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, new_val),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 2),
+            ],
+            [
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, 0x04])
+            ],
+            pc=0x200, acc=val, sr=sr, xind=2, yind=1)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1135,6 +1154,8 @@ try:
     def test_inc_absx(addr, xind, val, sr):
         test_read_write_op_absx('inc', inc_op, 0xfe, addr, xind, val, sr)
     
+    def test_asl_imp(val, sr):
+        test_acc_op_imp('asl', asl_op, 0x0a, val, sr)
     def test_asl_zpg(addr, val, sr):
         test_read_write_op_zpg('asl', asl_op, 0x06, addr, val, sr)
     def test_asl_zpgx(addr, xind, val, sr):
@@ -1144,6 +1165,8 @@ try:
     def test_asl_absx(addr, xind, val, sr):
         test_read_write_op_absx('asl', asl_op, 0x1e, addr, xind, val, sr)
     
+    def test_lsr_imp(val, sr):
+        test_acc_op_imp('lsr', lsr_op, 0x4a, val, sr)
     def test_lsr_zpg(addr, val, sr):
         test_read_write_op_zpg('lsr', lsr_op, 0x46, addr, val, sr)
     def test_lsr_zpgx(addr, xind, val, sr):
@@ -1153,6 +1176,8 @@ try:
     def test_lsr_absx(addr, xind, val, sr):
         test_read_write_op_absx('lsr', lsr_op, 0x5e, addr, xind, val, sr)
     
+    def test_rol_imp(val, sr):
+        test_acc_op_imp('rol', rol_op, 0x2a, val, sr)
     def test_rol_zpg(addr, val, sr):
         test_read_write_op_zpg('rol', rol_op, 0x26, addr, val, sr)
     def test_rol_zpgx(addr, xind, val, sr):
@@ -1162,6 +1187,8 @@ try:
     def test_rol_absx(addr, xind, val, sr):
         test_read_write_op_absx('rol', rol_op, 0x3e, addr, xind, val, sr)
     
+    def test_ror_imp(val, sr):
+        test_acc_op_imp('ror', ror_op, 0x6a, val, sr)
     def test_ror_zpg(addr, val, sr):
         test_read_write_op_zpg('ror', ror_op, 0x66, addr, val, sr)
     def test_ror_zpgx(addr, xind, val, sr):
@@ -1387,7 +1414,6 @@ try:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_sty_abs(yind, addr, sr)
-    """
     
     for addr in zpg_addr_values:
         for v in small_nz_values:
@@ -1430,6 +1456,14 @@ try:
                     test_lsr_absx(addr, xind, v, sr)
                     test_rol_absx(addr, xind, v, sr)
                     test_ror_absx(addr, xind, v, sr)
+    
+    for v in small_nz_values:
+        for sr in small_sr_nz_values:
+            test_asl_imp(v, sr)
+            test_lsr_imp(v, sr)
+            test_rol_imp(v, sr)
+            test_ror_imp(v, sr)
+    """
     
     """
     for i in transfer_values:
