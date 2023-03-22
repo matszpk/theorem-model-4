@@ -1414,9 +1414,10 @@ try:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_sty_abs(yind, addr, sr)
+    """
     
     for addr in zpg_addr_values:
-        for v in small_nz_values:
+        for v in transfer_values:
             for sr in small_sr_nz_values:
                 test_dec_zpg(addr, v, sr)
                 test_inc_zpg(addr, v, sr)
@@ -1427,7 +1428,7 @@ try:
     
     for addr in zpg_addr_values:
         for xind in zpgx_xind_values:
-            for v in small_nz_values:
+            for v in transfer_values:
                 for sr in small_sr_nz_values:
                     test_dec_zpgx(addr, xind, v, sr)
                     test_inc_zpgx(addr, xind, v, sr)
@@ -1437,7 +1438,7 @@ try:
                     test_ror_zpgx(addr, xind, v, sr)
     
     for addr in abs_addr_values:
-        for v in small_nz_values:
+        for v in transfer_values:
             for sr in small_sr_nz_values:
                 test_dec_abs(addr, v, sr)
                 test_inc_abs(addr, v, sr)
@@ -1448,7 +1449,7 @@ try:
     
     for addr in abs_addr_values:
         for xind in zpgx_xind_values:
-            for v in small_nz_values:
+            for v in transfer_values:
                 for sr in small_sr_nz_values:
                     test_dec_absx(addr, xind, v, sr)
                     test_inc_absx(addr, xind, v, sr)
@@ -1457,13 +1458,12 @@ try:
                     test_rol_absx(addr, xind, v, sr)
                     test_ror_absx(addr, xind, v, sr)
     
-    for v in small_nz_values:
+    for v in transfer_values:
         for sr in small_sr_nz_values:
             test_asl_imp(v, sr)
             test_lsr_imp(v, sr)
             test_rol_imp(v, sr)
             test_ror_imp(v, sr)
-    """
     
     """
     for i in transfer_values:
