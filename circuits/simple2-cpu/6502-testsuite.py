@@ -700,6 +700,54 @@ try:
             ],
             pc=0x200, acc=acc, sr=sr, yind=yind, xind=2)
     
+    def test_sta_pindx(acc, addr, xind, addr2, sr):
+        opcode = 0x81
+        run_testcase('sta pindx acc={} addr={} xind={} addr2={} sr={}' \
+                .format(acc, addr, xind, addr2, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 6),
+                (0, addr2&0xffff, acc),
+            ],
+            [
+                ((addr+xind)&0xff, [addr2&0xff]),
+                ((addr+xind+1)&0xff, [(addr2>>8)&0xff]),
+                (addr2&0xffff, [0 if acc!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=1)
+    
+    def test_sta_pindy(acc, addr, addr2, yind, sr):
+        opcode = 0x91
+        run_testcase('sta pindy acc={} addr={} addr2={} yind={} sr={}' \
+                     .format(acc, addr, addr2, yind, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 6),
+                (0, (addr2+yind)&0xffff, acc),
+            ],
+            [
+                ((addr)&0xff, [addr2&0xff]),
+                ((addr+1)&0xff, [(addr2>>8)&0xff]),
+                ((addr2+yind)&0xffff, [0 if acc!=0 else 1]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, yind=yind, xind=2)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -910,7 +958,6 @@ try:
         for addr in abs_addr_values:
             for sr in small_sr_nz_values:
                 test_sta_abs(acc, addr, sr)
-    """
     
     for acc in small_nz_values:
         for addr in abs_addr_values:
@@ -923,6 +970,19 @@ try:
             for yind in zpgx_xind_values:
                 for sr in small_sr_nz_values:
                     test_sta_absy(acc, addr, yind, sr)
+    
+    for acc in small_nz_values:
+        for (addr, xind) in pindx_addr_values:
+            for addr2 in abs_addr_values:
+                for sr in small_sr_nz_values:
+                    test_sta_pindx(acc, addr, xind, addr2, sr)
+    """
+    
+    for acc in small_nz_values:
+        for addr in zpg_addr_values:
+            for (addr2, yind) in pindy_addr2_values:
+                for sr in small_sr_nz_values:
+                    test_sta_pindy(acc, addr, addr2, yind, sr)
     
     """
     for i in transfer_values:
