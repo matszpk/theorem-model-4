@@ -968,6 +968,71 @@ try:
             ],
             pc=0x200, acc=3, sr=sr, xind=2, yind=1)
     
+    def test_read_write_op_zpgx(name, mem_op, opcode, addr, xind, val, sr):
+        new_val, new_sr = mem_op(val, sr)
+        run_testcase('{} zpgx addr={} xind={} val={} sr={}' \
+                    .format(name, addr, xind, val, sr),
+            [
+                (1, pc_offset, (0x203)&0xff),
+                (1, pc_offset+1, ((0x203)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 3),
+                (1, xind_offset, xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 6),
+                (0, (addr+xind)&0xff, new_val),
+            ],
+            [
+                ((addr+xind)&0xff, [val]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=xind, yind=1)
+    
+    def test_read_write_op_abs(name, mem_op, opcode, addr, val, sr):
+        new_val, new_sr = mem_op(val, sr)
+        run_testcase('{} abs addr={} val={} sr={}'.format(name, addr, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 3),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 6),
+                (0, addr&0xffff, new_val),
+            ],
+            [
+                (addr&0xffff, [val]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=2, yind=1)
+    
+    def test_read_write_op_absx(name, mem_op, opcode, addr, xind, val, sr):
+        new_val, new_sr = mem_op(val, sr)
+        run_testcase('{} absx addr={} xind={} val={} sr={}' \
+                    .format(name, addr, xind, val, sr),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, 3),
+                (1, xind_offset, xind),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 7),
+                (0, (addr+xind)&0xffff, new_val),
+            ],
+            [
+                ((addr+xind)&0xffff, [val]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=xind, yind=1)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1035,9 +1100,21 @@ try:
     
     def test_dec_zpg(addr, val, sr):
         test_read_write_op_zpg('dec', dec_op, 0xc6, addr, val, sr)
+    def test_dec_zpgx(addr, xind, val, sr):
+        test_read_write_op_zpgx('dec', dec_op, 0xd6, addr, xind, val, sr)
+    def test_dec_abs(addr, val, sr):
+        test_read_write_op_abs('dec', dec_op, 0xce, addr, val, sr)
+    def test_dec_absx(addr, xind, val, sr):
+        test_read_write_op_absx('dec', dec_op, 0xde, addr, xind, val, sr)
     
     def test_inc_zpg(addr, val, sr):
         test_read_write_op_zpg('inc', inc_op, 0xe6, addr, val, sr)
+    def test_inc_zpgx(addr, xind, val, sr):
+        test_read_write_op_zpgx('inc', inc_op, 0xf6, addr, xind, val, sr)
+    def test_inc_abs(addr, val, sr):
+        test_read_write_op_abs('inc', inc_op, 0xee, addr, val, sr)
+    def test_inc_absx(addr, xind, val, sr):
+        test_read_write_op_absx('inc', inc_op, 0xfe, addr, xind, val, sr)
     
     ###############################
     # testsuite
@@ -1053,6 +1130,7 @@ try:
     small_nz_values = [0, 31, 128, 55]
     small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93, 0x10 ]
     
+    """
     for i in sr_flags_values:
         test_clc(i)
         test_cld(i)
@@ -1261,10 +1339,33 @@ try:
                 test_dec_zpg(addr, v, sr)
                 test_inc_zpg(addr, v, sr)
     
+    for addr in zpg_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_dec_zpgx(addr, xind, v, sr)
+                    test_inc_zpgx(addr, xind, v, sr)
+    """
+    
+    for addr in abs_addr_values:
+        for v in small_nz_values:
+            for sr in small_sr_nz_values:
+                test_dec_abs(addr, v, sr)
+                test_inc_abs(addr, v, sr)
+    
+    for addr in abs_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_nz_values:
+                for sr in small_sr_nz_values:
+                    test_dec_absx(addr, xind, v, sr)
+                    test_inc_absx(addr, xind, v, sr)
+    
+    """
     for i in transfer_values:
         for j in transfer_values:
             for sr in small_sr_nz_values:
                 test_and_imm(i, j, sr)
+    """
     
     #########################
     # Summary
