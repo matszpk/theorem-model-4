@@ -1369,7 +1369,7 @@ def gencode():
 
     op_jmpind = ml.pc
     ml.lda(child_mem_addr)
-    ml.clc()
+    ml.sec()
     ml.adc_imm(0)
     ml.sta(child_mem_addr)
     ml.clc()

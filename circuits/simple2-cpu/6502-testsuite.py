@@ -1182,6 +1182,50 @@ try:
             ],
             pc=0x200, acc=3, sr=sr, xind=1, yind=2, sp=sp)
     
+    def test_jmp(addr, acc, xind, yind, sr):
+        run_testcase('jmp abs addr={} acc={} xind={} yind={} sr={}' \
+                     .format(addr, acc, xind, yind, sr),
+            [
+                (1, pc_offset, (addr+1)&0xff),
+                (1, pc_offset+1, ((addr+1)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 3),
+                (0, addr&0xffff, 0x04),
+            ],
+            [
+                (addr&0xffff, [0x04]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x4c, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=yind)
+    
+    def test_jmp_ind(addr, addr2, acc, xind, yind, sr):
+        run_testcase('jmp ind addr={} addr2={} acc={} xind={} yind={} sr={}' \
+                     .format(addr, addr2, acc, xind, yind, sr),
+            [
+                (1, pc_offset, (addr2+1)&0xff),
+                (1, pc_offset+1, ((addr2+1)>>8)&0xff),
+                (1, sr_offset, sr),
+                (1, acc_offset, acc),
+                (1, xind_offset, xind),
+                (1, yind_offset, yind),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 5),
+                (0, addr2&0xffff, 0x04),
+            ],
+            [
+                (addr&0xffff, [addr2&0xff]),
+                (((addr)&0xff00)+((addr+1)&0xff), [(addr2>>8)&0xff]),
+                (addr2&0xffff, [0x04]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x6c, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=sr, xind=xind, yind=yind)
+    
     ################
     
     def test_clc(sr): test_chsr('clc', 0x18, 0, True, sr)
@@ -1458,6 +1502,7 @@ try:
                        (0x3ba, 0x2d), (0x3ba, 0x43), (0x3ba, 0x44), (0x3ba, 0x47)]
     small_cmp_values = [0, 11, 22, 93, 233, 252]
     sp_values = [255, 154, 31, 0, 3]
+    jmp_ind_addr = [(0x3314, 0x42ba), (0x4bff, 0x5b11), (0xffff, 0x1ad5), (0x21, 0x241)]
     
     """
     for i in sr_flags_values:
@@ -1883,12 +1928,26 @@ try:
     for sp in sp_values:
         for sr in transfer_values:
             test_php(sp, sr)
-    """
     
     for val in transfer_values:
         for sp in sp_values:
             for sr in transfer_values:
                 test_plp(val, sp, sr)
+    
+    for addr in abs_addr_values:
+        for acc in small_nz_values:
+            for xind in small_nz_values:
+                for yind in small_nz_values:
+                    for sr in small_sr_nz_values:
+                        test_jmp(addr, acc, xind, yind, sr)
+    """
+    
+    for (addr, addr2) in jmp_ind_addr:
+        for acc in small_nz_values:
+            for xind in small_nz_values:
+                for yind in small_nz_values:
+                    for sr in small_sr_nz_values:
+                        test_jmp_ind(addr, addr2, acc, xind, yind, sr)
     
     #########################
     # Summary
