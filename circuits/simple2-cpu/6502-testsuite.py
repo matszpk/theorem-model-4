@@ -2338,7 +2338,7 @@ try:
             [
                 (0, [0x2f, 0x30|(memconfig&7)]),
                 (addr&0xffff, [0]),
-                ((addr&0xffff)|0x10000, [0]),
+                ((addr&0xffff)|0x10000, [0]),   # only for testcases. DO NOT USE!
                 # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
