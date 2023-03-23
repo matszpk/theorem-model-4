@@ -10,8 +10,11 @@ import subprocess
 PROJECT_PATH = os.path.split(os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])[0]
 
 THEOREM_MODEL = os.path.join(PROJECT_PATH, 'target/release/theorem-model-4')
-CIRCUIT =  os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/simple2-cpu.circuit')
-CG6502 =  os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/6502.py')
+CIRCUIT = os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/simple2-cpu.circuit')
+CG6502 = os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/6502.py')
+C64BASIC = os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/basic')
+C64KERNAL = os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/kernal')
+C64CHARGEN = os.path.join(PROJECT_PATH, 'circuits/simple2-cpu/chargen')
 PYTHON = '/usr/bin/python'
 
 pc_offset = 0xfe0
@@ -2221,7 +2224,6 @@ try:
                 for sr in small_sr_nzvc_values:
                     test_adc_pindy(0x1c, addr, addr2, yind, v, sr)
                     test_sbc_pindy(0x1c, addr, addr2, yind, v, sr)
-    """
     
     for a in range(0,256):
         for b in range(0,256):
@@ -2230,12 +2232,86 @@ try:
                 if tests_failed!=0:
                     exit()
     
-    """
     for a in range(0,256):
         for b in range(0,256):
             for sr in range(8,10):
                 test_sbc_imm(a, b, sr)
     """
+    
+    #########################
+    # Commodore 64 native
+    
+    #########################
+    cp = subprocess.run([PYTHON, CG6502, '-N', '-C'], capture_output=True)
+    if cp.returncode != 0:
+        raise(RuntimeError('Error while running code generation of 6502'))
+    with open('6502progbase.raw','wb') as f:
+        f.write(cp.stdout)
+
+    with open('6502membase.raw','wb') as f:
+        f.write(b'\x00'*(0x1a000))
+        with open(C64BASIC,'rb') as basic:
+            f.write(basic.read())
+        with open(C64CHARGEN,'rb') as chargen:
+            f.write(chargen.read())
+        f.write(b'\x00'*(0x1000))   # devio
+        with open(C64KERNAL,'rb') as kernal:
+            f.write(kernal.read())
+    ####################################
+    
+    def test_lda_rom(memconfig, addr, val, romaddr, romval):
+        new_acc, new_sr = lda_op(0, val, 0)
+        run_testcase('lda (rom) mc={} addr={} val={}'.format(memconfig, addr, val),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, val),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, 1),
+                (0, (romaddr&0xffff)|0x10000, romval),
+            ],
+            [
+                (0, [0x2f, 0x30|(memconfig&7)]),
+                (addr&0xffff, [1]),
+                # instructions. last is undefined (stop)
+                (0x200, [0xad, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=0, sr=0, xind=2, yind=1)
+    
+    ####################################
+    # basic and kernel
+    test_lda_rom(7, 0xa280, 0x4e, 0xa280, 0x4e)
+    test_lda_rom(7, 0xe580, 0x27, 0xe580, 0x27)
+    test_lda_rom(3, 0xa280, 0x4e, 0xa280, 0x4e)
+    test_lda_rom(3, 0xe580, 0x27, 0xe580, 0x27)
+    # only kernal
+    test_lda_rom(6, 0xa280, 0x1, 0xa280, 0x4e)
+    test_lda_rom(6, 0xe580, 0x27, 0xe580, 0x27)
+    test_lda_rom(2, 0xa280, 0x1, 0xa280, 0x4e)
+    test_lda_rom(2, 0xe580, 0x27, 0xe580, 0x27)
+    # no basic no kernal
+    test_lda_rom(5, 0xa280, 0x1, 0xa280, 0x4e)
+    test_lda_rom(5, 0xe580, 0x1, 0xe580, 0x27)
+    test_lda_rom(4, 0xa280, 0x1, 0xa280, 0x4e)
+    test_lda_rom(4, 0xe580, 0x1, 0xe580, 0x27)
+    test_lda_rom(1, 0xa280, 0x1, 0xa280, 0x4e)
+    test_lda_rom(1, 0xe580, 0x1, 0xe580, 0x27)
+    test_lda_rom(0, 0xa280, 0x1, 0xa280, 0x4e)
+    test_lda_rom(0, 0xe580, 0x1, 0xe580, 0x27)
+    # chargen
+    test_lda_rom(3, 0xd4e0, 0xf3, 0xc4e0, 0xf3)
+    test_lda_rom(2, 0xd4e0, 0xf3, 0xc4e0, 0xf3)
+    test_lda_rom(1, 0xd4e0, 0xf3, 0xc4e0, 0xf3)
+    test_lda_rom(0, 0xd4e0, 0x1, 0xc4e0, 0xf3)
+    # devio
+    test_lda_rom(7, 0xd4e0, 0x0, 0xd4e0, 0x0)   # devio
+    test_lda_rom(6, 0xd4e0, 0x0, 0xd4e0, 0x0)   # devio
+    test_lda_rom(5, 0xd4e0, 0x0, 0xd4e0, 0x0)   # devio
+    test_lda_rom(4, 0xd4e0, 0x1, 0xd4e0, 0x0)   # ram
     
     #########################
     # Summary
