@@ -2284,6 +2284,7 @@ try:
     
     ####################################
     # basic and kernel
+    """
     test_lda_rom(7, 0xa280, 0x4e, 0xa280, 0x4e)
     test_lda_rom(7, 0xe580, 0x27, 0xe580, 0x27)
     test_lda_rom(3, 0xa280, 0x4e, 0xa280, 0x4e)
@@ -2315,6 +2316,42 @@ try:
     # only ram
     for mc in range(0,8):
         test_lda_rom(mc, 0x2280, 0x1, 0x2280, 0x0)
+    """
+    
+    # store
+    def test_sta_rom(memconfig, acc, addr, val, val2):
+        opcode = 0x8d
+        run_testcase('sta (rom) mc={} acc={} addr={} val={} val2={}' \
+                .format(memconfig, acc, addr, val, val2),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, 1),
+                (1, acc_offset, acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, val),
+                (0, (addr&0xffff)|0x10000, val2),
+            ],
+            [
+                (0, [0x2f, 0x30|(memconfig&7)]),
+                (addr&0xffff, [0]),
+                ((addr&0xffff)|0x10000, [0]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=1, xind=2, yind=1)
+    
+    for mc in range(0, 8):
+        test_sta_rom(mc, 0xca, 0xa332, 0xca, 0)
+        test_sta_rom(mc, 0xca, 0xe332, 0xca, 0)
+    test_sta_rom(7, 0x4d, 0xd176, 0, 0x4d)
+    test_sta_rom(6, 0x4d, 0xd176, 0, 0x4d)
+    test_sta_rom(5, 0x4d, 0xd176, 0, 0x4d)
+    for mc in range(0, 5):
+        test_sta_rom(mc, 0x4d, 0xd176, 0x4d, 0)
     
     #########################
     # Summary

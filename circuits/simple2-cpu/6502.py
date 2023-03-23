@@ -228,8 +228,6 @@ load_mem_val_c64_mapping1 = -10000
 load_mem_val_c64_no_kernal = -10000
 load_mem_val_c64_no_deviochar = -10000
 
-store_mem_val_c64_no_basic = -10000
-store_mem_val_c64_no_kernal = -10000
 store_mem_val_c64_no_deviochar = -10000
 
 addr_mode_code = -10000
@@ -1822,8 +1820,6 @@ def gencode():
     ml.bcc(get_ret_page(load_mem_val), [False, True])
     ############################
     
-    global store_mem_val_c64_no_basic
-    global store_mem_val_c64_no_kernal
     global store_mem_val_c64_no_deviochar
     
     store_mem_val = ml.pc
@@ -1856,39 +1852,14 @@ def gencode():
         ml.lda(mm_mem_addr+1)
         ml.sta(child_mem_addr+1)
         
-        ml.ana_imm(0xe0)
-        ml.xor_imm(0xa0)
-        ml.bne(store_mem_val_c64_no_basic)
-        ml.lda(mm_mem_temp)
-        ml.ana_imm(3)
-        ml.xor_imm(3)   # BASIC not enabled in memconfig
-        ml.bne(store_mem_val_c64_no_basic)
-        ml.bpl(store_mem_val_end)       # no-operation
-        
-        store_mem_val_c64_no_basic = ml.pc
-        ml.lda(child_mem_addr+1)
-        ml.ana_imm(0xe0)
-        ml.xor_imm(0xe0)
-        ml.bne(store_mem_val_c64_no_kernal)
-        ml.lda(mm_mem_temp)
-        ml.ana_imm(2)
-        ml.xor_imm(2)   # BASIC not enabled in memconfig
-        ml.bne(store_mem_val_c64_no_kernal)
-        ml.bpl(store_mem_val_end)   # if kernal
-        
-        store_mem_val_c64_no_kernal = ml.pc
-        ml.lda(child_mem_addr+1)
         ml.ana_imm(0xf0)
         ml.xor_imm(0xd0)
         ml.bne(store_mem_val_c64_no_deviochar)
         ml.lda(mm_mem_temp)
-        ml.ana_imm(3)
-        ml.bne(ml.pc+4)
-        ml.bpl(store_mem_val_c64_no_deviochar)
-        ml.lda(mm_mem_temp)
-        ml.ana_imm(4)
-        ml.bne(ml.pc+4)   # mapping1 - is devio
-        ml.bpl(store_mem_val_end)   # characters no operation
+        ml.ana_imm(7)
+        ml.sec()
+        ml.sbc_imm(5)
+        ml.bcc(store_mem_val_c64_no_deviochar)
         # devio access
         ml.lda_imm(1)
         ml.sta(child_mem_addr+2)
