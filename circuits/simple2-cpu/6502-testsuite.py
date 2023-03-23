@@ -2338,15 +2338,14 @@ try:
             [
                 (0, [0x2f, 0x30|(memconfig&7)]),
                 (addr&0xffff, [0]),
-                ((addr&0xffff)|0x10000, [0]),   # only for testcases. DO NOT USE!
                 # instructions. last is undefined (stop)
                 (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
             ],
             pc=0x200, acc=acc, sr=1, xind=2, yind=1)
     
     for mc in range(0, 8):
-        test_sta_rom(mc, 0xca, 0xa332, 0xca, 0)
-        test_sta_rom(mc, 0xca, 0xe332, 0xca, 0)
+        test_sta_rom(mc, 0xca, 0xa332, 0xca, 226)
+        test_sta_rom(mc, 0xca, 0xe332, 0xca, 160)
     test_sta_rom(7, 0x4d, 0xd176, 0, 0x4d)
     test_sta_rom(6, 0x4d, 0xd176, 0, 0x4d)
     test_sta_rom(5, 0x4d, 0xd176, 0, 0x4d)
