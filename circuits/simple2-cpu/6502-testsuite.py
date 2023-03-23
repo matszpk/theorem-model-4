@@ -1693,7 +1693,7 @@ try:
     pindx_addr_values = [(0, 42), (54, 76), (187, 68), (200, 55), (178, 121)]
     pindy_addr2_values = [(0x34dd, 11), (0x828b, 141), (0xbd20, 55), (0x6b92, 0x6e)]
     small_nz_values = [0, 31, 128, 55]
-    small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93, 0x10 ]
+    small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93, 0x10, 0x18 ]
     small_sr_nzvc_values = [ 0x11, 0x13, 0x91, 0x93, 0x10, 0x50, 0x41, 0x51 ]
     rel_jump_values = [(0x341, 0x31), (0x33b, 0xc3), (0x33b, 0xc2), (0x33b, 0xba),
                        (0x3ba, 0x2d), (0x3ba, 0x43), (0x3ba, 0x44), (0x3ba, 0x47)]
@@ -1703,7 +1703,6 @@ try:
     jmp_ind_addr = [(0x3314, 0x42ba), (0x4bff, 0x5b11), (0xffff, 0x1ad5), (0x21, 0x241)]
     vecfffe_values = [0x1316, 0xfffc, 0xfe11, 0xffe, 0x0451, 0xb5a1, 0x2988]
     
-    """
     for i in sr_flags_values:
         test_clc(i)
         test_cld(i)
@@ -2229,14 +2228,11 @@ try:
         for b in range(0,256):
             for sr in range(8,10):
                 test_adc_imm(a, b, sr)
-                if tests_failed!=0:
-                    exit()
     
     for a in range(0,256):
         for b in range(0,256):
             for sr in range(8,10):
                 test_sbc_imm(a, b, sr)
-    """
     
     #########################
     # Commodore 64 native
@@ -2284,7 +2280,6 @@ try:
     
     ####################################
     # basic and kernel
-    """
     test_lda_rom(7, 0xa280, 0x4e, 0xa280, 0x4e)
     test_lda_rom(7, 0xe580, 0x27, 0xe580, 0x27)
     test_lda_rom(3, 0xa280, 0x4e, 0xa280, 0x4e)
@@ -2316,7 +2311,6 @@ try:
     # only ram
     for mc in range(0,8):
         test_lda_rom(mc, 0x2280, 0x1, 0x2280, 0x0)
-    """
     
     # store
     def test_sta_rom(memconfig, acc, addr, val, val2):
