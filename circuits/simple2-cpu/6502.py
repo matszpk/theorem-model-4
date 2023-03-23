@@ -1631,7 +1631,7 @@ def gencode():
     ml.lda(nsr)
     ml.ror()    # get carry
     ml.lda(nacc)
-    ml.adc(mem_val)
+    ml.sbc(mem_val)
     ml.sta(nacc)
     ml.bne(set_cpu_nzvc)
     ml.bpl(set_cpu_nzvc)

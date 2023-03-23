@@ -107,6 +107,8 @@ try:
         return (sr&(0xff^2^128)) | (0 if val!=0 else 2) | (val&0x80)
     def set_sr_nzc(val, c, sr):
         return (sr&(0xff^2^128^1)) | (0 if val!=0 else 2) | (val&0x80) | int(c)
+    def set_sr_v(v, sr):
+        return (sr&(0xff^0x40)) | (int(v)<<6)
     
     ####################
     # main tests
@@ -1357,6 +1359,18 @@ try:
         res = (acc & val) & 0xff
         sr_res = set_sr_nz(res, sr)
         return acc, ((sr_res&(0xff^0xc0)) | (val&0xc0))
+    def adc_op(acc, val, sr):
+        res = (acc + val + (sr&1)) & 0xff
+        c = ((acc + val + (sr&1)) >> 8) != 0
+        v = ((((acc ^ val) & 0x80) ^ 0x80) & ((acc ^ res) & 0x80)) != 0
+        sr_res = set_sr_v(v, set_sr_nzc(res, c, sr))
+        return res, sr_res
+    def sbc_op(acc, val, sr):
+        res = (acc + (val^0xff) + (sr&1)) & 0xff
+        c = ((acc + (val^0xff) + (sr&1)) >> 8) != 0
+        v = (((acc ^ res) & 0x80) & ((acc ^ val) & 0x80)) != 0
+        sr_res = set_sr_v(v, set_sr_nzc(res, c, sr))
+        return res, sr_res
     
     def dec_op(val, sr):
         res = (256 + val - 1) & 0xff
@@ -1503,6 +1517,40 @@ try:
     def test_cpy_abs(yind, addr, val, sr):
         test_read_op_yind_abs('cpy', cmp_op, 0xcc, yind, addr, val, sr)
     
+    def test_adc_imm(acc, imm, sr):
+        test_read_op_imm('adc', adc_op, 0x69, acc, imm, sr)
+    def test_adc_zpg(acc, addr, val, sr):
+        test_read_op_zpg('adc', adc_op, 0x65, acc, addr, val, sr)
+    def test_adc_zpgx(acc, addr, xind, val, sr):
+        test_read_op_zpgx('adc', adc_op, 0x75, acc, addr, xind, val, sr)
+    def test_adc_abs(acc, addr, val, sr):
+        test_read_op_abs('adc', adc_op, 0x6d, acc, addr, val, sr)
+    def test_adc_absx(acc, addr, xind, val, sr):
+        test_read_op_absx('adc', adc_op, 0x7d, acc, addr, xind, val, sr)
+    def test_adc_absy(acc, addr, xind, val, sr):
+        test_read_op_absy('adc', adc_op, 0x79, acc, addr, yind, val, sr)
+    def test_adc_pindx(acc, addr, xind, addr2, val, sr):
+        test_read_op_pindx('adc', adc_op, 0x61, acc, addr, xind, addr2, val, sr)
+    def test_adc_pindy(acc, addr, addr2, yind, val, sr):
+        test_read_op_pindy('adc', adc_op, 0x71, acc, addr, addr2, yind, val, sr)
+    
+    def test_sbc_imm(acc, imm, sr):
+        test_read_op_imm('sbc', sbc_op, 0xe9, acc, imm, sr)
+    def test_sbc_zpg(acc, addr, val, sr):
+        test_read_op_zpg('sbc', sbc_op, 0xe5, acc, addr, val, sr)
+    def test_sbc_zpgx(acc, addr, xind, val, sr):
+        test_read_op_zpgx('sbc', sbc_op, 0xf5, acc, addr, xind, val, sr)
+    def test_sbc_abs(acc, addr, val, sr):
+        test_read_op_abs('sbc', sbc_op, 0xed, acc, addr, val, sr)
+    def test_sbc_absx(acc, addr, xind, val, sr):
+        test_read_op_absx('sbc', sbc_op, 0xfd, acc, addr, xind, val, sr)
+    def test_sbc_absy(acc, addr, xind, val, sr):
+        test_read_op_absy('sbc', sbc_op, 0xf9, acc, addr, yind, val, sr)
+    def test_sbc_pindx(acc, addr, xind, addr2, val, sr):
+        test_read_op_pindx('sbc', sbc_op, 0xe1, acc, addr, xind, addr2, val, sr)
+    def test_sbc_pindy(acc, addr, addr2, yind, val, sr):
+        test_read_op_pindy('sbc', sbc_op, 0xf1, acc, addr, addr2, yind, val, sr)
+    
     def test_bit_zpg(acc, addr, val, sr):
         test_read_op_zpg('bit', bit_op, 0x24, acc, addr, val, sr)
     def test_bit_abs(acc, addr, val, sr):
@@ -1600,6 +1648,7 @@ try:
     pindy_addr2_values = [(0x34dd, 11), (0x828b, 141), (0xbd20, 55), (0x6b92, 0x6e)]
     small_nz_values = [0, 31, 128, 55]
     small_sr_nz_values = [ 0x11, 0x13, 0x91, 0x93, 0x10 ]
+    small_sr_nzvc_values = [ 0x11, 0x13, 0x91, 0x93, 0x10, 0x50, 0x41, 0x51 ]
     rel_jump_values = [(0x341, 0x31), (0x33b, 0xc3), (0x33b, 0xc2), (0x33b, 0xba),
                        (0x3ba, 0x2d), (0x3ba, 0x43), (0x3ba, 0x44), (0x3ba, 0x47)]
     small_cmp_values = [0, 11, 22, 93, 233, 252]
@@ -2068,13 +2117,68 @@ try:
             for sp in sp_values:
                 for sr in sr_flags_values:
                     test_brk(start, vecfffe, sp, sr)
-    """
     
     for val in abs_addr_values:
         for ret_sr in sr_flags_values:
             for sp in sp2_values:
                 for sr in small_sr_nz_values:
                     test_rti(val, ret_sr, sp, sr)
+    """
+    
+    for i in transfer_values:
+        for j in transfer_values:
+            for sr in small_sr_nzvc_values:
+                test_adc_imm(i, j, sr)
+                test_sbc_imm(i, j, sr)
+    
+    for i in transfer_values:
+        for addr in zpg_addr_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nzvc_values:
+                    test_adc_zpg(i, addr, v, sr)
+                    test_sbc_zpg(i, addr, v, sr)
+    
+    for addr in zpg_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nzvc_values:
+                    test_adc_zpgx(0x1c, addr, xind, v, sr)
+                    test_sbc_zpgx(0x1c, addr, xind, v, sr)
+    
+    for i in transfer_values:
+        for addr in abs_addr_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nzvc_values:
+                    test_adc_abs(i, addr, v, sr)
+                    test_sbc_abs(i, addr, v, sr)
+    
+    for addr in abs_addr_values:
+        for xind in zpgx_xind_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nzvc_values:
+                    test_adc_absx(0x1c, addr, xind, v, sr)
+                    test_sbc_absx(0x1c, addr, xind, v, sr)
+    
+    for addr in abs_addr_values:
+        for yind in zpgx_xind_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nzvc_values:
+                    test_adc_absy(0x1c, addr, yind, v, sr)
+                    test_sbc_absy(0x1c, addr, yind, v, sr)
+    
+    for (addr, xind) in pindx_addr_values:
+        for addr2 in abs_addr_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nzvc_values:
+                    test_adc_pindx(0x1c, addr, xind, addr2, v, sr)
+                    test_sbc_pindx(0x1c, addr, xind, addr2, v, sr)
+    
+    for addr in zpg_addr_values:
+        for (addr2, yind) in pindy_addr2_values:
+            for v in small_cmp_values:
+                for sr in small_sr_nzvc_values:
+                    test_adc_pindy(0x1c, addr, addr2, yind, v, sr)
+                    test_sbc_pindy(0x1c, addr, addr2, yind, v, sr)
     
     #########################
     # Summary
