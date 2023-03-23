@@ -1465,6 +1465,12 @@ def gencode():
     ml.adc_imm(5+10)   # add 6
     ml.sta(temp1)
     adc_dec_no_lo_fix = ml.pc
+    ml.lda(temp1)       # fix carry for low nibble (a+b+c+6) <= 0x20
+    ml.ana_imm(0x20)
+    ml.clc()
+    ml.rol()            # 0x20 -> 0x10
+    ml.ora(temp1)
+    ml.sta(temp1)       # join with tmp
     # next step
     ml.lda(mem_val)
     ml.ana_imm(0xf0)
@@ -1479,11 +1485,11 @@ def gencode():
     ml.lda(temp3)   # add lower nibble result
     ml.clc()
     ml.adc(temp2)
-    ml.sta(temp1)
+    ml.sta(temp1)   # temp1 - all sum of high nibble
     ml.rol()
-    ml.ora(temp4)
+    ml.ora(temp4)   # join carry
     ml.ana_imm(1)
-    ml.sta(temp2) # carry!
+    ml.sta(temp2)  # carry!
     # set ZNV
     # calculate V
     ml.lda(nacc)
@@ -1507,8 +1513,8 @@ def gencode():
     ml.bne(adc_dec_nz_z_zero)
     ml.lda(nsr)
     ml.ora_imm(SRFlags.Z)
-    adc_dec_nz_z_zero = ml.pc
     ml.bne(adc_dec_nz_z_store)
+    adc_dec_nz_z_zero = ml.pc
     ml.lda(nsr)
     ml.ana_imm(0xff^SRFlags.Z)
     adc_dec_nz_z_store = ml.pc
@@ -1529,7 +1535,8 @@ def gencode():
     
     # fix higher nibble
     ml.lda(temp2) # carry!
-    ml.bne(adc_dec_no_hi_fix) # to fix
+    ml.bne(ml.pc+4)
+    ml.bpl(adc_dec_after_hi_fix) # to fix
     ml.lda(temp1)
     ml.sec()
     ml.sbc_imm(0xa0)
