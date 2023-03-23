@@ -1475,8 +1475,8 @@ def gencode():
     ml.adc(temp1)   # tmp <= 0x0f then (tmp&0xf) else (tmp&0xf) + 0x10
     ml.sta(temp3)
     ml.rol()
-    ml.sta(temp4)  # carry!
-    ml.lda(temp3)
+    ml.sta(temp4)   # carry!
+    ml.lda(temp3)   # add lower nibble result
     ml.clc()
     ml.adc(temp2)
     ml.sta(temp1)
@@ -1568,6 +1568,8 @@ def gencode():
     ###################################
     # SBC DECIMAL
     op_sbc_decimal = ml.pc
+    ml.lda(nacc)
+    ml.sta(temp4)
     # calculate ACC
     ml.lda(mem_val)
     ml.ana_imm(0xf)
@@ -1600,14 +1602,21 @@ def gencode():
     ml.ana_imm(0xf0)
     ml.sec()
     ml.sbc(temp2)
+    ml.sta(nacc)
+    ml.lda_imm(0)
+    ml.sbc_imm(0)
+    ml.sta(temp2)   # carry!
+    ml.lda(nacc)
     ml.sec()
     ml.sbc(temp3)   # - 0x10
     ml.ora(temp1)
     ml.sta(nacc)
+    ml.lda(temp2)
+    ml.sbc_imm(0)   # carry! (-sub)
+    ml.ana_imm(1)
     # fix high nibble
-    ml.bcc(ml.pc+5) # skip next instrs - if res&0x100 != 0
-    ml.clc()
-    ml.bcc(sbc_dec_no_hi_fix) # skip fix of high nibble
+    ml.bne(ml.pc+4) # skip next instrs - if res&0x100 != 0
+    ml.bpl(sbc_dec_no_hi_fix) # skip fix of high nibble
     ml.lda(nacc)
     ml.sec()
     ml.sbc_imm(0x60)
@@ -1617,8 +1626,8 @@ def gencode():
     # flags are set from binary subtraction
     ml.lda(nsr)
     ml.ror()    # get carry
-    ml.lda(nacc)
-    ml.adc(mem_val)
+    ml.lda(temp4)
+    ml.sbc(mem_val)
     ml.bne(set_cpu_nzvc)
     ml.bpl(set_cpu_nzvc)
     # END OF SBC DECIMAL

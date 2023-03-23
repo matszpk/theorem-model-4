@@ -1359,18 +1359,61 @@ try:
         res = (acc & val) & 0xff
         sr_res = set_sr_nz(res, sr)
         return acc, ((sr_res&(0xff^0xc0)) | (val&0xc0))
+    
+    def adc_dec_op(acc, val, sr):
+        reg_a_read, tmp_value = acc, val
+        tmp = (reg_a_read & 0xf) + (tmp_value & 0xf) + (sr & 0x1)
+        if (tmp > 0x9):
+            tmp += 0x6
+        if (tmp <= 0x0f):
+            tmp = (tmp & 0xf) + (reg_a_read & 0xf0) + (tmp_value & 0xf0)
+        else:
+            tmp = (tmp & 0xf) + (reg_a_read & 0xf0) + (tmp_value & 0xf0) + 0x10
+        sr = (sr & (0xff ^ 0x2)) | (int(((reg_a_read + tmp_value + (sr & 0x1)) & 0xff) == 0)<<1)
+        sr = (sr & (0xff ^ 0x80)) | (tmp & 0x80)
+        sr = (sr & (0xff ^ 0x40)) | (int(((reg_a_read ^ tmp) & 0x80)!=0 and \
+                            ((reg_a_read ^ tmp_value) & 0x80)==0)<<6)
+        if ((tmp & 0x1f0) > 0x90):
+            tmp += 0x60
+        sr = (sr & (0xff^1)) | int((tmp & 0xff0) > 0xf0)
+        return tmp&0xff, sr
+
+    def sbc_dec_op(acc, val, sr):
+        reg_a_read, src = acc, val
+        tmp = (0x10000 + reg_a_read - src - (0 if (sr & 1)!=0 else 1)) & 0xffff
+        tmp_a = (0x10000 + (reg_a_read & 0xf) - (src & 0xf) - (0 if (sr & 1)!=0 else 1)) & 0xffff
+        if (tmp_a & 0x10):
+            tmp_a = ((tmp_a - 6) & 0xf) | (((reg_a_read & 0xf0) - (src & 0xf0) - 0x10) & 0xffff)
+        else:
+            tmp_a = (tmp_a & 0xf) | (((reg_a_read & 0xf0) - (src & 0xf0)) & 0xffff)
+        if (tmp_a & 0x100):
+            tmp_a -= 0x60
+        sr = (sr & (0xff^1)) | int(tmp < 0x100)
+        sr = (sr & (0xff^2)) | (int((tmp & 0xff) == 0)<<1)
+        sr = (sr & (0xff ^ 0x80)) | ((tmp & 0xff) & 0x80)
+        sr = (sr & (0xff ^ 0x40)) | (int(((reg_a_read ^ tmp) & 0x80)!=0 and \
+                                ((reg_a_read ^ src) & 0x80)!=0)<<6)
+        return tmp_a&0xff, sr
+    
     def adc_op(acc, val, sr):
-        res = (acc + val + (sr&1)) & 0xff
-        c = ((acc + val + (sr&1)) >> 8) != 0
-        v = ((((acc ^ val) & 0x80) ^ 0x80) & ((acc ^ res) & 0x80)) != 0
-        sr_res = set_sr_v(v, set_sr_nzc(res, c, sr))
-        return res, sr_res
+        if sr&8 != 0:
+            return adc_dec_op(acc, val, sr)
+        else:
+            res = (acc + val + (sr&1)) & 0xff
+            c = ((acc + val + (sr&1)) >> 8) != 0
+            v = ((((acc ^ val) & 0x80) ^ 0x80) & ((acc ^ res) & 0x80)) != 0
+            sr_res = set_sr_v(v, set_sr_nzc(res, c, sr))
+            return res, sr_res
+    
     def sbc_op(acc, val, sr):
-        res = (acc + (val^0xff) + (sr&1)) & 0xff
-        c = ((acc + (val^0xff) + (sr&1)) >> 8) != 0
-        v = (((acc ^ res) & 0x80) & ((acc ^ val) & 0x80)) != 0
-        sr_res = set_sr_v(v, set_sr_nzc(res, c, sr))
-        return res, sr_res
+        if sr&8 != 0:
+            return sbc_dec_op(acc, val, sr)
+        else:
+            res = (acc + (val^0xff) + (sr&1)) & 0xff
+            c = ((acc + (val^0xff) + (sr&1)) >> 8) != 0
+            v = (((acc ^ res) & 0x80) & ((acc ^ val) & 0x80)) != 0
+            sr_res = set_sr_v(v, set_sr_nzc(res, c, sr))
+            return res, sr_res
     
     def dec_op(val, sr):
         res = (256 + val - 1) & 0xff
@@ -2123,7 +2166,6 @@ try:
             for sp in sp2_values:
                 for sr in small_sr_nz_values:
                     test_rti(val, ret_sr, sp, sr)
-    """
     
     for i in transfer_values:
         for j in transfer_values:
@@ -2179,6 +2221,12 @@ try:
                 for sr in small_sr_nzvc_values:
                     test_adc_pindy(0x1c, addr, addr2, yind, v, sr)
                     test_sbc_pindy(0x1c, addr, addr2, yind, v, sr)
+    """
+    
+    for a in range(0,256):
+        for b in range(0,256):
+            for sr in range(8,10):
+                test_sbc_imm(a, b, sr)
     
     #########################
     # Summary
