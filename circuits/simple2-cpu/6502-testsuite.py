@@ -2312,6 +2312,9 @@ try:
     test_lda_rom(6, 0xd4e0, 0x0, 0xd4e0, 0x0)   # devio
     test_lda_rom(5, 0xd4e0, 0x0, 0xd4e0, 0x0)   # devio
     test_lda_rom(4, 0xd4e0, 0x1, 0xd4e0, 0x0)   # ram
+    # only ram
+    for mc in range(0,8):
+        test_lda_rom(mc, 0x2280, 0x1, 0x2280, 0x0)
     
     #########################
     # Summary
