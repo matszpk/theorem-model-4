@@ -1710,8 +1710,6 @@ def gencode():
     ml.bcc(set_cpu_nz)
     
     op_crt = ml.pc
-    ml.lda(native_machine)
-    ml.bne(op_und)
     ml.spc_imm(0)
     ml.bcc(main_loop)
     
