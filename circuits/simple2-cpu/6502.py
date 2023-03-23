@@ -1716,8 +1716,6 @@ def gencode():
     ml.bcc(main_loop)
     
     op_stp = ml.pc
-    ml.lda(native_machine)
-    ml.bne(op_und)
     ml.spc_imm(1)
     
     op_und = ml.pc
