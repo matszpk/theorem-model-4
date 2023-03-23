@@ -2226,7 +2226,16 @@ try:
     for a in range(0,256):
         for b in range(0,256):
             for sr in range(8,10):
+                test_adc_imm(a, b, sr)
+                if tests_failed!=0:
+                    exit()
+    
+    """
+    for a in range(0,256):
+        for b in range(0,256):
+            for sr in range(8,10):
                 test_sbc_imm(a, b, sr)
+    """
     
     #########################
     # Summary

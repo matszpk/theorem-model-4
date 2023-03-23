@@ -203,7 +203,7 @@ op_branch_if_not_set = -10000
 op_branch_if_set = -10000
 set_cpu_nz_z_zero, set_cpu_nz_z_store = -10000, -10000
 set_cpu_nz_n_zero, set_cpu_nz_n_store = -10000, -10000
-adc_dec_no_lo_fix, adc_dec_after_hi_fix = -10000, -10000
+adc_dec_no_lo_fix, adc_dec_after_hi_fix, adc_dec_do_fix = -10000, -10000, -100000
 adc_dec_nz_z_zero, adc_dec_nz_z_store = -10000, -10000
 adc_dec_nz_n_zero, adc_dec_nz_n_store = -10000, -10000
 sbc_dec_no_lo_fix, sbc_dec_no_hi_fix = -10000, -10000
@@ -1442,7 +1442,7 @@ def gencode():
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
 
-    global adc_dec_no_lo_fix, adc_dec_after_hi_fix
+    global adc_dec_no_lo_fix, adc_dec_after_hi_fix, adc_dec_do_fix
     global adc_dec_nz_z_zero, adc_dec_nz_z_store
     global adc_dec_nz_n_zero, adc_dec_nz_n_store
     ###################################
@@ -1468,8 +1468,9 @@ def gencode():
     ml.lda(temp1)       # fix carry for low nibble (a+b+c+6) <= 0x20
     ml.ana_imm(0x20)
     ml.clc()
-    ml.rol()            # 0x20 -> 0x10
+    ml.ror()            # 0x20 -> 0x10
     ml.ora(temp1)
+    ml.ana_imm(0x1f)
     ml.sta(temp1)       # join with tmp
     # next step
     ml.lda(mem_val)
@@ -1508,7 +1509,10 @@ def gencode():
     ml.sta(nsr)
     # end of calculate V
     # set ZN
-    ml.lda(temp1)
+    ml.lda(nsr)
+    ml.ror()
+    ml.lda(nacc)
+    ml.adc(mem_val)     # normal adc for zero flag
     # set Z flag
     ml.bne(adc_dec_nz_z_zero)
     ml.lda(nsr)
@@ -1540,14 +1544,15 @@ def gencode():
     ml.clc()    # clear current carry
     # fix higher nibble
     ml.lda(temp2) # carry!
-    ml.bne(ml.pc+4)
-    ml.bpl(adc_dec_after_hi_fix) # to fix
+    ml.bne(adc_dec_do_fix)
     ml.lda(temp1)
     ml.sec()
     ml.sbc_imm(0xa0)
     ml.bcc(adc_dec_after_hi_fix)
+    adc_dec_do_fix = ml.pc
     ml.lda(temp1)
-    ml.adc_imm(0x5f)
+    ml.clc()
+    ml.adc_imm(0x60)
     ml.sta(nacc)
     adc_dec_after_hi_fix = ml.pc
     ml.rol()        # get next carry
