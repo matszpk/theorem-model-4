@@ -1612,8 +1612,10 @@ def gencode():
     ml.sec()
     ml.sbc(temp2)
     ml.sta(nacc)
-    ml.lda_imm(0)
-    ml.sbc_imm(0)
+    ml.rol()
+    ml.xor_imm(1)
+    #ml.lda_imm(0)
+    #ml.sbc_imm(0)
     ml.sta(temp2)   # carry!
     ml.lda(nacc)
     ml.sec()
