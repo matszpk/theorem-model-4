@@ -1102,7 +1102,7 @@ def gencode():
     ml.bcc(op_rol_rest)
     
     op_dec = ml.pc
-    ml.lda(mem_val)
+    #ml.lda(mem_val)
     ml.clc()
     ml.sbc_imm(0)
     op_dec_rest = ml.pc
@@ -1242,7 +1242,7 @@ def gencode():
 
     op_dex = ml.pc
     ml.lda(nxind)
-    ml.clc()
+    #ml.clc()
     ml.sbc_imm(0)
     op_dex_rest = ml.pc
     ml.sta(nxind)
@@ -1251,7 +1251,7 @@ def gencode():
 
     op_dey = ml.pc
     ml.lda(nyind)
-    ml.clc()
+    #ml.clc()
     ml.sbc_imm(0)
     op_dey_rest = ml.pc
     ml.sta(nyind)
