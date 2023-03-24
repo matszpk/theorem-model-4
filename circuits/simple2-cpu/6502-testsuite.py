@@ -1720,7 +1720,7 @@ try:
             test_tya(i, sr)
             test_tsx(i, sr)
             test_txs(i, sr)
-
+    
     for i in transfer_values:
         for sr in small_sr_nz_values:
             test_dex(i, sr)
