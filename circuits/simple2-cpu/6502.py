@@ -1025,7 +1025,7 @@ def gencode():
     set_cpu_nz_n_store = ml.pc
     # store nsr
     ml.sta(nsr)
-    ml.clc()
+    ml.clc()    # required!
     ml.bcc(main_loop)
     
     # PUSH to stack operation
@@ -1105,6 +1105,7 @@ def gencode():
     ml.lda(mem_val)
     ml.clc()
     ml.sbc_imm(0)
+    op_dec_rest = ml.pc
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
     ml.bcc(set_cpu_nz)
@@ -1113,9 +1114,8 @@ def gencode():
     ml.lda(mem_val)
     ml.sec()
     ml.adc_imm(0)
-    ml.sta(mm_mem_val)
-    call_proc_8b(store_mem_val)
-    ml.bcc(set_cpu_nz)
+    ml.clc()
+    ml.bcc(op_dec_rest)
     
     op_sta = ml.pc
     ml.lda(nacc)
@@ -1244,6 +1244,7 @@ def gencode():
     ml.lda(nxind)
     ml.clc()
     ml.sbc_imm(0)
+    op_dex_rest = ml.pc
     ml.sta(nxind)
     ml.clc()
     ml.bcc(set_cpu_nz)
@@ -1252,6 +1253,7 @@ def gencode():
     ml.lda(nyind)
     ml.clc()
     ml.sbc_imm(0)
+    op_dey_rest = ml.pc
     ml.sta(nyind)
     ml.clc()
     ml.bcc(set_cpu_nz)
@@ -1354,17 +1356,15 @@ def gencode():
     ml.lda(nxind)
     ml.sec()
     ml.adc_imm(0)
-    ml.sta(nxind)
     ml.clc()
-    ml.bcc(set_cpu_nz)
+    ml.bcc(op_dex_rest)
 
     op_iny = ml.pc
     ml.lda(nyind)
     ml.sec()
     ml.adc_imm(0)
-    ml.sta(nyind)
     ml.clc()
-    ml.bcc(set_cpu_nz)
+    ml.bcc(op_dey_rest)
     
     op_jmp = ml.pc
     ml.lda(child_mem_addr)
