@@ -1408,22 +1408,21 @@ def gencode():
     ml.bcc(op_and_rest)
 
     op_rol_a = ml.pc
+    ml.lda_imm(instr_rol)
+    ml.sta(ml.pc+2+2+1+2)
+    op_rol_a_rest = ml.pc
     ml.lda(nsr)
     ml.ror()
     ml.lda(nacc)
-    ml.rol()
+    ml.rol(True)
     ml.sta(nacc)
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
 
     op_ror_a = ml.pc
-    ml.lda(nsr)
-    ml.ror()
-    ml.lda(nacc)
-    ml.ror()
-    ml.sta(nacc)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
+    ml.lda_imm(instr_ror)
+    ml.sta(op_rol_a_rest+2+1+2)
+    ml.bcc(op_rol_a_rest)
 
     global adc_dec_no_lo_fix, adc_dec_after_hi_fix, adc_dec_do_fix
     global adc_dec_nz_z_zero, adc_dec_nz_z_store
