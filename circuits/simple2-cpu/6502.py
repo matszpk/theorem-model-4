@@ -228,10 +228,11 @@ load_mem_val_c64_mapping1 = -10000
 load_mem_val_c64_no_kernal = -10000
 load_mem_val_c64_no_deviochar = -10000
 
+get_cpu_ioport01, get_cpu_ioport01_ch = -10000, -10000
+get_cpu_ioport01_end = -10000
+
 store_mem_val_c64_no_deviochar = -10000
-
 addr_mode_code = -10000
-
 branch_dont = -10000
 
 def gencode():
@@ -1534,9 +1535,7 @@ def gencode():
     adc_dec_nz_n_store = ml.pc
     # store nsr
     ml.sta(nsr)
-    
     # good low nibble
-    
     ml.lda(temp1)
     ml.sta(nacc)
     ml.clc()    # clear current carry
@@ -1744,6 +1743,10 @@ def gencode():
         ml.lda(child_mem_val)
         ml.sta(mm_mem_val)  # default mem value
         
+        global get_cpu_ioport01, get_cpu_ioport01_ch, get_cpu_ioport01_end
+        ml.lda_imm(get_cpu_ioport01_end & 0xff)
+        get_cpu_ioport01 = ml.pc
+        ml.sta(get_cpu_ioport01_ch+1)   # store return address
         ml.lda(child_mem_addr)
         ml.sta(mm_mem_addr)
         ml.lda(child_mem_addr+1)
@@ -1760,6 +1763,10 @@ def gencode():
         ml.sta(child_mem_addr)
         ml.lda(mm_mem_addr+1)
         ml.sta(child_mem_addr+1)
+        ml.clc()
+        get_cpu_ioport01_ch = ml.pc
+        ml.bcc(get_ret_page(get_cpu_ioport01), [False, True])
+        get_cpu_ioport01_end = ml.pc
         
         ml.ana_imm(0xe0)
         ml.xor_imm(0xa0)
@@ -1835,22 +1842,7 @@ def gencode():
     store_mem_val_native = ml.pc
     
     if commodore64:
-        ml.lda(child_mem_addr)
-        ml.sta(mm_mem_addr)
-        ml.lda(child_mem_addr+1)
-        ml.sta(mm_mem_addr+1)
-        
-        ml.lda_imm(1)
-        ml.sta(child_mem_addr)
-        ml.lda_imm(0)
-        ml.sta(child_mem_addr+1)
-        ml.lda(child_mem_val)
-        ml.sta(mm_mem_temp)
-        
-        ml.lda(mm_mem_addr)
-        ml.sta(child_mem_addr)
-        ml.lda(mm_mem_addr+1)
-        ml.sta(child_mem_addr+1)
+        call_proc_8b(get_cpu_ioport01)
         
         ml.ana_imm(0xf0)
         ml.xor_imm(0xd0)
