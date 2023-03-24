@@ -1049,6 +1049,13 @@ def gencode():
     
     ##################################
     # OPS CODE START
+    
+    # Important notice about carry:
+    # Because every op_xx routine will be called by bcc instruction, hence
+    # carry flag is always zero.
+    # Becuase subroutines load_mem_val, store_mem_val, op_push, op_pull always returns
+    # by bcc instruction, hence carry flag is always zero after call of these subroutines.
+    
     ops_code_start = ml.pc
     
     global op_asl_ch1, op_asl_ch2
