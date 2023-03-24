@@ -1727,7 +1727,7 @@ try:
             test_dey(i, sr)
             test_inx(i, sr)
             test_iny(i, sr)
-
+    
     for i in transfer_values:
         for v in small_nz_values:
             for sr in small_sr_nz_values:
