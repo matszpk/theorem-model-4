@@ -826,6 +826,7 @@ def gencode():
     
     ###########################################
     # addressing modes code
+    # C is off at start
     addr_mode_code = ml.pc
     am_imp = ml.pc
     # start with carry off
@@ -846,7 +847,7 @@ def gencode():
     
     am_zpgy = ml.pc
     ml.lda(narglo)
-    ml.clc()
+    #ml.clc()
     ml.adc(nyind)
     ml.sta(child_mem_addr)
     ml.lda_imm(0)
@@ -857,7 +858,7 @@ def gencode():
     am_zpgx = ml.pc
     am_pindx = ml.pc
     ml.lda(narglo)
-    ml.clc()
+    #ml.clc()
     ml.adc(nxind)
     ml.sta(child_mem_addr)
     ml.lda_imm(0)
@@ -869,8 +870,8 @@ def gencode():
     ml.xor_imm(AddrMode.pindx)
     ml.bne(addr_mode_end)   # if not AddrMode.pindx (if AddrMode.zpgx)
     ml.lda(child_mem_addr)
-    ml.sec()
-    ml.adc_imm(0)
+    #ml.clc()
+    ml.adc_imm(1)
     ml.sta(child_mem_addr)
     call_proc_8b(addr_load_mem_val_call)
     ml.sta(narghi)
@@ -886,8 +887,8 @@ def gencode():
     call_proc_8b(addr_load_mem_val_call)
     ml.sta(narglo)
     ml.lda(child_mem_addr)
-    ml.sec()
-    ml.adc_imm(0)
+    #ml.clc()
+    ml.adc_imm(1)
     ml.sta(child_mem_addr)
     call_proc_8b(addr_load_mem_val_call)
     ml.sta(narghi)
@@ -932,7 +933,7 @@ def gencode():
     global am_absx_cycle_fix
     am_absx = ml.pc
     ml.lda(narglo)
-    ml.clc()
+    #ml.clc()
     ml.adc(nxind)
     am_absx_cont = ml.pc
     ml.sta(child_mem_addr)
@@ -951,7 +952,7 @@ def gencode():
     
     am_absy = ml.pc
     ml.lda(narglo)
-    ml.clc()
+    #ml.clc()
     ml.adc(nyind)
     ml.bne(am_absx_cont)
     ml.bpl(am_absx_cont)
