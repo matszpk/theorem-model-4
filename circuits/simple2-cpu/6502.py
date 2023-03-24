@@ -1130,6 +1130,7 @@ def gencode():
     op_and = ml.pc
     ml.lda(nacc)
     ml.ana(mem_val)
+    op_and_rest = ml.pc
     ml.sta(nacc)
     ml.bcc(set_cpu_nz)
     
@@ -1253,8 +1254,7 @@ def gencode():
     op_eor = ml.pc
     ml.lda(nacc)
     ml.xor(mem_val)
-    ml.sta(nacc)
-    ml.bcc(set_cpu_nz)
+    ml.bcc(op_and_rest)
 
     op_rti = ml.pc
     call_proc_8b(op_pull)
@@ -1405,8 +1405,7 @@ def gencode():
     op_ora = ml.pc
     ml.lda(nacc)
     ml.ora(mem_val)
-    ml.sta(nacc)
-    ml.bcc(set_cpu_nz)
+    ml.bcc(op_and_rest)
 
     op_rol_a = ml.pc
     ml.lda(nsr)
