@@ -485,6 +485,7 @@ def gencode():
     addr_mode_end = ml.pc
     #ml.spc_imm(1)
     
+    # memval - acc
     # call operation
     ml.clc()
     call_op = ml.pc
@@ -1102,8 +1103,8 @@ def gencode():
     ml.bcc(op_rol_rest)
     
     op_dec = ml.pc
-    #ml.lda(mem_val)
-    ml.clc()
+    ml.lda(mem_val)
+    #ml.clc()
     ml.sbc_imm(0)
     op_dec_rest = ml.pc
     ml.sta(mm_mem_val)
