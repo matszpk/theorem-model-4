@@ -968,7 +968,7 @@ def gencode():
     ml.sta(child_mem_addr+1)
     call_proc_8b(addr_load_mem_val_call)
     ml.sta(mem_val)
-    ml.clc()
+    #ml.clc()
     ml.bcc(op_jmpind)
     
     op_jmpind_cont = ml.pc
@@ -976,7 +976,7 @@ def gencode():
     ml.sta(npc+1)
     ml.lda(mem_val)
     ml.sta(npc)
-    ml.clc()
+    #ml.clc()
     ml.bcc(main_loop)
     
     ###########################################
