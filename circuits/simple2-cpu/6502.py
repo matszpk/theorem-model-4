@@ -1112,8 +1112,8 @@ def gencode():
     
     op_inc = ml.pc
     ml.lda(mem_val)
-    ml.sec()
-    ml.adc_imm(0)
+    #ml.clc()
+    ml.adc_imm(1)
     ml.clc()
     ml.bcc(op_dec_rest)
     
@@ -1293,8 +1293,8 @@ def gencode():
 
     op_brk = ml.pc
     ml.lda(npc)
-    ml.sec()
-    ml.adc_imm(0)   # old_pc+2
+    #ml.clc()
+    ml.adc_imm(1)   # old_pc+2
     ml.sta(temp2)
     ml.lda(npc+1)
     ml.adc_imm(0)
@@ -1343,8 +1343,8 @@ def gencode():
     call_proc_8b(op_pull)
     ml.sta(npc+1)
     ml.lda(npc)
-    ml.sec()
-    ml.adc_imm(0)
+    #ml.clc()
+    ml.adc_imm(1)
     ml.sta(npc)
     ml.lda(npc+1)
     ml.adc_imm(0)
@@ -1354,15 +1354,15 @@ def gencode():
     
     op_inx = ml.pc
     ml.lda(nxind)
-    ml.sec()
-    ml.adc_imm(0)
+    #ml.clc()
+    ml.adc_imm(1)
     ml.clc()
     ml.bcc(op_dex_rest)
 
     op_iny = ml.pc
     ml.lda(nyind)
-    ml.sec()
-    ml.adc_imm(0)
+    #ml.sec()
+    ml.adc_imm(1)
     ml.clc()
     ml.bcc(op_dey_rest)
     
@@ -1375,8 +1375,8 @@ def gencode():
 
     op_jmpind = ml.pc
     ml.lda(child_mem_addr)
-    ml.sec()
-    ml.adc_imm(0)
+    #ml.clc()
+    ml.adc_imm(1)
     ml.sta(child_mem_addr)
     ml.clc()
     ml.bcc(op_jmpind_cont)
