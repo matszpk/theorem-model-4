@@ -235,6 +235,9 @@ store_mem_val_c64_no_deviochar = -10000
 addr_mode_code = -10000
 branch_dont = -10000
 
+op_rol_ch1, op_rol_ch2 = -10000, -10000
+op_asl_ch1, op_asl_ch2 = -10000, -10000
+
 def gencode():
     global ret_pages
     global load_inc_pc, load_inc_pc_ch
@@ -1047,55 +1050,56 @@ def gencode():
     # OPS CODE START
     ops_code_start = ml.pc
     
+    global op_asl_ch1, op_asl_ch2
     op_asl = ml.pc
+    ml.lda_imm(instr_rol)
+    ml.sta(op_asl_ch1)
+    ml.sta(op_asl_ch2)
+    op_asl_rest = ml.pc
     ml.lda(mem_val)
     ml.clc()
-    ml.rol()
+    op_asl_ch1 = ml.pc
+    ml.rol(True)
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
     ml.lda(mem_val)
-    ml.rol()
+    op_asl_ch2 = ml.pc
+    ml.rol(True)
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
     op_lsr = ml.pc
-    ml.lda(mem_val)
-    ml.clc()
-    ml.ror()
-    ml.sta(mm_mem_val)
-    call_proc_8b(store_mem_val)
-    ml.lda(mem_val)
-    ml.ror()
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
+    ml.lda_imm(instr_ror)
+    ml.sta(op_asl_ch1)
+    ml.sta(op_asl_ch2)
+    ml.bcc(op_asl_rest)
     
+    global op_rol_ch1, op_rol_ch2
     op_rol = ml.pc
+    ml.lda_imm(instr_rol)
+    ml.sta(op_rol_ch1)
+    ml.sta(op_rol_ch2)
+    op_rol_rest = ml.pc
     ml.lda(nsr)
     ml.ror()
     ml.lda(mem_val)
-    ml.rol()
+    op_rol_ch1 = ml.pc
+    ml.rol(True)
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
     ml.lda(nsr)
     ml.ror()
     ml.lda(mem_val)
-    ml.rol()
+    op_rol_ch2 = ml.pc
+    ml.rol(True)
     ml.bne(set_cpu_nzc)
     ml.bpl(set_cpu_nzc)
     
     op_ror = ml.pc
-    ml.lda(nsr)
-    ml.ror()
-    ml.lda(mem_val)
-    ml.ror()
-    ml.sta(mm_mem_val)
-    call_proc_8b(store_mem_val)
-    ml.lda(nsr)
-    ml.ror()
-    ml.lda(mem_val)
-    ml.ror()
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
+    ml.lda_imm(instr_ror)
+    ml.sta(op_rol_ch1)
+    ml.sta(op_rol_ch2)
+    ml.bcc(op_rol_rest)
     
     op_dec = ml.pc
     ml.lda(mem_val)
