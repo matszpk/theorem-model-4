@@ -1116,21 +1116,18 @@ def gencode():
     
     op_sta = ml.pc
     ml.lda(nacc)
+    op_sta_rest = ml.pc
     ml.sta(mm_mem_val)
     call_proc_8b(store_mem_val)
     ml.bcc(main_loop)
 
     op_stx = ml.pc
     ml.lda(nxind)
-    ml.sta(mm_mem_val)
-    call_proc_8b(store_mem_val)
-    ml.bcc(main_loop)
+    ml.bcc(op_sta_rest)
 
     op_sty = ml.pc
     ml.lda(nyind)
-    ml.sta(mm_mem_val)
-    call_proc_8b(store_mem_val)
-    ml.bcc(main_loop)
+    ml.bcc(op_sta_rest)
     
     op_and = ml.pc
     ml.lda(nacc)
@@ -1230,6 +1227,7 @@ def gencode():
 
     op_cmp = ml.pc
     ml.lda(nacc)
+    op_cmp_rest = ml.pc
     ml.sec()
     ml.sbc(mem_val)
     ml.bne(set_cpu_nzc)
@@ -1237,17 +1235,11 @@ def gencode():
 
     op_cpx = ml.pc
     ml.lda(nxind)
-    ml.sec()
-    ml.sbc(mem_val)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
+    ml.bcc(op_cmp_rest)
 
     op_cpy = ml.pc
     ml.lda(nyind)
-    ml.sec()
-    ml.sbc(mem_val)
-    ml.bne(set_cpu_nzc)
-    ml.bpl(set_cpu_nzc)
+    ml.bcc(op_cmp_rest)
 
     op_dex = ml.pc
     ml.lda(nxind)
