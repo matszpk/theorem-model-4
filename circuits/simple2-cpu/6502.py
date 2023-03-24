@@ -1135,7 +1135,7 @@ def gencode():
     
     op_asl_a = ml.pc
     ml.lda(nacc)
-    ml.clc()
+    #ml.clc()
     ml.rol()
     ml.sta(nacc)
     ml.bne(set_cpu_nzc)
@@ -1398,7 +1398,7 @@ def gencode():
     
     op_lsr_a = ml.pc
     ml.lda(nacc)
-    ml.clc()
+    #ml.clc()
     ml.ror()
     ml.sta(nacc)
     ml.bne(set_cpu_nzc)
@@ -1668,6 +1668,7 @@ def gencode():
 
     op_tax = ml.pc
     ml.lda(nacc)
+    op_tax_rest = ml.pc
     ml.sta(nxind)
     ml.bcc(set_cpu_nz)
 
@@ -1678,11 +1679,11 @@ def gencode():
 
     op_tsx = ml.pc
     ml.lda(nsp)
-    ml.sta(nxind)
-    ml.bcc(set_cpu_nz)
+    ml.bcc(op_tax_rest)
 
     op_txa = ml.pc
     ml.lda(nxind)
+    op_txa_rest = ml.pc
     ml.sta(nacc)
     ml.bcc(set_cpu_nz)
 
@@ -1693,8 +1694,7 @@ def gencode():
 
     op_tya = ml.pc
     ml.lda(nyind)
-    ml.sta(nacc)
-    ml.bcc(set_cpu_nz)
+    ml.bcc(op_txa_rest)
     
     op_crt = ml.pc
     ml.spc_imm(0)
