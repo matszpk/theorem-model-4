@@ -2,7 +2,11 @@
 # cell_len_bits: 8, address_len: 10
 # Registers:
 #  A - accumlator (8-bit)
-#  F - flags (3 - N, 2 - V, 1 - Z, 0 - C)
+#  F - flags:
+#    0 bit - C - carry
+#    1 bit - Z - if zero
+#    2 bit - V - overflow
+#    3 bit - N - negative (7 bit is 1)
 #  PC - program counter (12-bit)
 # Instruction set:
 # 0 - LDA - load into accumulator
@@ -12,7 +16,7 @@
 # 4 - AND - perform bitwise AND on accumulator
 # 5 - OR - perform bitwise OR on accumulator
 # 6 - XOR - perform bitwise XOR on accumulator
-# 7 - CLC
+# 7 - CLC - clear C (set to 0)
 # 8 - ROL - rotate left 1 bit including C.
 # 9 - ROR - rotate right 1 bit including C.
 # A - BCC - branch if C=0
@@ -20,7 +24,10 @@
 # C - BVC - branch if V=0
 # D - BPL - branch if N=0
 # E - SPC: mem: 0bxxxxxx00 - create, 0bxxxxxx01 - stop, 0bxxxxxx10 unsatisfied
-# F - SEC
+# F - SEC - set C to 1
+# LDA, ADC, SBC, AND, OR, XOR, ROL, ROR sets N an Z flags.
+# ADC, SBC, ROL, ROR, CLC, SEC sets C flag.
+# ADC, SBC sets V flag.
 # phases:
 # 0 - instruction fetch
 # 1 - fetch memory argument
