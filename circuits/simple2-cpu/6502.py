@@ -1841,6 +1841,10 @@ def gencode():
         ml.ana_imm(2)
         ml.xor_imm(2)   # BASIC not enabled in memconfig
         ml.bne(load_mem_val_c64_no_kernal)
+        # fix mapping to avoid last bytes overlapping
+        ml.lda(child_mem_addr+1)
+        ml.ana_imm(0x7f)
+        ml.sta(child_mem_addr+1)        # kernal in 0x16000
         ml.bpl(load_mem_val_c64_mapping1)   # if kernal
         #------------
         load_mem_val_c64_no_kernal = ml.pc
