@@ -1720,6 +1720,56 @@ def gencode():
     #print("opscode:", ops_code_start, ops_code_end, ops_code_end - (ops_code_start&0xf00))
     if ops_code_end - (ops_code_start&0xf00) >= 0x400:
         raise(RuntimeError("Ops code out of range!"))
+    ##########################################
+    
+    global store_mem_val_c64_no_deviochar
+    global get_cpu_ioport01, get_cpu_ioport01_ch, get_cpu_ioport01_end
+    
+    store_mem_val = ml.pc
+    ml.sta(store_mem_val_ch+1)
+    ml.lda(native_machine)
+    ml.bne(store_mem_val_native)
+    
+    ml.lda(mm_mem_val)
+    ml.sta(child_mem_val)
+    ml.clc()
+    ml.bcc(store_mem_val_end)
+    
+    store_mem_val_native = ml.pc
+    
+    if commodore64:
+        call_proc_8b(get_cpu_ioport01)
+        
+        ml.ana_imm(0xf0)
+        ml.xor_imm(0xd0)
+        ml.bne(store_mem_val_c64_no_deviochar)
+        ml.lda(mm_mem_temp)
+        ml.ana_imm(7)
+        ml.sec()
+        ml.sbc_imm(5)
+        ml.bcc(store_mem_val_c64_no_deviochar)
+        # devio access
+        ml.lda_imm(1)
+        ml.sta(child_mem_addr+2)
+        ml.lda(mm_mem_val)
+        ml.sta(child_mem_val)
+        ml.lda_imm(0)
+        ml.sta(child_mem_addr+2)
+        ml.bpl(store_mem_val_end)
+        
+        store_mem_val_c64_no_deviochar = ml.pc
+        ml.lda(mm_mem_val)
+        ml.sta(child_mem_val)
+    else:
+        ml.lda(mm_mem_val)
+        ml.sta(child_mem_val)
+    
+    store_mem_val_end = ml.pc
+    ml.clc()
+    store_mem_val_ch = ml.pc
+    ml.bcc(get_ret_page(store_mem_val), [False, True])
+    
+    ###########################################
     
     global load_mem_val_c64_no_basic, load_mem_val_c64_end, load_mem_val_c64_mapping1
     global load_mem_val_c64_no_kernal, load_mem_val_c64_no_deviochar
@@ -1738,8 +1788,10 @@ def gencode():
         ml.lda(child_mem_val)
         ml.sta(mm_mem_val)  # default mem value
         
-        global get_cpu_ioport01, get_cpu_ioport01_ch, get_cpu_ioport01_end
         ml.lda_imm(get_cpu_ioport01_end & 0xff)
+        if get_cpu_ioport01_end >= 0:
+            if (get_cpu_ioport01_end & 0xf00) != get_ret_page(get_cpu_ioport01):
+                raise(RuntimeError("Wrong page for get_cpu_ioport01"))
         get_cpu_ioport01 = ml.pc
         ml.sta(get_cpu_ioport01_ch+1)   # store return address
         ml.lda(child_mem_addr)
@@ -1820,55 +1872,8 @@ def gencode():
     ml.clc()
     load_mem_val_ch = ml.pc
     ml.bcc(get_ret_page(load_mem_val), [False, True])
-    ############################
-    
-    global store_mem_val_c64_no_deviochar
-    
-    store_mem_val = ml.pc
-    ml.sta(store_mem_val_ch+1)
-    ml.lda(native_machine)
-    ml.bne(store_mem_val_native)
-    
-    ml.lda(mm_mem_val)
-    ml.sta(child_mem_val)
-    ml.clc()
-    ml.bcc(store_mem_val_end)
-    
-    store_mem_val_native = ml.pc
-    
-    if commodore64:
-        call_proc_8b(get_cpu_ioport01)
-        
-        ml.ana_imm(0xf0)
-        ml.xor_imm(0xd0)
-        ml.bne(store_mem_val_c64_no_deviochar)
-        ml.lda(mm_mem_temp)
-        ml.ana_imm(7)
-        ml.sec()
-        ml.sbc_imm(5)
-        ml.bcc(store_mem_val_c64_no_deviochar)
-        # devio access
-        ml.lda_imm(1)
-        ml.sta(child_mem_addr+2)
-        ml.lda(mm_mem_val)
-        ml.sta(child_mem_val)
-        ml.lda_imm(0)
-        ml.sta(child_mem_addr+2)
-        ml.bpl(store_mem_val_end)
-        
-        store_mem_val_c64_no_deviochar = ml.pc
-        ml.lda(mm_mem_val)
-        ml.sta(child_mem_val)
-    else:
-        ml.lda(mm_mem_val)
-        ml.sta(child_mem_val)
-    
-    store_mem_val_end = ml.pc
-    ml.clc()
-    store_mem_val_ch = ml.pc
-    ml.bcc(get_ret_page(store_mem_val), [False, True])
-    
     ##########################################
+    
     native_machine = ml.pc
     ml.byte(int(args.native))      # set true for native machine
     
