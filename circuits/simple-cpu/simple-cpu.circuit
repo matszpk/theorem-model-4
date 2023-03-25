@@ -1,5 +1,5 @@
 # Simple 4-bit CPU
-# cell_len_bits: 4, address_len: 8
+# cell_len_bits: 2, address_len: 8
 # Registers:
 #  A - accumlator (4-bit)
 #  S - stack pointer (4-bit)
@@ -22,6 +22,8 @@
 # D - JMP
 # E - PSH - push
 # F - PUL - pull, if SP=0 then STOP
+# LDA, ADC, SBC, AND, OR, XOR, ROL, ROR sets N an Z flags.
+# ADC, SBC, ROL, ROR, CLC, SEC sets C flag.
 main:
     # input (phase):
     alias cpu_phase_0 i0
