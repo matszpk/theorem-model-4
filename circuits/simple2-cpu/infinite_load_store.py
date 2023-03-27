@@ -2,7 +2,7 @@ from simple2_cpu_asm import *
 from sys import stdout
 import argparse
 
-ap = argparse.ArgumentParser(prog = '6502 simple2-cpu codegen')
+ap = argparse.ArgumentParser(prog = 'infinite_load_store')
 ap.add_argument('-I', '--info', action='store_true')
 
 args = ap.parse_args()
