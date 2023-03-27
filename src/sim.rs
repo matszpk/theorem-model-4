@@ -662,7 +662,7 @@ impl SecondMachine {
                 new_cell_len_bits |= u32::from(get_bit(&self.memory, addr + i)) << i;
             }
 
-            assert!(self.cell_len_bits < new_cell_len_bits);
+            assert!(self.cell_len_bits <= new_cell_len_bits);
 
             if trace {
                 println!(
