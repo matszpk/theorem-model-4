@@ -857,6 +857,7 @@ def gencode():
 ml.assemble(gencode)
 
 if args.info:
+    print("example_start", "0x%03x"%example_start)
     print("mpc:", ml.pc)
     print(globals())
 else:
