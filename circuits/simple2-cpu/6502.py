@@ -12,12 +12,14 @@ ap.add_argument('-s', '--sp', type=lambda x: int(x,0), default=255)
 ap.add_argument('-r', '--sr', type=lambda x: int(x,0), default=0)
 ap.add_argument('-N', '--native', action='store_true')
 ap.add_argument('--create', type=lambda x: int(x,0), default=-1)
+ap.add_argument('--create_jsr', type=lambda x: int(x,0), default=-1)
 ap.add_argument('-C', '--commodore64', action='store_true')
 ap.add_argument('-I', '--info', action='store_true')
 
 args = ap.parse_args()
 
 create_page = args.create
+create_jsr = args.create_jsr
 
 args.create
 commodore64 = args.commodore64
@@ -158,7 +160,6 @@ op_txa = -10000
 op_txs = -10000
 op_tya = -10000
 op_und = -10000
-op_crt = -10000     # create machine
 op_stp = -10000     # stop machine
 
 ret_pages = dict()
@@ -244,6 +245,8 @@ branch_dont = -10000
 
 op_rol_ch1, op_rol_ch2 = -10000, -10000
 op_asl_ch1, op_asl_ch2 = -10000, -10000
+
+op_normal_jsr = -10000
 
 def gencode():
     global ret_pages
@@ -334,11 +337,12 @@ def gencode():
     global op_txs
     global op_tya
     global op_und
-    global op_crt
     global op_stp
     
     global op_jmpind_cont
     global op_brk_cont
+    
+    global op_normal_jsr
     
     start = 0
     ml.set_pc(start)
@@ -604,7 +608,7 @@ def gencode():
     opcode_table = [
         (AddrMode.imp, op_brk, 7), # 0x00
         (AddrMode.pindx, op_ora, 6), # 0x01
-        (AddrMode.imp, op_crt, 2), # 0x02
+        (AddrMode.imp, op_und, 2), # 0x02
         (AddrMode.imp, op_stp, 2), # 0x04
         (AddrMode.zpg, op_ora, 3), # 0x05
         (AddrMode.zpg, op_asl, 5), # 0x06
@@ -1288,6 +1292,17 @@ def gencode():
     ml.bcc(main_loop)
     
     op_jsr = ml.pc
+    if create_jsr>=0:
+        ml.lda(child_mem_addr)
+        ml.xor_imm(create_jsr&0xff)
+        ml.bne(op_normal_jsr)
+        ml.lda(child_mem_addr+1)
+        ml.xor_imm((create_jsr>>8)&0xff)
+        ml.bne(op_normal_jsr)
+        ml.spc_imm(0)
+        ml.clc()
+        ml.bcc(main_loop)
+    op_normal_jsr = ml.pc
     ml.lda(npc)
     ml.clc()
     ml.sbc_imm(0)   # old_pc+2
@@ -1707,13 +1722,6 @@ def gencode():
     op_tya = ml.pc
     ml.lda(nyind)
     ml.bcc(op_txa_rest)
-    
-    op_crt = ml.pc
-    if create_page>=0:
-        ml.spc_imm(0)
-        ml.bcc(main_loop)
-    else:
-        ml.spc_imm(2)
     
     op_stp = ml.pc
     ml.spc_imm(1)
