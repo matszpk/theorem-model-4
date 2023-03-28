@@ -379,6 +379,7 @@ def gencode():
     ml.adc(val_0x40_imm)
     ml.bcc(execute_bcc)
     # execute spc - just - disable child_ops in this machine and return
+    # becuase opcode in c-f - it can be any instruction that need 2 bytes (BPL, BVC, SPC).
     ml.lda(zero_imm)
     ml.sta(child_ops)
     ml.clc()
