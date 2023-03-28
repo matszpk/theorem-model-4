@@ -2238,7 +2238,7 @@ try:
     # Commodore 64 native
     
     #########################
-    cp = subprocess.run([PYTHON, CG6502, '-N', '-C'], capture_output=True)
+    cp = subprocess.run([PYTHON, CG6502, '-N', '-C', '--create=0xcf'], capture_output=True)
     if cp.returncode != 0:
         raise(RuntimeError('Error while running code generation of 6502'))
     with open('6502progbase.raw','wb') as f:
@@ -2396,9 +2396,88 @@ try:
     test_inc_rom(1, 0xd4e0, 0xf3, 0xf4, 0xc4e0, 0xf3)
     test_inc_rom(0, 0xd4e0, 0xf3, 0x2, 0xc4e0, 0xf3)
     
+    # load last page
+    def test_lda_last(addr, val, lastval):
+        new_acc, new_sr = lda_op(0, val, 0)
+        run_testcase('lda (last) addr={} val={} lastval={}'.format(addr, val, lastval),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, new_sr),
+                (1, acc_offset, val),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, 1),
+                (0, addr|0x1ff00, lastval),
+            ],
+            [
+                (addr&0xffff, [1]),
+                (addr|0x1ff00, [lastval]),
+                # instructions. last is undefined (stop)
+                (0x200, [0xad, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=0, sr=0, xind=2, yind=1)
+    
+    test_lda_last(0xcf23, 0x54, 0x54)
+    test_lda_last(0xce23, 1, 0x54)
+    
+    def test_sta_last(acc, addr, val, lastval):
+        opcode = 0x8d
+        run_testcase('sta (last) acc={} addr={} val={} lastval={}' \
+                .format(acc, addr, val, lastval),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, 1),
+                (1, acc_offset, acc),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 4),
+                (0, addr&0xffff, val),
+                (0, addr|0x1ff00, lastval),
+            ],
+            [
+                (addr&0xffff, [0]),
+                # instructions. last is undefined (stop)
+                (0x200, [opcode&0xff, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=acc, sr=1, xind=2, yind=1)
+    
+    test_sta_last(0x4b, 0xcf23, 0, 0x4b)
+    test_sta_last(0x4b, 0xce23, 0x4b, 0)
+    
+    def test_inc_last(addr, val, lastval):
+        run_testcase('inc (last) addr={} val={} destval={}'.format(addr, val, lastval),
+            [
+                (1, pc_offset, (0x204)&0xff),
+                (1, pc_offset+1, ((0x204)>>8)&0xff),
+                (1, sr_offset, set_sr_nz(2, 0)),
+                (1, acc_offset, 3),
+                (1, xind_offset, 2),
+                (1, yind_offset, 1),
+                (1, sp_offset, 0xff),
+                (1, instr_cycles_offset, 6),
+                (0, addr&0xffff, val),
+                (0, addr|0x1ff00, lastval),
+            ],
+            [
+                (addr&0xffff, [1]),
+                (addr|0x1ff00, [1]),
+                # instructions. last is undefined (stop)
+                (0x200, [0xee, addr&0xff, (addr>>8)&0xff, 0x04])
+            ],
+            pc=0x200, acc=3, sr=0, xind=2, yind=1)
+    
+    test_inc_last(0xcf3a, 1, 2)
+    test_inc_last(0xce3a, 2, 1)
+    
     #########################
     # Summary
     print("Tests passed: {}, Tests failed: {}, Total: {}" \
             .format(tests_passed, tests_failed, tests_passed+tests_failed))
 finally:
-    cleanup()
+    #cleanup()
+    pass

@@ -11,10 +11,15 @@ ap.add_argument('-y', '--yind', type=lambda x: int(x,0), default=0)
 ap.add_argument('-s', '--sp', type=lambda x: int(x,0), default=255)
 ap.add_argument('-r', '--sr', type=lambda x: int(x,0), default=0)
 ap.add_argument('-N', '--native', action='store_true')
+ap.add_argument('--create', type=lambda x: int(x,0), default=-1)
 ap.add_argument('-C', '--commodore64', action='store_true')
+ap.add_argument('-I', '--info', action='store_true')
 
 args = ap.parse_args()
 
+create_page = args.create
+
+args.create
 commodore64 = args.commodore64
 
 ml = Memory()
@@ -232,6 +237,8 @@ get_cpu_ioport01, get_cpu_ioport01_ch = -10000, -10000
 get_cpu_ioport01_end = -10000
 
 store_mem_val_c64_no_deviochar = -10000
+load_mem_val_no_create_page, store_mem_val_no_create_page = -10000, -10000
+
 addr_mode_code = -10000
 branch_dont = -10000
 
@@ -1702,8 +1709,11 @@ def gencode():
     ml.bcc(op_txa_rest)
     
     op_crt = ml.pc
-    ml.spc_imm(0)
-    ml.bcc(main_loop)
+    if create_page>=0:
+        ml.spc_imm(0)
+        ml.bcc(main_loop)
+    else:
+        ml.spc_imm(2)
     
     op_stp = ml.pc
     ml.spc_imm(1)
@@ -1724,9 +1734,37 @@ def gencode():
     
     global store_mem_val_c64_no_deviochar
     global get_cpu_ioport01, get_cpu_ioport01_ch, get_cpu_ioport01_end
+    global load_mem_val_no_create_page, store_mem_val_no_create_page
+    
+    ml.set_pc((ml.pc+255)&0xf00)
     
     store_mem_val = ml.pc
     ml.sta(store_mem_val_ch+1)
+    if create_page>=0:
+        ml.lda(child_mem_addr+1)
+        ml.xor_imm(create_page)
+        ml.bne(store_mem_val_no_create_page)
+        ml.lda(child_mem_addr+1)
+        ml.sta(mm_mem_addr+1)
+        
+        ml.lda_imm(0xff)
+        ml.sta(child_mem_addr+1)
+        ml.lda_imm(1)
+        ml.sta(child_mem_addr+2)
+        
+        ml.lda(mm_mem_val)
+        ml.sta(child_mem_val)
+        # restore
+        ml.lda(mm_mem_addr+1)
+        ml.sta(child_mem_addr+1)
+        ml.lda_imm(0)
+        ml.sta(child_mem_addr+2)
+        ml.lda(mm_mem_val)
+        ml.clc()
+        ml.bcc(store_mem_val_end)
+    
+    store_mem_val_no_create_page = ml.pc
+    
     ml.lda(native_machine)
     ml.bne(store_mem_val_native)
     
@@ -1775,6 +1813,33 @@ def gencode():
     global load_mem_val_c64_no_kernal, load_mem_val_c64_no_deviochar
     load_mem_val = ml.pc
     ml.sta(load_mem_val_ch+1)
+    
+    if create_page>=0:
+        ml.lda(child_mem_addr+1)
+        ml.xor_imm(create_page)
+        ml.bne(load_mem_val_no_create_page)
+        ml.lda(child_mem_addr+1)
+        ml.sta(mm_mem_addr+1)
+        
+        ml.lda_imm(0xff)
+        ml.sta(child_mem_addr+1)
+        ml.lda_imm(1)
+        ml.sta(child_mem_addr+2)
+        
+        ml.lda(child_mem_val)
+        ml.sta(mm_mem_temp)
+        # restore
+        ml.lda(mm_mem_addr+1)
+        ml.sta(child_mem_addr+1)
+        ml.lda_imm(0)
+        ml.sta(child_mem_addr+2)
+        
+        ml.lda(mm_mem_temp)
+        ml.clc()
+        ml.bcc(load_mem_val_end)
+    
+    load_mem_val_no_create_page = ml.pc
+    
     ml.lda(native_machine)
     ml.bne(load_mem_val_native)
     
@@ -1885,6 +1950,9 @@ def gencode():
 
 ml.assemble(gencode)
 
-#print("mpc:", ml.pc)
-stdout.buffer.write(ml.dump())
-#print(globals())
+if args.info:
+    print(args)
+    print("mpc:", ml.pc)
+    print(globals())
+else:
+    stdout.buffer.write(ml.dump())
