@@ -361,7 +361,7 @@ cpu_phase23:
     alias mem_value_6 i40
     alias mem_value_7 i41
     
-    # phase 2 - load memory argument from memory
+    # phase 2 - load or store memory argument from memory
     # new state: cpu_phase_X
     # new values: mem_rw, mem_address
     
