@@ -8,8 +8,9 @@
 #        if lowest bit is one then stop, if second lowest bit is one then create
 # phases: 
 # 0-15 - instruction fetch
-# 16 - load memory argument
-# 17 - execute and store to memory
+# 16 - load last bit of instruction
+# 18 - load memory argument
+# 19 - execute and store to memory
 main:
     alias cpu_phase_0 i0
     alias cpu_phase_1 i1
@@ -103,6 +104,7 @@ main:
     mem_value = copy mem_value
     
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
+    # phase 18 - process instruction
     do_operation_x = and_5 cpu_phase_1 cpu_phase_2_n cpu_phase_3_n cpu_phase_4 one
     do_operation = and do_operation_x cpu_phase_0
     do_nand_op = and do_operation cpu_instr_0_n
