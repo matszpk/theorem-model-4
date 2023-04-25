@@ -650,8 +650,8 @@ class Memory:
         elif self.flag_is_clear(flagN):
             self.bpl(addr, mod[0:2])
         else:
-            self.clc(mod[0:2])
-            self.bcc(addr, mod[2:4])
+            self.clc(mod[0])
+            self.bcc(addr, mod[1:2])
 
     def dump(self):
         out = b''
