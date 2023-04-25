@@ -626,6 +626,7 @@ class Memory:
             self.sec(mod)
     
     def lda_imm(self, im, mod=[False,False]):
+        im=im&0xff
         global imms
         if im in imms and imms[im]>=0:
             self.lda(imms[im], mod, im)
@@ -634,6 +635,7 @@ class Memory:
             imms[im] = -1
     
     def adc_imm(self, im, mod=[False,False]):
+        im=im&0xff
         global imms
         if im in imms:
             self.adc(imms[im], mod, im)
@@ -642,6 +644,7 @@ class Memory:
             imms[im] = -1
     
     def sbc_imm(self, im, mod=[False,False]):
+        im=im&0xff
         global imms
         if im in imms and imms[im]>=0:
             self.sbc(imms[im], mod, im)
@@ -650,6 +653,7 @@ class Memory:
             imms[im] = -1
     
     def ana_imm(self, im, mod=[False,False]):
+        im=im&0xff
         global imms
         if im in imms and imms[im]>=0:
             self.ana(imms[im], mod, im)
@@ -658,6 +662,7 @@ class Memory:
             imms[im] = -1
     
     def ora_imm(self, im, mod=[False,False]):
+        im=im&0xff
         global imms
         if im in imms and imms[im]>=0:
             self.ora(imms[im], mod, im)
@@ -666,6 +671,7 @@ class Memory:
             imms[im] = -1
     
     def xor_imm(self, im, mod=[False,False]):
+        im=im&0xff
         global imms
         if im in imms and imms[im]>=0:
             self.xor(imms[im], mod, im)
@@ -674,6 +680,7 @@ class Memory:
             imms[im] = -1
     
     def spc_imm(self, im, mod=[False,False]):
+        im=im&0xff
         global imms
         if im in imms and imms[im]>=0:
             self.spc(imms[im], mod)
