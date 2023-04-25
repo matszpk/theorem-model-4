@@ -1,16 +1,16 @@
 # Simple NAND CPU
-# cell_len_bits: 0, address_len: 15
+# cell_len_bits: 0, address_len: 20
 # Registers: 1-bit accumulator
-# PC program counter: 11-bit
+# PC program counter: 15-bit
 # Instruction set:
 # 0 - NAND - make NAND
-# 1 - BNE - make jump if not zero. First 4 bits of address are ignored.
+# 1 - BNE - make jump if not zero. First 5 bits of address are ignored.
 #        if lowest bit is one then stop, if second lowest bit is one then create
 # phases: 
-# 0-15 - instruction fetch
-# 16 - load last bit of instruction
-# 18 - load memory argument
-# 19 - execute and store to memory
+# 0-20 - instruction fetch
+# 21 - load last bit of instruction
+# 24 - load memory argument
+# 25 - execute and store to memory
 main:
     alias cpu_phase_0 i0
     alias cpu_phase_1 i1
@@ -29,23 +29,32 @@ main:
     alias cpu_pc_8 i14
     alias cpu_pc_9 i15
     alias cpu_pc_10 i16
-    alias cpu_instr_0 i17
-    alias cpu_instr_1 i18
-    alias cpu_instr_2 i19
-    alias cpu_instr_3 i20
-    alias cpu_instr_4 i21
-    alias cpu_instr_5 i22
-    alias cpu_instr_6 i23
-    alias cpu_instr_7 i24
-    alias cpu_instr_8 i25
-    alias cpu_instr_9 i26
-    alias cpu_instr_10 i27
-    alias cpu_instr_11 i28
-    alias cpu_instr_12 i29
-    alias cpu_instr_13 i30
-    alias cpu_instr_14 i31
-    alias cpu_instr_15 i32
-    alias mem_value i33
+    alias cpu_pc_11 i17
+    alias cpu_pc_12 i18
+    alias cpu_pc_13 i19
+    alias cpu_pc_14 i20
+    alias cpu_instr_0 i21
+    alias cpu_instr_1 i22
+    alias cpu_instr_2 i23
+    alias cpu_instr_3 i24
+    alias cpu_instr_4 i25
+    alias cpu_instr_5 i26
+    alias cpu_instr_6 i27
+    alias cpu_instr_7 i28
+    alias cpu_instr_8 i29
+    alias cpu_instr_9 i30
+    alias cpu_instr_10 i31
+    alias cpu_instr_11 i32
+    alias cpu_instr_12 i33
+    alias cpu_instr_13 i34
+    alias cpu_instr_14 i35
+    alias cpu_instr_15 i36
+    alias cpu_instr_16 i37
+    alias cpu_instr_17 i38
+    alias cpu_instr_18 i39
+    alias cpu_instr_19 i40
+    alias cpu_instr_20 i41
+    alias mem_value i42
     
     one = nand zero zero
     
@@ -57,8 +66,10 @@ main:
         carry_inc_4bit one :4:cpu_pc_0
     cpu_pc_4_inc cpu_pc_5_inc cpu_pc_6_inc cpu_pc_7_inc carry8 = \
         carry_inc_4bit carry4 :4:cpu_pc_4
-    cpu_pc_8_inc cpu_pc_9_inc cpu_pc_10_inc ign ign = \
+    cpu_pc_8_inc cpu_pc_9_inc cpu_pc_10_inc cpu_pc_11_inc carry12 = \
         carry_inc_4bit carry8 :4:cpu_pc_8
+    cpu_pc_12_inc cpu_pc_13_inc cpu_pc_14_inc ign ign = \
+        carry_inc_4bit carry12 :4:cpu_pc_12
     
     cpu_phase_0_n = nand cpu_phase_0 cpu_phase_0
     cpu_phase_1_n = nand cpu_phase_1 cpu_phase_1
@@ -82,13 +93,19 @@ main:
     cpu_instr_13_choose = and_5 cpu_phase_0_n :3:cpu_phase_1 cpu_phase_4_n
     cpu_instr_14_choose = and_5 :4:cpu_phase_0 cpu_phase_4_n
     cpu_instr_15_choose = and_5 :4:cpu_phase_0_n cpu_phase_4
+    cpu_instr_16_choose = and_5 cpu_phase_0 :3:cpu_phase_1_n cpu_phase_4
+    cpu_instr_17_choose = and_5 cpu_phase_0_n cpu_phase_1 cpu_phase_2_n cpu_phase_3_n cpu_phase_4
+    cpu_instr_18_choose = and_5 cpu_phase_0 cpu_phase_1 cpu_phase_2_n cpu_phase_3_n cpu_phase_4
+    cpu_instr_19_choose = and_5 cpu_phase_0_n cpu_phase_1_n cpu_phase_2 cpu_phase_3_n cpu_phase_4
+    cpu_instr_20_choose = and_5 cpu_phase_0 cpu_phase_1_n cpu_phase_2 cpu_phase_3_n cpu_phase_4
     
-    # in phase_16 change pc
+    # in phase_20 change pc
     cpu_pc_0_nextp cpu_pc_1_nextp cpu_pc_2_nextp cpu_pc_3_nextp \
     cpu_pc_4_nextp cpu_pc_5_nextp cpu_pc_6_nextp cpu_pc_7_nextp = \
-        ite_8bit cpu_instr_15_choose :4:cpu_pc_0_inc :4:cpu_pc_4_inc :8:cpu_pc_0
-    cpu_pc_8_nextp cpu_pc_9_nextp cpu_pc_10_nextp ign = \
-        ite_4bit cpu_instr_15_choose :4:cpu_pc_8_inc :4:cpu_pc_8
+        ite_8bit cpu_instr_20_choose :4:cpu_pc_0_inc :4:cpu_pc_4_inc :8:cpu_pc_0
+    cpu_pc_8_nextp cpu_pc_9_nextp cpu_pc_10_nextp cpu_pc_11_nextp \
+    cpu_pc_12_nextp cpu_pc_13_nextp cpu_pc_14_nextp ign = \
+        ite_8bit cpu_instr_20_choose :4:cpu_pc_8_inc :4:cpu_pc_12_inc :8:cpu_pc_8
     
     # copy to avoid unavailability
     cpu_phase_0 cpu_phase_1 cpu_phase_2 cpu_phase_3 = copy_4bit :4:cpu_phase_0
@@ -96,16 +113,19 @@ main:
     cpu_acc = copy cpu_acc
     cpu_pc_0 cpu_pc_1 cpu_pc_2 cpu_pc_3 cpu_pc_4 cpu_pc_5 cpu_pc_6 cpu_pc_7 = \
             copy_8bit :8:cpu_pc_0
-    cpu_pc_8 cpu_pc_9 cpu_pc_10 ign = copy_4bit :4:cpu_pc_8
+    cpu_pc_8 cpu_pc_9 cpu_pc_10 cpu_pc_11 \
+    cpu_pc_12 cpu_pc_13 cpu_pc_14 ign = copy_8bit :8:cpu_pc_8
     cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3 \
     cpu_instr_4 cpu_instr_5 cpu_instr_6 cpu_instr_7 = copy_8bit :8:cpu_instr_0
     cpu_instr_8 cpu_instr_9 cpu_instr_10 cpu_instr_11 \
     cpu_instr_12 cpu_instr_13 cpu_instr_14 cpu_instr_15 = copy_8bit :8:cpu_instr_8
+    cpu_instr_16 cpu_instr_17 cpu_instr_18 cpu_instr_19 = copy_4bit :4:cpu_instr_16
+    cpu_instr_20 = copy cpu_instr_20
     mem_value = copy mem_value
     
     cpu_instr_0_n = nand cpu_instr_0 cpu_instr_0
-    # phase 18-19 - process instruction
-    do_operation_x = and_5 cpu_phase_1 cpu_phase_2_n cpu_phase_3_n cpu_phase_4 one
+    # operation in phase 24-25 - process instruction
+    do_operation_x = and_5 cpu_phase_1 cpu_phase_2_n cpu_phase_3 cpu_phase_4 one
     do_operation = and do_operation_x cpu_phase_0
     do_nand_op = and do_operation cpu_instr_0_n
     do_jump_op = and do_operation cpu_instr_0
@@ -115,6 +135,8 @@ main:
     result = nand cpu_acc mem_value
     mem_rw = and do_nand_op cpu_phase_0
     
+    fetch_instr = nand cpu_phase_3 cpu_phase_4
+    
     # output
     # cpu_phase
     o0 o1 o2 o3 = copy_4bit :4:cpu_phase_0_next
@@ -123,42 +145,46 @@ main:
     o5 = ite do_nand_op result cpu_acc
     # cpu_pc
     # make jump
-    o6 o7 o8 o9 o10 o11 o12 o13 = ite_8bit do_jump_nonzero :8:cpu_instr_5 :8:cpu_pc_0_nextp
-    o14 = ite do_jump_nonzero cpu_instr_13 cpu_pc_8_nextp
-    o15 = ite do_jump_nonzero cpu_instr_14 cpu_pc_9_nextp
-    o16 = ite do_jump_nonzero cpu_instr_15 cpu_pc_10_nextp
+    o6 o7 o8 o9 o10 o11 o12 o13 = ite_8bit do_jump_nonzero :8:cpu_instr_6 :8:cpu_pc_0_nextp
+    o14 o15 o16 o17 = ite_4bit do_jump_nonzero :4:cpu_instr_14 :4:cpu_pc_8_nextp
+    o18 = ite do_jump_nonzero cpu_instr_18 cpu_pc_12_nextp
+    o19 = ite do_jump_nonzero cpu_instr_19 cpu_pc_13_nextp
+    o20 = ite do_jump_nonzero cpu_instr_20 cpu_pc_14_nextp
     # cpu_instr
-    o17 = ite cpu_instr_0_choose mem_value cpu_instr_0
-    o18 = ite cpu_instr_1_choose mem_value cpu_instr_1
-    o19 = ite cpu_instr_2_choose mem_value cpu_instr_2
-    o20 = ite cpu_instr_3_choose mem_value cpu_instr_3
-    o21 = ite cpu_instr_4_choose mem_value cpu_instr_4
-    o22 = ite cpu_instr_5_choose mem_value cpu_instr_5
-    o23 = ite cpu_instr_6_choose mem_value cpu_instr_6
-    o24 = ite cpu_instr_7_choose mem_value cpu_instr_7
-    o25 = ite cpu_instr_8_choose mem_value cpu_instr_8
-    o26 = ite cpu_instr_9_choose mem_value cpu_instr_9
-    o27 = ite cpu_instr_10_choose mem_value cpu_instr_10
-    o28 = ite cpu_instr_11_choose mem_value cpu_instr_11
-    o29 = ite cpu_instr_12_choose mem_value cpu_instr_12
-    o30 = ite cpu_instr_13_choose mem_value cpu_instr_13
-    o31 = ite cpu_instr_14_choose mem_value cpu_instr_14
-    o32 = ite cpu_instr_15_choose mem_value cpu_instr_15
+    o21 = ite cpu_instr_0_choose mem_value cpu_instr_0
+    o22 = ite cpu_instr_1_choose mem_value cpu_instr_1
+    o23 = ite cpu_instr_2_choose mem_value cpu_instr_2
+    o24 = ite cpu_instr_3_choose mem_value cpu_instr_3
+    o25 = ite cpu_instr_4_choose mem_value cpu_instr_4
+    o26 = ite cpu_instr_5_choose mem_value cpu_instr_5
+    o27 = ite cpu_instr_6_choose mem_value cpu_instr_6
+    o28 = ite cpu_instr_7_choose mem_value cpu_instr_7
+    o29 = ite cpu_instr_8_choose mem_value cpu_instr_8
+    o30 = ite cpu_instr_9_choose mem_value cpu_instr_9
+    o31 = ite cpu_instr_10_choose mem_value cpu_instr_10
+    o32 = ite cpu_instr_11_choose mem_value cpu_instr_11
+    o33 = ite cpu_instr_12_choose mem_value cpu_instr_12
+    o34 = ite cpu_instr_13_choose mem_value cpu_instr_13
+    o35 = ite cpu_instr_14_choose mem_value cpu_instr_14
+    o36 = ite cpu_instr_15_choose mem_value cpu_instr_15
+    o37 = ite cpu_instr_16_choose mem_value cpu_instr_16
+    o38 = ite cpu_instr_17_choose mem_value cpu_instr_17
+    o39 = ite cpu_instr_18_choose mem_value cpu_instr_18
+    o40 = ite cpu_instr_19_choose mem_value cpu_instr_19
+    o41 = ite cpu_instr_20_choose mem_value cpu_instr_20
     # mem_value
-    o33 = copy o5
+    o42 = copy o5
     # mem_rw
-    o34 = copy do_nand_op
+    o43 = copy do_nand_op
     # mem_address
-    o35 o36 o37 o38 o39 o40 o41 o42 = ite_8bit \
-            cpu_phase_4 :8:cpu_instr_1 :4:cpu_phase_0 :4:cpu_pc_0
-    o43 o44 o45 o46 = ite_4bit cpu_phase_4 :4:cpu_instr_9 :4:cpu_pc_4
-    o47 = ite cpu_phase_4 cpu_instr_13 cpu_pc_8
-    o48 = ite cpu_phase_4 cpu_instr_14 cpu_pc_9
-    o49 = ite cpu_phase_4 cpu_instr_15 cpu_pc_10
+    o44 o45 o46 o47 o48 o49 o50 o51 = ite_8bit \
+            fetch_instr :5:cpu_phase_0 :3:cpu_pc_0 :8:cpu_instr_1
+    o52 o53 o54 o55 o56 o57 o58 o59 = ite_8bit fetch_instr :8:cpu_pc_3 :8:cpu_instr_9
+    o60 o61 o62 o63 = ite_4bit fetch_instr :4:cpu_pc_11 :4:cpu_instr_17
     # create
-    o50 = and do_jump_op cpu_instr_2
+    o64 = and do_jump_op cpu_instr_2
     # stop
-    o51 = and do_jump_op cpu_instr_1
+    o65 = and do_jump_op cpu_instr_1
     
 copy:
     empty 1
