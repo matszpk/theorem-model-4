@@ -85,13 +85,14 @@ class Memory:
         self.zero()
         self.nand(*self.one_addr)
     
-    def neg_mem(self, addr, bit, mod=[False, False, False, False]):
-        self.bne(self.pc + (1<<self.instr_len_log)*2)
-        self.nand(*self.one_addr)
+    def neg_mem(self, addr, bit, mod=[False, False, False, False], acc_one=False):
+        if not acc_one:
+            self.bne(self.pc + (1<<self.instr_len_log)*2)
+            self.nand(*self.one_addr)
         self.nand(addr, bit, mod)
     
-    def load_mem(self, addr, bit, mod=[False]*8):
-        self.neg_mem(addr, bit, mod[0:4])
+    def load_mem(self, addr, bit, mod=[False]*8, acc_one=False):
+        self.neg_mem(addr, bit, mod[0:4], acc_one)
         self.nand(addr, bit, mod[4:])
     
     def store_one(self, addr, bit, mod=[False, False, False, False]):
@@ -118,7 +119,44 @@ class Memory:
         self.nand(addr, bit, mod[0:4])
         self.bne(self.pc + (1<<self.instr_len_log)*5)
         self.store_zero(addr, bit, mod[4:])
-        
+    
+    def copy_mem(self, addr_dest, bit_dest, addr_src, bit_src, acc_one=False):
+        self.load_mem(addr_src, bit_src, [False]*8, acc_one)
+        self.store_mem(addr_dest, bit_dest)
+    
+    def move_mem(self, addr_dest, bit_dest, addr_src, bit_src, acc_one=False):
+        self.neg_mem(addr_src, bit_src, [False]*4, acc_one)
+        self.store_neg_mem(addr_dest, bit_dest)
+    
+    def and_mem(self, addr, bit, mod=[False]*8):
+        self.nand(addr, bit, mod[0:4])
+        self.nand(addr, bit, mod[4:])
+    
+    def or_mem(self, addr, bit, mod=[False]*4):
+        self.bne(self.prim_rest_addr + len(self.prim_rest))
+        routine_end = self.pc
+        self.store_one(addr, bit, mod)
+        self.bne(routine_end)
+        self.prim_rest += self.mem[routine_end:self.pc]
+        self.set_pc(routine_end)
+    
+    def nor_mem(self, addr, bit, mod=[False]*8):
+        self.bne(self.prim_rest_addr + len(self.prim_rest))
+        self.nand(*self.one_addr)
+        to_this_point = self.pc
+        self.nand(addr, bit, mod)
+        routine_end = self.pc
+        self.store_one(addr, bit, mod)
+        self.bne(to_this_point)
+        self.prim_rest += self.mem[routine_end:self.pc]
+        self.set_pc(routine_end)
+    
+    def xor_mem(self, addr, bit, mod=[False]*4):
+        self.bne(self.pc + (1<<self.instr_len_log)*3)
+        self.nand(*self.one_addr, mod)
+        self.bne(self.pc + (1<<self.instr_len_log)*2)
+        self.nand(addr, bit, mod)
+    
     def dump(self):
         out = b''
         for i in self.mem:
