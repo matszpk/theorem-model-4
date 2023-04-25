@@ -123,12 +123,16 @@ class Memory:
         self.word16(a&0xffff, mod[0:2])
         self.word16((a>>16)&0xffff, mod[2:4])
 
-    def lda(self, addr, mod=[False,False]):
+    def lda(self, addr, mod=[False,False], imm=acc_undef):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_lda | instr_addr(addr), mod)
-            if not mod[0] and not mod[1] and not self.mmod[addr]:
-                self.set_flag_NZ(self.mem[addr])
-                self.acc = self.mem[addr]
+            
+            if imm==acc_undef and not mod[0] and not mod[1] and not self.mmod[addr]:
+                imm = self.mem[addr]
+            
+            if imm!=acc_undef:
+                self.set_flag_NZ(imm)
+                self.acc = imm
             else:
                 self.set_flag(flag_N, flag_undef)
                 self.set_flag(flag_Z, flag_undef)
@@ -148,21 +152,23 @@ class Memory:
         else:
             self.word16(instr_sta | instr_addr(0), [True, True])
     
-    def adc(self, addr, mod=[False,False]):
+    def adc(self, addr, mod=[False,False], imm=acc_undef):
         new_flag_N = self.flags[flag_N]
         new_flag_Z = self.flags[flag_Z]
         new_acc = self.acc
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_adc | instr_addr(addr), mod)
             
+            if imm==acc_undef and not mod[0] and not mod[1] and not self.mmod[addr]:
+                imm = self.mem[addr]
+            
             new_flag_C = flag_undef
             determined = False
             determined_all = False
             if self.acc != acc_undef:
-                if not mod[0] and not mod[1] and not self.mmod[addr] and \
-                        self.flags[flag_C]!=flag_undef:
+                if imm!=acc_undef and self.flags[flag_C]!=flag_undef:
                     acc = self.acc
-                    mem_value = self.mem[addr]
+                    mem_value = imm
                     flagc = int(self.flag_is_set(flag_C))
                     s = (acc + mem_value + flagc) & 0x1ff
                     fc = (s>>8)&1
@@ -174,7 +180,7 @@ class Memory:
                     self.set_flag_NZ(self.acc)
                     determined = True
                     determined_all = True
-                elif self.flag_is_set(flag_C) and acc==0xff:
+                elif self.flag_is_set(flag_C) and self.acc==0xff:
                     new_flag_C = flag_set
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
@@ -183,17 +189,15 @@ class Memory:
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
                     new_acc = acc_undef
-                else:
-                    determined = True
                     
-            if not mod[0] and not mod[1] and not self.mmod[addr]:
-                if self.flag_is_set(flag_C) and self.mem[addr]==0xff:
+            if imm!=acc_undef:
+                if self.flag_is_set(flag_C) and imm==0xff:
                     new_flag_C = flag_set
                     if not determined:
                         new_flag_N = flag_undef
                         new_flag_Z = flag_undef
                         new_acc = acc_undef
-                elif not determined and (self.flag_is_set(flag_C) or self.acc!=0x00):
+                elif not determined and (self.flag_is_set(flag_C) or imm!=0x00):
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
                     new_acc = acc_undef
@@ -201,29 +205,34 @@ class Memory:
             if not determined_all:
                 self.set_flag(flag_C, new_flag_C)
                 self.set_flag(flag_V, flag_undef)
+                self.set_flag(flag_N, new_flag_N)
+                self.set_flag(flag_Z, new_flag_Z)
+                self.acc = new_acc
         else:
             self.word16(instr_adc | instr_addr(0), [True, True])
             self.set_flag(flag_C, flag_undef)
             self.set_flag(flag_V, flag_undef)
-        self.set_flag(flag_N, new_flag_N)
-        self.set_flag(flag_Z, new_flag_Z)
-        self.acc = new_acc
+            self.set_flag(flag_N, new_flag_N)
+            self.set_flag(flag_Z, new_flag_Z)
+            self.acc = new_acc
     
-    def sbc(self, addr, mod=[False,False]):
+    def sbc(self, addr, mod=[False,False], imm=acc_undef):
         new_flag_N = self.flags[flag_N]
         new_flag_Z = self.flags[flag_Z]
         new_acc = self.acc
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_sbc | instr_addr(addr), mod)
             
+            if imm==acc_undef and not mod[0] and not mod[1] and not self.mmod[addr]:
+                imm = self.mem[addr]
+            
             new_flag_C = flag_undef
             determined = False
             determined_all = False
             if self.acc != acc_undef:
-                if not mod[0] and not mod[1] and not self.mmod[addr] and \
-                        self.flags[flag_C]!=flag_undef:
+                if imm!=acc_undef and self.flags[flag_C]!=flag_undef:
                     acc = self.acc
-                    mem_value = self.mem[addr]
+                    mem_value = imm
                     flagc = int(self.flag_is_set(flag_C))
                     s = (acc + (mem_value^0xff) + flagc) & 0x1ff
                     fc = (s>>8)&1
@@ -244,17 +253,15 @@ class Memory:
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
                     new_acc = acc_undef
-                else:
-                    determined = True
                     
-            if not mod[0] and not mod[1] and not self.mmod[addr]:
-                if self.flag_is_set(flag_C) and self.mem[addr]==0x00:
+            if imm!=acc_undef:
+                if self.flag_is_set(flag_C) and imm==0x00:
                     new_flag_C = flag_set
                     if not determined:
                         new_flag_N = flag_undef
                         new_flag_Z = flag_undef
                         new_acc = acc_undef
-                elif not determined and (self.flag_is_set(flag_C) or self.mem[addr]!=0xff):
+                elif not determined and (self.flag_is_set(flag_C) or imm!=0xff):
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
                     new_acc = acc_undef
@@ -262,24 +269,30 @@ class Memory:
             if not determined_all:
                 self.set_flag(flag_C, new_flag_C)
                 self.set_flag(flag_V, flag_undef)
+                self.set_flag(flag_N, new_flag_N)
+                self.set_flag(flag_Z, new_flag_Z)
+                self.acc = new_acc
         else:
             self.word16(instr_sbc | instr_addr(0), [True, True])
             self.set_flag(flag_C, flag_undef)
             self.set_flag(flag_V, flag_undef)
-        self.set_flag(flag_N, new_flag_N)
-        self.set_flag(flag_Z, new_flag_Z)
-        self.acc = new_acc
+            self.set_flag(flag_N, new_flag_N)
+            self.set_flag(flag_Z, new_flag_Z)
+            self.acc = new_acc
     
-    def ana(self, addr, mod=[False,False]):
+    def ana(self, addr, mod=[False,False], imm=acc_undef):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_and | instr_addr(addr), mod)
             determined_N = False
             determined_Z = False
             determined_acc = False
             
+            if imm==acc_undef and not mod[0] and not mod[1] and not self.mmod[addr]:
+                imm = self.mem[addr]
+            
             if self.acc != acc_undef:
-                if not mod[0] and not mod[1] and not self.mmod[addr]:
-                    self.acc = self.acc & self.mem[addr]
+                if imm!=acc_undef:
+                    self.acc = self.acc & imm
                     self.set_flag_NZ(self.acc)
                     determined_N = True
                     determined_Z = True
@@ -294,26 +307,19 @@ class Memory:
                     self.set_flag(flag_N, flag_clear)
                     determined_N = True
                     self.set_flag(flag_Z, flag_undef)
-                elif self.acc != 0xff:
-                    self.set_flag(flag_N, flag_undef)
-                    self.set_flag(flag_Z, flag_undef)
-                    self.acc = acc_undef
-                else:
-                    determined_N = True
-                    determined_Z = True
             
-            if not mod[0] and not mod[1] and not self.mmod[addr]:
-                if self.mem[addr] == 0:
+            if imm!=acc_undef:
+                if imm == 0:
                     self.set_flag(flag_N, flag_clear)
                     self.set_flag(flag_Z, flag_set)
                     self.acc = 0
-                elif (self.mem[addr]&0x80) == 0:
+                elif (imm&0x80) == 0:
                     self.set_flag(flag_N, flag_clear)
                     if not determined_Z:
                         self.set_flag(flag_Z, flag_undef)
                     if not determined_acc:
                         self.acc = acc_undef
-                elif self.mem[addr] != 0xff:
+                elif imm != 0xff:
                     if not determined_N:
                         self.set_flag(flag_N, flag_undef)
                     if not determined_Z:
@@ -332,16 +338,19 @@ class Memory:
             self.set_flag(flag_N, flag_undef)
             self.set_flag(flag_Z, flag_undef)
     
-    def ora(self, addr, mod=[False,False]):
+    def ora(self, addr, mod=[False,False], imm=acc_undef):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_ora | instr_addr(addr), mod)
+            
+            if imm==acc_undef and not mod[0] and not mod[1] and not self.mmod[addr]:
+                imm = self.mem[addr]
             
             determined_N = False
             determined_Z = False
             determined_acc = False
             if self.acc != acc_undef:
-                if not mod[0] and not mod[1] and not self.mmod[addr]:
-                    self.acc = self.acc | self.mem[addr]
+                if imm!=acc_undef:
+                    self.acc = self.acc | imm
                     self.set_flag_NZ(self.acc)
                     determined_N = True
                     determined_Z = True
@@ -361,30 +370,24 @@ class Memory:
                     self.set_flag(flag_N, flag_undef)
                     self.set_flag(flag_Z, flag_clear)
                     determined_Z = True
-                elif self.acc!=0x00:
-                    self.set_flag(flag_N, flag_undef)
-                    self.set_flag(flag_Z, flag_undef)
-                else:
-                    determined_N = True
-                    determined_Z = True
             
-            if not mod[0] and not mod[1] and not self.mmod[addr]:
-                if self.mem[addr] == 0xff:
+            if imm!=acc_undef:
+                if imm == 0xff:
                     self.set_flag(flag_N, flag_set)
                     self.set_flag(flag_Z, flag_clear)
                     self.acc = 0xff
-                elif (self.mem[addr]&0x80) != 0:
+                elif (imm&0x80) != 0:
                     self.set_flag(flag_N, flag_set)
                     self.set_flag(flag_Z, flag_clear)
                     if not determined_acc:
                         self.acc = acc_undef
-                elif self.mem[addr] != 0:
+                elif imm != 0:
                     if not determined_N:
                         self.set_flag(flag_N, flag_undef)
                     self.set_flag(flag_Z, flag_clear)
                     if not determined_acc:
                         self.acc = acc_undef
-                elif self.mem[addr] != 0xff:
+                elif imm != 0xff:
                     if not determined_N:
                         self.set_flag(flag_N, flag_undef)
                     if not determined_Z:
@@ -403,35 +406,28 @@ class Memory:
             self.set_flag(flag_N, flag_undef)
             self.set_flag(flag_Z, flag_undef)
     
-    def xor(self, addr, mod=[False,False]):
+    def xor(self, addr, mod=[False,False], imm=acc_undef):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_xor | instr_addr(addr), mod)
+            
+            if imm==acc_undef and not mod[0] and not mod[1] and not self.mmod[addr]:
+                imm = self.mem[addr]
             
             determined_N = False
             determined_Z = False
             determined_acc = False
             if self.acc != acc_undef:
-                if not mod[0] and not mod[1] and not self.mmod[addr]:
-                    self.acc = self.acc ^ self.mem[addr]
+                if imm!=acc_undef:
+                    self.acc = self.acc ^ imm
                     self.set_flag_NZ(self.acc)
                     determined_N = True
                     determined_Z = True
                     determined_acc = True
-                else:
-                    if (self.acc&0x80) != 0:
-                        self.set_flag(flag_N, flag_undef)
-                    else:
-                        determined_N = True
-                    if self.acc != 0:
-                        self.set_flag(flag_Z, flag_undef)
-                        self.acc = acc_undef
-                    else:
-                        determined_Z = True
             
-            if not mod[0] and not mod[1] and not self.mmod[addr]:
-                if (self.mem[addr]&0x80) != 0 and not determined_N:
+            if imm!=acc_undef:
+                if (imm&0x80) != 0 and not determined_N:
                     self.set_flag(flag_N, flag_undef)
-                if self.mem[addr] != 0 and not determined_Z:
+                if imm != 0 and not determined_Z:
                     self.set_flag(flag_Z, flag_undef)
                 if not determined_acc:
                     self.acc = acc_undef
@@ -632,49 +628,49 @@ class Memory:
     def lda_imm(self, im, mod=[False,False]):
         global imms
         if im in imms and imms[im]>=0:
-            self.lda(imms[im], mod)
+            self.lda(imms[im], mod, im)
         else:
-            self.lda(0, [True,True])
+            self.lda(0, [True,True], im)
             imms[im] = -1
     
     def adc_imm(self, im, mod=[False,False]):
         global imms
         if im in imms:
-            self.adc(imms[im], mod)
+            self.adc(imms[im], mod, im)
         else:
-            self.adc(0, [True,True])
+            self.adc(0, [True,True], im)
             imms[im] = -1
     
     def sbc_imm(self, im, mod=[False,False]):
         global imms
         if im in imms and imms[im]>=0:
-            self.sbc(imms[im], mod)
+            self.sbc(imms[im], mod, im)
         else:
-            self.sbc(0, [True,True])
+            self.sbc(0, [True,True], im)
             imms[im] = -1
     
     def ana_imm(self, im, mod=[False,False]):
         global imms
         if im in imms and imms[im]>=0:
-            self.ana(imms[im], mod)
+            self.ana(imms[im], mod, im)
         else:
-            self.ana(0, [True,True])
+            self.ana(0, [True,True], im)
             imms[im] = -1
     
     def ora_imm(self, im, mod=[False,False]):
         global imms
         if im in imms and imms[im]>=0:
-            self.ora(imms[im], mod)
+            self.ora(imms[im], mod, im)
         else:
-            self.ora(0, [True,True])
+            self.ora(0, [True,True], im)
             imms[im] = -1
     
     def xor_imm(self, im, mod=[False,False]):
         global imms
         if im in imms and imms[im]>=0:
-            self.xor(imms[im], mod)
+            self.xor(imms[im], mod, im)
         else:
-            self.xor(0, [True,True])
+            self.xor(0, [True,True], im)
             imms[im] = -1
     
     def spc_imm(self, im, mod=[False,False]):
@@ -766,7 +762,7 @@ class Memory:
             start=codegen()
             join_imms(imms, self.imms(range(start,self.pc)))
             self.pc = imm_pc
-
+        
 def join_imms(imms1, imms2):
     for (k,v) in imms2.items():
         if v>=0 and (k not in imms1 or imms1[k]<0):
