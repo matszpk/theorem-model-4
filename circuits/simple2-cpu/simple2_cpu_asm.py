@@ -30,6 +30,9 @@ acc_undef = -1
 def instr_addr(addr):
     return (((addr>>8)&0xf)<<4) | ((addr&0xff)<<8)
 
+# TODO: write subroutine handling
+# TODO: extend flags handling (add label handling)
+
 """
 Assemblying program should be done by using assemble method which argument is function that
 generates code. Function should return start address from assemble method will start
