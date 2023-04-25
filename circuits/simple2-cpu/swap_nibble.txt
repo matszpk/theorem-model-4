@@ -1,0 +1,14 @@
+ml.sta(nopcode)
+    ml.ana_imm(0x03)
+    ml.xor_imm(0x03)
+    ml.bne(op_und)
+    ml.rol()
+    ml.ana_imm(0xf0)
+    ml.sta(temp1)       # [7]654-|----
+    ml.lda(nopcode)
+    ml.ana_imm(0x0f)    # ----|3210
+    ml.ora(temp1)       # [7]654-|3210
+    ml.rol()            # 3210|7654
+    ml.rol()
+    ml.rol()
+    ml.rol()        # 5 + 2 + 8 -> 15

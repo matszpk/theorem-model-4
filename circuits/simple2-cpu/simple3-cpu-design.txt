@@ -1,0 +1,44 @@
+Simple3-CPU:
+
+ISA:
+
+F - flags this same as Simple2-CPU.
+R0 - R15 - general purpose registers
+PC - 12-bit or 20-bit
+SP - 12-bit or 20-bit
+
+Mem instructions:
+LD rd, mem
+ST mem, rd
+MOV rd, rs
+ADD rd, rs1, rs2
+ADC rd, rs1, rs2
+SUB rd, rs1, rs2
+SBC rd, rs1, rs2
+AND rd, rs1, rs2
+OR rd, rs1, rs2
+XOR rd, rs1, rs2
+NOT rd, rs
+NEG rd, rs
+CMP rs1, rs2
+TST rs1, rs2
+ASL rd, rs1, rs2
+LSR rd, rs1, rs2
+ASR rd, rs1, rs2
+ROL rd, rs1, rs2
+ROR rd, rs1, rs2
+PSH mem, rd
+PUL rd, mem
+
+JMP mem/rd
+JSR mem/rd
+BCC mem/rd
+BCS mem/rd
+BEQ mem/rd
+BNE mem/rd
+BVC mem/rd
+BVS mem/rd
+BPL mem/rd
+BMI mem/rd
+
+RTS
