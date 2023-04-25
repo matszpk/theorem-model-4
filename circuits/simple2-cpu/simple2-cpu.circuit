@@ -373,8 +373,14 @@ cpu_phase23:
     alias mem_address_5_ph2 mem_value_5
     alias mem_address_6_ph2 mem_value_6
     alias mem_address_7_ph2 mem_value_7
+    
+    cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit :4:cpu_instr_0
+    
+    if_clc_sec = and_3 cpu_instr_0 cpu_instr_1 cpu_instr_2
+    if_rol_ror = and_3 cpu_instr_1_n cpu_instr_2_n cpu_instr_3
+    if_clc_sec_rol_ror_phase3 = or_4 if_clc_sec if_rol_ror cpu_phase_0 zero
     mem_address_8_ph2 mem_address_9_ph2 mem_address_10_ph2 mem_address_11_ph2 = \
-        copy_4bit :4:cpu_tmp_0
+        ite_4bit if_clc_sec_rol_ror_phase3 .4:zero :4:cpu_tmp_0
     
     one = nand zero zero
     
@@ -396,7 +402,6 @@ cpu_phase23:
     
     alias cpu_phase_0_ph3 zero
     alias cpu_phase_1_ph3 zero
-    cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit :4:cpu_instr_0
     
     # phase 2
     # if sta
@@ -425,7 +430,7 @@ cpu_phase23:
     cpu_pc_0_ph2 cpu_pc_1_ph2 cpu_pc_2_ph2 cpu_pc_3_ph2 \
     cpu_pc_4_ph2 cpu_pc_5_ph2 cpu_pc_6_ph2 cpu_pc_7_ph2 \
     cpu_pc_8_ph2 cpu_pc_9_ph2 cpu_pc_10_ph2 cpu_pc_11_ph2 = ite_12bit if_do_branch \
-        :12:mem_address_0_ph2 :12:cpu_pc_0
+        :8:mem_address_0_ph2 :4:mem_address_8_ph2 :12:cpu_pc_0
         
     cpu_acc_0 cpu_acc_1 cpu_acc_2 cpu_acc_3 \
     cpu_acc_4 cpu_acc_5 cpu_acc_6 cpu_acc_7 \
@@ -447,7 +452,8 @@ cpu_phase23:
     # mem_value_X
     o27 o28 o29 o30 o31 o32 o33 o34 = copy_8bit :8:cpu_acc_0
     # mem_address_X
-    o35 o36 o37 o38 o39 o40 o41 o42 o43 o44 o45 o46 = copy_12bit :12:mem_address_0_ph2
+    o35 o36 o37 o38 o39 o40 o41 o42 o43 o44 o45 o46 = copy_12bit :8:mem_address_0_ph2 \
+        :4:mem_address_8_ph2
     o47 = and cpu_phase_0 create_ph3
     o48 = and cpu_phase_0 stop_ph3
 

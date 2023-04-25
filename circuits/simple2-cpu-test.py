@@ -224,6 +224,8 @@ def cpu_phase23(data):
     if phase0==0:
         next_pc = pc
         maddr = (mem_value+(tmp<<8))&0xfff
+        if instr==instr_clc or  instr==instr_sec or instr==instr_rol or instr==instr_ror:
+            maddr = mem_value&0xfff
         if_sta = instr==instr_sta
         if_branch = instr==instr_bcc or instr==instr_bne or instr==instr_bvc or instr==instr_bpl
         if (instr==instr_bcc and not flag_c(flags)) or \
@@ -235,7 +237,7 @@ def cpu_phase23(data):
                 'acc':acc, 'flags':flags, 'pc':next_pc, 'mem_rw':int(if_sta),
                 'mem_value':acc, 'mem_address':maddr, 'create':0, 'stop':0}
     else:
-        maddr = (mem_value+(tmp<<8))&0xfff
+        maddr = mem_value&0xfff
         outv = bin_decomp(cpu_exec_output_str, cpu_exec(bin_comp(cpu_exec_input_str,
                 {'instr':instr, 'acc':acc, 'flags':flags, 'mem_value':mem_value})))
         outv |= {'phase':0, 'pc':pc, 'mem_rw':0, 'mem_value':acc, 'mem_address':maddr}
