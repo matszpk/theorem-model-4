@@ -526,15 +526,15 @@ class Memory:
     
     def bcc(self, addr, mod=[False,False]):
         if isinstance(addr,str):
+            bflags = self.flags[:]
+            bflags[flag_C] = flag_clear
             if addr in self.labels:
-                bflags = self.flags[:]
-                bflags[flag_C] = flag_clear
                 self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bcc(self.labels[addr][0], mod)
             else:
                 self.bcc(-100000, mod)
-                self.labels[addr] = (-1000000, self.flags, self.acc)
+                self.labels[addr] = (-1000000, bflags, self.acc)
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bcc | instr_addr(addr), mod)
         else:
@@ -548,15 +548,15 @@ class Memory:
     
     def bne(self, addr, mod=[False,False]):
         if isinstance(addr,str):
+            bflags = self.flags[:]
+            bflags[flag_Z] = flag_clear
             if addr in self.labels:
-                bflags = self.flags[:]
-                bflags[flag_Z] = flag_clear
                 self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bne(self.labels[addr][0], mod)
             else:
                 self.bne(-100000, mod)
-                self.labels[addr] = (-1000000, self.flags, self.acc)
+                self.labels[addr] = (-1000000, bflags, self.acc)
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bne | instr_addr(addr), mod)
         else:
@@ -570,15 +570,15 @@ class Memory:
     
     def bvc(self, addr, mod=[False,False]):
         if isinstance(addr,str):
+            bflags = self.flags[:]
+            bflags[flag_V] = flag_clear
             if addr in self.labels:
-                bflags = self.flags[:]
-                bflags[flag_V] = flag_clear
                 self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bvc(self.labels[addr][0], mod)
             else:
                 self.bvc(-100000, mod)
-                self.labels[addr] = (-1000000, self.flags, self.acc)
+                self.labels[addr] = (-1000000, bflags, self.acc)
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bvc | instr_addr(addr), mod)
         else:
@@ -592,15 +592,15 @@ class Memory:
     
     def bpl(self, addr, mod=[False,False]):
         if isinstance(addr,str):
+            bflags = self.flags[:]
+            bflags[flag_N] = flag_clear
             if addr in self.labels:
-                bflags = self.flags[:]
-                bflags[flag_N] = flag_clear
                 self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bpl(self.labels[addr][0], mod)
             else:
                 self.bpl(-100000, mod)
-                self.labels[addr] = (-1000000, self.flags, self.acc)
+                self.labels[addr] = (-1000000, bflags, self.acc)
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bpl | instr_addr(addr), mod)
         else:
