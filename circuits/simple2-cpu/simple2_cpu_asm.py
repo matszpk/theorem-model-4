@@ -16,6 +16,17 @@ instr_bpl=13
 instr_spc=14
 instr_sec=15
 
+flag_C = 0
+flag_Z = 1
+flag_V = 2
+flag_N = 3
+
+flag_clear = 0
+flag_set = 1
+flag_undef = 2
+
+acc_undef = -1
+
 def instr_addr(addr):
     return (((addr>>8)&0xf)<<4) | ((addr&0xff)<<8)
 
@@ -37,9 +48,46 @@ class Memory:
         self.mem = [0]*(1<<12)
         self.mmod = [True]*(1<<12)
         self.pc = 0
+        self.flags = [flag_undef,flag_undef,flag_undef,flag_undef]
+        self.acc = acc_undef
     
     def clearmod(self):
         self.mmod = [True]*(1<<12)
+    
+    def clearflags(self):
+        self.flags = [flag_undef,flag_undef,flag_undef,flag_undef]
+    
+    def clearacc(self):
+        self.acc = acc_undef
+    
+    def set_flag(self, flag, value):
+        self.flags[flag] = value
+    
+    def flag_is_set(self, flag):
+        return self.flags[flag]==flag_set
+    
+    def flag_is_not_set(self, flag):
+        return self.flags[flag]!=flag_set
+    
+    def flag_is_clear(self, flag):
+        return self.flags[flag]==flag_clear
+    
+    def flag_is_not_clear(self, flag):
+        return self.flags[flag]!=flag_clear
+    
+    def set_flag_NZ(self, value):
+        if value==0:
+            self.set_flag(flag_Z, flag_set)
+            self.set_flag(flag_N, flag_clear)
+        elif (value&0x80)!=0:
+            self.set_flag(flag_Z, flag_clear)
+            self.set_flag(flag_N, flag_set)
+        else:
+            self.set_flag(flag_Z, flag_clear)
+            self.set_flag(flag_N, flag_clear)
+    
+    def acc_is_undef(self):
+        return self.acc < 0
     
     def set_pc(self, pc):
         self.pc = pc&0xfff
@@ -60,8 +108,18 @@ class Memory:
     def lda(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_lda | instr_addr(addr), mod)
+            if not mod[0] and not mod[1] and not self.mmod[addr]:
+                self.set_flag_NZ(self.mem[addr])
+                self.acc = self.mem[addr]
+            else:
+                self.set_flag(flag_N, flag_undef)
+                self.set_flag(flag_Z, flag_undef)
+                self.acc = acc_undef
         else:
             self.word16(instr_lda | instr_addr(0), [True, True])
+            self.set_flag(flag_N, flag_undef)
+            self.set_flag(flag_Z, flag_undef)
+            self.acc = acc_undef
     
     def sta(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
@@ -73,67 +131,428 @@ class Memory:
             self.word16(instr_sta | instr_addr(0), [True, True])
     
     def adc(self, addr, mod=[False,False]):
+        new_flag_N = self.flags[flag_N]
+        new_flag_Z = self.flags[flag_Z]
+        new_acc = self.acc
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_adc | instr_addr(addr), mod)
+            
+            new_flag_C = flag_undef
+            determined = False
+            determined_all = False
+            if self.acc != acc_undef:
+                if not mod[0] and not mod[1] and not self.mmod[addr] and \
+                        self.flags[flag_C]!=flag_undef:
+                    acc = self.acc
+                    mem_value = self.mem[addr]
+                    flagc = int(self.flag_is_set(flag_C))
+                    s = (acc + mem_value + flagc) & 0x1ff
+                    fc = (s>>8)&1
+                    a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
+                    fv = (a7&b7&(s7^1)) | ((a7^1)&(b7^1)&s7)
+                    self.acc = s&0xff
+                    self.set_flag(flag_C, fc)
+                    self.set_flag(flag_V, fv)
+                    self.set_flag_NZ(self.acc)
+                    determined = True
+                    determined_all = True
+                elif self.flag_is_set(flag_C) and acc==0xff:
+                    new_flag_C = flag_set
+                    new_flag_N = flag_undef
+                    new_flag_Z = flag_undef
+                    new_acc = acc_undef
+                elif self.flag_is_set(flag_C) or self.acc!=0x00:
+                    new_flag_N = flag_undef
+                    new_flag_Z = flag_undef
+                    new_acc = acc_undef
+                else:
+                    determined = True
+                    
+            if not mod[0] and not mod[1] and not self.mmod[addr]:
+                if self.flag_is_set(flag_C) and self.mem[addr]==0xff:
+                    new_flag_C = flag_set
+                    if not determined:
+                        new_flag_N = flag_undef
+                        new_flag_Z = flag_undef
+                        new_acc = acc_undef
+                elif not determined and (self.flag_is_set(flag_C) or self.acc!=0x00):
+                    new_flag_N = flag_undef
+                    new_flag_Z = flag_undef
+                    new_acc = acc_undef
+            
+            if not determined_all:
+                self.set_flag(flag_C, new_flag_C)
+                self.set_flag(flag_V, flag_undef)
         else:
             self.word16(instr_adc | instr_addr(0), [True, True])
+            self.set_flag(flag_C, flag_undef)
+            self.set_flag(flag_V, flag_undef)
+        self.set_flag(flag_N, new_flag_N)
+        self.set_flag(flag_Z, new_flag_Z)
+        self.acc = new_acc
     
     def sbc(self, addr, mod=[False,False]):
+        new_flag_N = self.flags[flag_N]
+        new_flag_Z = self.flags[flag_Z]
+        new_acc = self.acc
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_sbc | instr_addr(addr), mod)
+            
+            new_flag_C = flag_undef
+            determined = False
+            determined_all = False
+            if self.acc != acc_undef:
+                if not mod[0] and not mod[1] and not self.mmod[addr] and \
+                        self.flags[flag_C]!=flag_undef:
+                    acc = self.acc
+                    mem_value = self.mem[addr]^0xff
+                    flagc = int(self.flag_is_set(flag_C))
+                    s = (acc + mem_value + flagc) & 0x1ff
+                    fc = (s>>8)&1
+                    a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
+                    fv = (a7&b7&(s7^1)) | ((a7^1)&(b7^1)&s7)
+                    self.acc = s&0xff
+                    self.set_flag(flag_C, fc)
+                    self.set_flag(flag_V, fv)
+                    self.set_flag_NZ(self.acc)
+                    determined = True
+                    determined_all = True
+                elif self.flag_is_set(flag_C) and self.acc==0xff:
+                    new_flag_C = flag_set
+                    new_flag_N = flag_undef
+                    new_flag_Z = flag_undef
+                    new_acc = acc_undef
+                elif self.flag_is_set(flag_C) or self.acc!=0x00:
+                    new_flag_N = flag_undef
+                    new_flag_Z = flag_undef
+                    new_acc = acc_undef
+                else:
+                    determined = True
+                    
+            if not mod[0] and not mod[1] and not self.mmod[addr]:
+                if self.flag_is_set(flag_C) and self.mem[addr]==0x00:
+                    new_flag_C = flag_set
+                    if not determined:
+                        new_flag_N = flag_undef
+                        new_flag_Z = flag_undef
+                        new_acc = acc_undef
+                elif not determined and (self.flag_is_set(flag_C) or self.mem[addr]!=0xff):
+                    new_flag_N = flag_undef
+                    new_flag_Z = flag_undef
+                    new_acc = acc_undef
+            
+            if not determined_all:
+                self.set_flag(flag_C, new_flag_C)
+                self.set_flag(flag_V, flag_undef)
         else:
             self.word16(instr_sbc | instr_addr(0), [True, True])
+            self.set_flag(flag_C, flag_undef)
+            self.set_flag(flag_V, flag_undef)
+        self.set_flag(flag_N, new_flag_N)
+        self.set_flag(flag_Z, new_flag_Z)
+        self.acc = new_acc
     
     def ana(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_and | instr_addr(addr), mod)
+            determined_N = False
+            determined_Z = False
+            determined_acc = False
+            
+            if self.acc != acc_undef:
+                if not mod[0] and not mod[1] and not self.mmod[addr]:
+                    self.acc = self.acc & self.mem[addr]
+                    self.set_flag_NZ(self.acc)
+                    determined_N = True
+                    determined_Z = True
+                    determined_acc = True
+                elif self.acc == 0:
+                    self.set_flag(flag_N, flag_clear)
+                    self.set_flag(flag_Z, flag_set)
+                    determined_N = True
+                    determined_Z = True
+                    determined_acc = True
+                elif (self.acc&0x80) == 0:
+                    self.set_flag(flag_N, flag_clear)
+                    determined_N = True
+                    self.set_flag(flag_Z, flag_undef)
+                elif self.acc != 0xff:
+                    self.set_flag(flag_N, flag_undef)
+                    self.set_flag(flag_Z, flag_undef)
+                    self.acc = acc_undef
+                else:
+                    determined_N = True
+                    determined_Z = True
+            
+            if not mod[0] and not mod[1] and not self.mmod[addr]:
+                if self.mem[addr] == 0:
+                    self.set_flag(flag_N, flag_clear)
+                    self.set_flag(flag_Z, flag_set)
+                    self.acc = 0
+                elif (self.mem[addr]&0x80) == 0:
+                    self.set_flag(flag_N, flag_clear)
+                    if not determined_Z:
+                        self.set_flag(flag_Z, flag_undef)
+                    if not determined_acc:
+                        self.acc = acc_undef
+                elif self.mem[addr] != 0xff:
+                    if not determined_N:
+                        self.set_flag(flag_N, flag_undef)
+                    if not determined_Z:
+                        self.set_flag(flag_Z, flag_undef)
+                    if not determined_acc:
+                        self.acc = acc_undef
+            else:
+                if not determined_N:
+                    self.set_flag(flag_N, flag_undef)
+                if not determined_Z:
+                    self.set_flag(flag_Z, flag_undef)
+                if not determined_acc:
+                        self.acc = acc_undef
         else:
             self.word16(instr_and | instr_addr(0), [True, True])
+            self.set_flag(flag_N, flag_undef)
+            self.set_flag(flag_Z, flag_undef)
     
     def ora(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_ora | instr_addr(addr), mod)
+            
+            determined_N = False
+            determined_Z = False
+            determined_acc = False
+            if self.acc != acc_undef:
+                if not mod[0] and not mod[1] and not self.mmod[addr]:
+                    self.acc = self.acc | self.mem[addr]
+                    self.set_flag_NZ(self.acc)
+                    determined_N = True
+                    determined_Z = True
+                    determined_acc = True
+                elif self.acc == 0xff:
+                    self.set_flag(flag_N, flag_set)
+                    self.set_flag(flag_Z, flag_clear)
+                    determined_N = True
+                    determined_Z = True
+                    determined_acc = True
+                elif (self.acc&0x80) != 0:
+                    self.set_flag(flag_N, flag_set)
+                    self.set_flag(flag_Z, flag_clear)
+                    determined_N = True
+                    determined_Z = True
+                elif self.acc != 0:
+                    self.set_flag(flag_N, flag_undef)
+                    self.set_flag(flag_Z, flag_clear)
+                    determined_Z = True
+                elif self.acc!=0x00:
+                    self.set_flag(flag_N, flag_undef)
+                    self.set_flag(flag_Z, flag_undef)
+                else:
+                    determined_N = True
+                    determined_Z = True
+            
+            if not mod[0] and not mod[1] and not self.mmod[addr]:
+                if self.mem[addr] == 0xff:
+                    self.set_flag(flag_N, flag_set)
+                    self.set_flag(flag_Z, flag_clear)
+                    self.acc = 0xff
+                elif (self.mem[addr]&0x80) != 0:
+                    self.set_flag(flag_N, flag_set)
+                    self.set_flag(flag_Z, flag_clear)
+                    if not determined_acc:
+                        self.acc = acc_undef
+                elif self.mem[addr] != 0:
+                    if not determined_N:
+                        self.set_flag(flag_N, flag_undef)
+                    self.set_flag(flag_Z, flag_clear)
+                    if not determined_acc:
+                        self.acc = acc_undef
+                elif self.mem[addr] != 0xff:
+                    if not determined_N:
+                        self.set_flag(flag_N, flag_undef)
+                    if not determined_Z:
+                        self.set_flag(flag_Z, flag_undef)
+                    if not determined_acc:
+                        self.acc = acc_undef
+            else:
+                if not determined_N:
+                    self.set_flag(flag_N, flag_undef)
+                if not determined_Z:
+                    self.set_flag(flag_Z, flag_undef)
+                if not determined_acc:
+                        self.acc = acc_undef
         else:
             self.word16(instr_ora | instr_addr(0), [True, True])
+            self.set_flag(flag_N, flag_undef)
+            self.set_flag(flag_Z, flag_undef)
     
     def xor(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_xor | instr_addr(addr), mod)
+            
+            determined_N = False
+            determined_Z = False
+            determined_acc = False
+            if self.acc != acc_undef:
+                if not mod[0] and not mod[1] and not self.mmod[addr]:
+                    self.acc = self.acc ^ self.mem[addr]
+                    self.set_flag_NZ(self.acc)
+                    determined_N = True
+                    determined_Z = True
+                    determined_acc = True
+                else:
+                    if (self.acc&0x80) != 0:
+                        self.set_flag(flag_N, flag_undef)
+                    else:
+                        determined_N = True
+                    if self.acc != 0:
+                        self.set_flag(flag_Z, flag_undef)
+                        self.acc = acc_undef
+                    else:
+                        determined_Z = True
+            
+            if not mod[0] and not mod[1] and not self.mmod[addr]:
+                if (self.mem[addr]&0x80) != 0 and not determined_N:
+                    self.set_flag(flag_N, flag_undef)
+                if self.mem[addr] != 0 and not determined_Z:
+                    self.set_flag(flag_Z, flag_undef)
+                if not determined_acc:
+                    self.acc = acc_undef
+            else:
+                if not determined_N:
+                    self.set_flag(flag_N, flag_undef)
+                if not determined_Z:
+                    self.set_flag(flag_Z, flag_undef)
+                if not determined_acc:
+                    self.acc = acc_undef
         else:
             self.word16(instr_xor | instr_addr(0), [True, True])
+            self.set_flag(flag_N, flag_undef)
+            self.set_flag(flag_Z, flag_undef)
     
     def clc(self, mod=False):
         self.byte(instr_clc, mod)
+        if not mod:
+            self.set_flag(flag_C, flag_clear)
+        else:
+            self.set_flag(flag_C, flag_undef)
+    
+    def cond_clc(self, mod=False):
+        if mod or self.flag_is_not_clear(flag_C):
+            self.clc(mod)
     
     def rol(self, mod=False):
         self.byte(instr_rol, mod)
+        if not mod:
+            if self.acc!=acc_undef:
+                new_flag_C = flag_set if (self.acc&0x80)!=0 else flag_clear
+                if self.flag_is_set(flag_C):
+                    self.acc = (self.acc << 1) + 1
+                    self.set_flag_NZ(self.acc)
+                if self.flag_is_clear(flag_C):
+                    self.acc = (self.acc << 1)
+                    self.set_flag_NZ(self.acc)
+                else:
+                    self.acc = acc_undef
+                self.set_flag(flag_C, new_flag_C)
+            else:
+                if self.flag_is_set(flag_C):
+                    self.set_flag(flag_Z, flag_clear)
+                else:
+                    self.set_flag(flag_Z, flag_undef)
+                
+                if self.flag_is_set(flag_N):
+                    self.set_flag(flag_C, flag_set)
+                elif self.flag_is_clear(flag_N):
+                    self.set_flag(flag_C, flag_clear)
+                else:
+                    self.set_flag(flag_C, flag_undef)
+                self.set_flag(flag_N, flag_undef)
+        else:
+            self.set_flag(flag_N, flag_undef)
+            self.set_flag(flag_Z, flag_undef)
+            self.set_flag(flag_C, flag_undef)
     
     def ror(self, mod=False):
         self.byte(instr_ror, mod)
+        
+        if not mod:
+            if self.acc!=acc_undef:
+                new_flag_C = flag_set if (self.acc&0x1)!=0 else flag_clear
+                if self.flag_is_set(flag_C):
+                    self.acc = (self.acc >> 1) + 0x80
+                    self.set_flag_NZ(self.acc)
+                if self.flag_is_clear(flag_C):
+                    self.acc = (self.acc >> 1)
+                    self.set_flag_NZ(self.acc)
+                else:
+                    self.acc = acc_undef
+                self.set_flag(flag_C, new_flag_C)
+            else:
+                new_flag_C = flag_undef
+                if self.flag_is_set(flag_Z):
+                    new_flag_C = flag_clear
+                if self.flag_is_set(flag_C):
+                    self.set_flag(flag_N, flag_set)
+                    self.set_flag(flag_Z, flag_clear)
+                elif self.flag_is_clear(flag_C):
+                    self.set_flag(flag_N, flag_clear)
+                    self.set_flag(flag_Z, flag_undef)
+                else:
+                    self.set_flag(flag_N, flag_undef)
+                    self.set_flag(flag_Z, flag_undef)
+                self.set_flag(flag_C, new_flag_C)
+        else:
+            self.set_flag(flag_N, flag_undef)
+            self.set_flag(flag_Z, flag_undef)
+            self.set_flag(flag_C, flag_undef)
     
     def bcc(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_bcc | instr_addr(addr), mod)
         else:
             self.word16(instr_bcc | instr_addr(0), [True,True])
+        # for next instruction
+        self.set_flag(flag_C, flag_set)
+    
+    def cond_bcc(self, addr, mod=[False,False]):
+        if mod[0] or mod[1] or self.flag_is_not_set(flag_C):
+            self.bcc(addr, mod)
     
     def bne(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_bne | instr_addr(addr), mod)
         else:
             self.word16(instr_bne | instr_addr(0), [True,True])
+        # for next instruction
+        self.set_flag(flag_Z, flag_set)
+    
+    def cond_bne(self, addr, mod=[False,False]):
+        if mod[0] or mod[1] or self.flag_is_not_set(flag_Z):
+            self.bne(addr, mod)
     
     def bvc(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_bvc | instr_addr(addr), mod)
         else:
             self.word16(instr_bvc | instr_addr(0), [True,True])
+        # for next instruction
+        self.set_flag(flag_V, flag_set)
+    
+    def cond_bvc(self, addr, mod=[False,False]):
+        if mod[0] or mod[1] or self.flag_is_not_set(flag_V):
+            self.bvc(addr, mod)
     
     def bpl(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_bpl | instr_addr(addr), mod)
         else:
             self.word16(instr_bpl | instr_addr(0), [True,True])
+        # for next instruction
+        self.set_flag(flag_N, flag_set)
+    
+    def cond_bpl(self, addr, mod=[False,False]):
+        if mod[0] or mod[1] or self.flag_is_not_set(flag_N):
+            self.bpl(addr, mod)
     
     def spc(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
@@ -143,6 +562,14 @@ class Memory:
     
     def sec(self, mod=False):
         self.byte(instr_sec, mod)
+        if not mod:
+            self.set_flag(flag_C, flag_set)
+        else:
+            self.set_flag(flag_C, flag_undef)
+    
+    def cond_sec(self, mod=False):
+        if mod or self.flag_is_not_set(flag_C):
+            self.sec(mod)
     
     def lda_imm(self, im, mod=[False,False]):
         global imms
@@ -199,6 +626,32 @@ class Memory:
         else:
             self.spc(0, [True,True])
             imms[im] = -1
+    
+    def jmp(self, addr, mod=[True,True,True,True]):
+        if self.flag_is_clear(flagC):
+            self.bcc(addr, mod[0:2])
+        elif self.flag_is_clear(flagZ):
+            self.bne(addr, mod[0:2])
+        elif self.flag_is_clear(flagV):
+            self.bvc(addr, mod[0:2])
+        elif self.flag_is_clear(flagN):
+            self.bpl(addr, mod[0:2])
+        else:
+            self.bne(addr, mod[0:2])
+            self.bpl(addr, mod[2:4])
+    
+    def jmpc(self, addr, mod=[True,True,True]):
+        if self.flag_is_clear(flagC):
+            self.bcc(addr, mod[0:2])
+        elif self.flag_is_clear(flagZ):
+            self.bne(addr, mod[0:2])
+        elif self.flag_is_clear(flagV):
+            self.bvc(addr, mod[0:2])
+        elif self.flag_is_clear(flagN):
+            self.bpl(addr, mod[0:2])
+        else:
+            self.clc(mod[0:2])
+            self.bcc(addr, mod[2:4])
 
     def dump(self):
         out = b''
@@ -227,11 +680,15 @@ class Memory:
         global imms
         imms = dict()
         for i in range(0,stages):
+            self.clearflags()
+            self.clearacc()
             start=codegen()
         imm_pc = self.pc
         start=codegen()
         join_imms(imms, self.imms(range(start,self.pc)))
         while self.rest_imms(imms):
+            self.clearflags()
+            self.clearacc()
             imm_pc = self.pc
             start=codegen()
             join_imms(imms, self.imms(range(start,self.pc)))
