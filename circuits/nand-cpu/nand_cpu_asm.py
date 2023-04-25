@@ -89,6 +89,9 @@ class Memory:
         if not acc_one:
             self.bne(self.pc + (1<<self.instr_len_log)*2)
             self.nand(*self.one_addr)
+        elif acc_one=='z':
+            # acc_one - z - always zero
+            self.nand(*self.one_addr)
         self.nand(addr, bit, mod)
     
     def load_mem(self, addr, bit, mod=[False]*8, acc_one=False):
