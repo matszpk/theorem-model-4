@@ -103,14 +103,6 @@ class Memory:
         self.nand(addr, bit, mod[4:])
     
     def store_mem(self, addr, bit, mod=[False]*12):
-        self.bne(self.pc + (1<<self.instr_len_log)*5)
-        self.nand(addr, bit, mod[0:4])
-        self.nand(addr, bit, mod[4:8])
-        self.nand(*self.one_addr)
-        self.bne(self.pc + (1<<self.instr_len_log)*4)
-        self.store_one(addr, bit, mod[8:])
-    
-    def store_mem_rest(self, addr, bit, mod=[False]*12):
         routine_start = self.pc
         self.bne(self.prim_rest_addr + len(self.prim_rest))
         self.nand(addr, bit, mod[0:4])
@@ -121,6 +113,12 @@ class Memory:
         self.prim_rest += self.mem[routine_end:self.pc]
         self.set_pc(routine_end)
     
+    def store_neg_mem(self, addr, bit, mod=[False]*12):
+        self.bne(self.pc + (1<<self.instr_len_log)*3)
+        self.nand(addr, bit, mod[0:4])
+        self.bne(self.pc + (1<<self.instr_len_log)*5)
+        self.store_zero(addr, bit, mod[4:])
+        
     def dump(self):
         out = b''
         for i in self.mem:
