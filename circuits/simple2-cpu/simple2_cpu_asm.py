@@ -205,12 +205,12 @@ class Memory:
                 if not mod[0] and not mod[1] and not self.mmod[addr] and \
                         self.flags[flag_C]!=flag_undef:
                     acc = self.acc
-                    mem_value = self.mem[addr]^0xff
+                    mem_value = self.mem[addr]
                     flagc = int(self.flag_is_set(flag_C))
-                    s = (acc + mem_value + flagc) & 0x1ff
+                    s = (acc + (mem_value^0xff) + flagc) & 0x1ff
                     fc = (s>>8)&1
                     a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
-                    fv = (a7&b7&(s7^1)) | ((a7^1)&(b7^1)&s7)
+                    fv = (a7&(b7^1)&(s7^1)) | ((a7^1)&b7&s7)
                     self.acc = s&0xff
                     self.set_flag(flag_C, fc)
                     self.set_flag(flag_V, fv)
