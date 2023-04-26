@@ -161,7 +161,6 @@ class Memory:
             
             if imm==acc_undef and not mod[0] and not mod[1] and not self.mmod[addr]:
                 imm = self.mem[addr]
-            
             new_flag_C = flag_undef
             determined = False
             determined_all = False
@@ -794,6 +793,10 @@ class Memory:
             start=codegen()
             join_imms(imms, self.imms(range(start,self.pc)))
             self.pc = imm_pc
+        self.clearflags()
+        self.clearacc()
+        imm_pc = self.pc
+        codegen()
         
 def join_imms(imms1, imms2):
     for (k,v) in imms2.items():
