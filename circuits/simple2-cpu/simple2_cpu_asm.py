@@ -309,17 +309,25 @@ class Memory:
                     self.set_flag(flag_Z, flag_undef)
             
             if imm!=acc_undef:
-                if imm == 0:
+                if (imm&0x80) == 0:
                     self.set_flag(flag_N, flag_clear)
-                    self.set_flag(flag_Z, flag_set)
-                    self.acc = 0
-                elif (imm&0x80) == 0:
-                    self.set_flag(flag_N, flag_clear)
-                    if not determined_Z:
-                        self.set_flag(flag_Z, flag_undef)
-                    if not determined_acc:
-                        self.acc = acc_undef
-                elif imm != 0xff:
+                if self.flag_is_clear(flag_N):
+                    if (imm&0x7f) == 0:
+                        self.set_flag(flag_Z, flag_set)
+                        self.acc = 0
+                    else:
+                        if not determined_Z:
+                            self.set_flag(flag_Z, flag_undef)
+                        if not determined_acc:
+                            self.acc = acc_undef
+                elif self.flag_is_set(flag_N):
+                    self.set_flag(flag_Z, flag_clear)
+                    if (imm&0x7f) == 0:
+                        self.acc = 0x80
+                    elif (imm&0x7f) != 0x7f:
+                        if not determined_acc:
+                            self.acc = acc_undef
+                else:
                     if not determined_N:
                         self.set_flag(flag_N, flag_undef)
                     if not determined_Z:
@@ -332,7 +340,7 @@ class Memory:
                 if not determined_Z:
                     self.set_flag(flag_Z, flag_undef)
                 if not determined_acc:
-                        self.acc = acc_undef
+                    self.acc = acc_undef
         else:
             self.word16(instr_and | instr_addr(0), [True, True])
             self.set_flag(flag_N, flag_undef)
@@ -372,22 +380,24 @@ class Memory:
                     determined_Z = True
             
             if imm!=acc_undef:
-                if imm == 0xff:
+                if (imm&0x80) != 0:
                     self.set_flag(flag_N, flag_set)
+                if self.flag_is_set(flag_N):
                     self.set_flag(flag_Z, flag_clear)
-                    self.acc = 0xff
-                elif (imm&0x80) != 0:
-                    self.set_flag(flag_N, flag_set)
-                    self.set_flag(flag_Z, flag_clear)
-                    if not determined_acc:
-                        self.acc = acc_undef
-                elif imm != 0:
-                    if not determined_N:
-                        self.set_flag(flag_N, flag_undef)
-                    self.set_flag(flag_Z, flag_clear)
-                    if not determined_acc:
-                        self.acc = acc_undef
-                elif imm != 0xff:
+                    if (imm&0x7f) == 0x7f:
+                        self.acc = 0xff
+                    else:
+                        if not determined_acc:
+                            self.acc = acc_undef
+                elif self.flag_is_clear(flag_N):
+                    if not determined_Z:
+                        self.set_flag(flag_Z, flag_undef)
+                    elif (imm&0x7f) == 0x7f:
+                        self.acc = 0x7f
+                    elif (imm&0x7f) != 0:
+                        if not determined_acc:
+                            self.acc = acc_undef
+                else:
                     if not determined_N:
                         self.set_flag(flag_N, flag_undef)
                     if not determined_Z:
