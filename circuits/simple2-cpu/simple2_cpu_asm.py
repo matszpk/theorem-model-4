@@ -91,8 +91,7 @@ class Memory:
     
     def clear_label_flags(self):
         for k in self.labels:
-            self.lalels[k][1] = None
-            self.lalels[k][2] = None
+            self.labels[k] = [self.labels[k][0], None, None]
     
     def set_flag(self, flag, value):
         self.flags[flag] = value
@@ -661,7 +660,7 @@ class Memory:
                 self.bcc(self.labels[addr][0], mod)
             else:
                 self.bcc(-100000, mod)
-                self.labels[addr] = (-1000000, bflags, self.acc)
+                self.labels[addr] = [-1000000, bflags, self.acc]
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bcc | instr_addr(addr), mod)
         else:
@@ -678,12 +677,15 @@ class Memory:
             bflags = self.flags[:]
             bflags[flag_Z] = flag_clear
             if addr in self.labels:
+                #print("XXbne", addr, bflags, self.labels[addr][1], self.acc)
                 self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bne(self.labels[addr][0], mod)
+                #print("YYbne", addr, self.labels[addr][1], self.labels[addr][2])
             else:
                 self.bne(-100000, mod)
-                self.labels[addr] = (-1000000, bflags, self.acc)
+                self.labels[addr] = [-1000000, bflags, self.acc]
+                #print("ZZbne", addr, self.labels[addr][1], self.labels[addr][2])
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bne | instr_addr(addr), mod)
         else:
@@ -705,7 +707,7 @@ class Memory:
                 self.bvc(self.labels[addr][0], mod)
             else:
                 self.bvc(-100000, mod)
-                self.labels[addr] = (-1000000, bflags, self.acc)
+                self.labels[addr] = [-1000000, bflags, self.acc]
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bvc | instr_addr(addr), mod)
         else:
@@ -727,7 +729,7 @@ class Memory:
                 self.bpl(self.labels[addr][0], mod)
             else:
                 self.bpl(-100000, mod)
-                self.labels[addr] = (-1000000, bflags, self.acc)
+                self.labels[addr] = [-1000000, bflags, self.acc]
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bpl | instr_addr(addr), mod)
         else:
@@ -853,20 +855,34 @@ class Memory:
             self.cond_clc(mod[0])
             self.bcc(addr, mod[1:])
 
-    def label(self, name):
+    def l(self, name):
         if name in self.labels:
             return self.labels[name][0]
         else:
             return -10000000000
     
+    def def_segment(self, name):
+        if name in self.labels:
+            new_flags = (self.labels[name][1][:], self.labels[name][2])
+            self.labels[name] = [self.pc, *new_flags]
+            self.flags = new_flags[0][:]
+            self.acc = new_flags[1]
+        else:
+            self.labels[name] = [self.pc, None, None]
+            # new flag in segment: all undefined
+            self.clearflags()
+            self.clear_acc()
+    
     def def_label(self, name):
         if name in self.labels:
             old_flags = self.labels[name][1]
-            old_acc =self.labels[name][2]
+            old_acc = self.labels[name][2]
             new_flags = join_flags(old_flags, self.flags, old_acc, self.acc)
-            self.labels[name] = (self.pc, *new_flags)
+            self.labels[name] = [self.pc, *new_flags]
+            self.flags = new_flags[0][:]
+            self.acc = new_flags[1]
         else:
-            self.labels[name] = (self.pc, self.flags, self.acc)
+            self.labels[name] = [self.pc, self.flags, self.acc]
 
     def dump(self):
         out = b''
@@ -895,24 +911,23 @@ class Memory:
         global imms
         imms = dict()
         for i in range(0,stages):
-            self.clearflags()
-            self.clearacc()
             self.clear_label_flags()
-            start=codegen()
+            for j in range(0,2):
+                self.clearflags()
+                self.clearacc()
+                start=codegen()
         imm_pc = self.pc
         start=codegen()
         join_imms(imms, self.imms(range(start,self.pc)))
         while self.rest_imms(imms):
             self.clearflags()
             self.clearacc()
-            self.clear_label_flags()
             imm_pc = self.pc
             start=codegen()
             join_imms(imms, self.imms(range(start,self.pc)))
             self.pc = imm_pc
         self.clearflags()
         self.clearacc()
-        self.clear_label_flags()
         imm_pc = self.pc
         codegen()
 
