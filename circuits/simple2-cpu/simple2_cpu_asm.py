@@ -91,6 +91,7 @@ class Memory:
         self.acc = acc_undef
         self.labels = dict()
         self.ret_pages = dict()
+        self.ret_procs = dict()
     
     def clearmod(self):
         self.mmod = [True]*(1<<12)
@@ -912,13 +913,21 @@ class Memory:
         else:
             self.labels[name] = [self.pc, self.flags, self.acc]
     
-    def def_short_routine(self, name):
+    def def_short_routine(self, name, jmp_name=None):
         self.def_segment(name)
-        self.start_short_proc(name)
+        if jmp_name==None or jmp_name==name:
+            self.start_short_proc(name)
+        else:
+            self.ret_procs[name] = jmp_name
+            self.start_short_proc_next(jmp_name)
     
-    def def_long_routine(self, name):
+    def def_long_routine(self, name, jmp_name=None):
         self.def_segment(name)
-        self.start_long_proc(name)
+        if jmp_name==None or jmp_name==name:
+            self.start_long_proc(name)
+        else:
+            self.ret_procs[name] = jmp_name
+            self.start_long_proc_next(jmp_name)
     
     def short_call_x(self, proc, cond=False):
         page = 0
@@ -955,7 +964,8 @@ class Memory:
     def long_call_x(self, proc, cond=False):
         extra_byte = 0 if cond else 1
         addr = self.pc+4+4+extra_byte
-        proc_ret = name_proc_ret(proc)
+        ret_proc = self.ret_procs[proc] if proc in self.ret_procs else proc
+        proc_ret = name_proc_ret(ret_proc)
         proc_ret_val = (self.mem[self.l(proc_ret)-2]&0xf) | ((addr>>4)&0xf0) \
                 if self.l(proc_ret)-2>=0 else 0
         self.lda_imm(proc_ret_val)
@@ -1000,6 +1010,7 @@ class Memory:
     # ml.cond_lastcall('rout2') - jump to rout2
     # ml.def_segment('rout2')
     #....
+    # or use ml.def_short_routine('rout1','rout2')
     def start_short_proc_next(self, proc):
         self.sta(self.l(name_proc_ret(proc))-1)
     
