@@ -648,12 +648,21 @@ class Memory:
             self.set_flag(flag_Z, flag_undef)
             self.set_flag(flag_C, flag_undef)
     
-    def bcc(self, addr, mod=[False,False]):
-        if isinstance(addr,str):
-            bflags = self.flags[:]
-            bflags[flag_C] = flag_clear
+    def handle_extra_jumps(self, bflags, extra_jumps):
+        for addr in extra_jumps:
             if addr in self.labels:
-                self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
+                self.labels[addr][1:] = join_flags(self.labels[addr][1], bflags, \
+                                    self.labels[addr][2], self.acc)
+            else:
+                self.labels[addr] = [-1000000, bflags, self.acc]
+    
+    def bcc(self, addr, mod=[False,False], extra_jumps=[]):
+        bflags = self.flags[:]
+        bflags[flag_C] = flag_clear
+        self.handle_extra_jumps(bflags, extra_jumps)
+        if isinstance(addr,str):
+            if addr in self.labels:
+                self.labels[addr][1:] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bcc(self.labels[addr][0], mod)
             else:
@@ -666,16 +675,17 @@ class Memory:
         # for next instruction
         self.set_flag(flag_C, flag_set)
     
-    def cond_bcc(self, addr, mod=[False,False]):
+    def cond_bcc(self, addr, mod=[False,False], extra_jumps=[]):
         if mod[0] or mod[1] or self.flag_is_not_set(flag_C):
-            self.bcc(addr, mod)
+            self.bcc(addr, mod, extra_jumps)
     
-    def bne(self, addr, mod=[False,False]):
+    def bne(self, addr, mod=[False,False], extra_jumps=[]):
+        bflags = self.flags[:]
+        bflags[flag_Z] = flag_clear
+        self.handle_extra_jumps(bflags, extra_jumps)
         if isinstance(addr,str):
-            bflags = self.flags[:]
-            bflags[flag_Z] = flag_clear
             if addr in self.labels:
-                self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
+                self.labels[addr][1:] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bne(self.labels[addr][0], mod)
             else:
@@ -689,16 +699,17 @@ class Memory:
         self.set_flag(flag_Z, flag_set)
         self.acc = 0
     
-    def cond_bne(self, addr, mod=[False,False]):
+    def cond_bne(self, addr, mod=[False,False], extra_jumps=[]):
         if mod[0] or mod[1] or self.flag_is_not_set(flag_Z):
-            self.bne(addr, mod)
+            self.bne(addr, mod, extra_jumps)
     
-    def bvc(self, addr, mod=[False,False]):
+    def bvc(self, addr, mod=[False,False], extra_jumps=[]):
+        bflags = self.flags[:]
+        bflags[flag_V] = flag_clear
+        self.handle_extra_jumps(bflags, extra_jumps)
         if isinstance(addr,str):
-            bflags = self.flags[:]
-            bflags[flag_V] = flag_clear
             if addr in self.labels:
-                self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
+                self.labels[addr][1:] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bvc(self.labels[addr][0], mod)
             else:
@@ -711,16 +722,17 @@ class Memory:
         # for next instruction
         self.set_flag(flag_V, flag_set)
     
-    def cond_bvc(self, addr, mod=[False,False]):
+    def cond_bvc(self, addr, mod=[False,False], extra_jumps=[]):
         if mod[0] or mod[1] or self.flag_is_not_set(flag_V):
-            self.bvc(addr, mod)
+            self.bvc(addr, mod, extra_jumps)
     
-    def bpl(self, addr, mod=[False,False]):
+    def bpl(self, addr, mod=[False,False], extra_jumps=[]):
+        bflags = self.flags[:]
+        bflags[flag_N] = flag_clear
+        self.handle_extra_jumps(bflags, extra_jumps)
         if isinstance(addr,str):
-            bflags = self.flags[:]
-            bflags[flag_N] = flag_clear
             if addr in self.labels:
-                self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
+                self.labels[addr][1:] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bpl(self.labels[addr][0], mod)
             else:
@@ -733,9 +745,9 @@ class Memory:
         # for next instruction
         self.set_flag(flag_N, flag_set)
     
-    def cond_bpl(self, addr, mod=[False,False]):
+    def cond_bpl(self, addr, mod=[False,False], extra_jumps=[]):
         if mod[0] or mod[1] or self.flag_is_not_set(flag_N):
-            self.bpl(addr, mod)
+            self.bpl(addr, mod, extra_jumps)
     
     def spc(self, addr, mod=[False,False]):
         if isinstance(addr,int) and addr>=0:
