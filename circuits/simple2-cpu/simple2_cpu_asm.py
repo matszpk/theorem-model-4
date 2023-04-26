@@ -690,29 +690,29 @@ class Memory:
     
     def jmp(self, addr, mod=[True,True,True,True]):
         if self.flag_is_clear(flagC):
-            self.bcc(addr, mod[0:2])
+            self.bcc(addr, mod[2:4])
         elif self.flag_is_clear(flagZ):
-            self.bne(addr, mod[0:2])
+            self.bne(addr, mod[2:4])
         elif self.flag_is_clear(flagV):
-            self.bvc(addr, mod[0:2])
+            self.bvc(addr, mod[2:4])
         elif self.flag_is_clear(flagN):
-            self.bpl(addr, mod[0:2])
+            self.bpl(addr, mod[2:4])
         else:
             self.bne(addr, mod[0:2])
             self.bpl(addr, mod[2:4])
     
     def jmpc(self, addr, mod=[True,True,True]):
         if self.flag_is_clear(flagC):
-            self.bcc(addr, mod[0:2])
+            self.bcc(addr, mod[1:])
         elif self.flag_is_clear(flagZ):
-            self.bne(addr, mod[0:2])
+            self.bne(addr, mod[1:])
         elif self.flag_is_clear(flagV):
-            self.bvc(addr, mod[0:2])
+            self.bvc(addr, mod[1:])
         elif self.flag_is_clear(flagN):
-            self.bpl(addr, mod[0:2])
+            self.bpl(addr, mod[1:])
         else:
             self.clc(mod[0])
-            self.bcc(addr, mod[1:2])
+            self.bcc(addr, mod[1:])
 
     def label(self, name):
         if name in self.labels:
