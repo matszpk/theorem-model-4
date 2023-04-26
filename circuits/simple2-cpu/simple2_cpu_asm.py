@@ -92,6 +92,7 @@ class Memory:
         self.labels = dict()
         self.ret_pages = dict()
         self.ret_procs = dict()
+        self.procs_calls = dict()
         self.procs_need_long = set()
         self.long_procs = set()
     
@@ -106,6 +107,15 @@ class Memory:
     
     def clear_ret_pages(self):
         self.ret_pages = dict()
+    
+    def clear_procs_calls(self):
+        self.procs_calls = dict()
+    
+    def add_proc_call(self, proc):
+        if proc in self.procs_calls:
+            self.procs_calls[proc].append(self.pc)
+        else:
+            self.procs_calls[proc] = [self.pc]
     
     def clear_label_flags(self):
         for k in self.labels:
@@ -972,6 +982,7 @@ class Memory:
     
     # report_needs - report error if long scheme needed
     def short_call_x(self, proc, cond=False, report_needs=False):
+        self.add_proc_call(proc)
         page = 0
         extra_byte = 0 if cond else 1
         if proc in self.ret_pages:
@@ -1010,6 +1021,7 @@ class Memory:
         self.short_call_x(proc, cond=True, report_needs=report_needs)
     
     def long_call_x(self, proc, cond=False):
+        self.add_proc_call(proc)
         extra_byte = 0 if cond else 1
         addr = self.pc+4+4+extra_byte
         ret_proc = self.ret_procs[proc] if proc in self.ret_procs else proc
@@ -1139,6 +1151,7 @@ class Memory:
             self.clearflags()
             self.clearacc()
             self.clear_ret_pages()
+            self.clear_procs_calls()
             start=codegen()
         
         self.clear_label_flags()
@@ -1146,26 +1159,33 @@ class Memory:
             self.clearflags()
             self.clearacc()
             self.clear_ret_pages()
+            self.clear_procs_calls()
             start=codegen()
         
         while self.process_procs_need_long():
             self.clearflags()
             self.clearacc()
             self.clear_ret_pages()
+            self.clear_procs_calls()
             start=codegen()
         
         imm_pc = self.pc
+        self.clearflags()
+        self.clearacc()
+        self.clear_procs_calls()
         start=codegen()
         join_imms(imms, self.imms(range(start,self.pc)))
         while self.rest_imms(imms):
             self.clearflags()
             self.clearacc()
+            self.clear_procs_calls()
             imm_pc = self.pc
             start=codegen()
             join_imms(imms, self.imms(range(start,self.pc)))
             self.pc = imm_pc
         self.clearflags()
         self.clearacc()
+        self.clear_procs_calls()
         imm_pc = self.pc
         codegen()
 
