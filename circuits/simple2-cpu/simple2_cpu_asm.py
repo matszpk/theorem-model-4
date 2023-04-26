@@ -850,7 +850,7 @@ class Memory:
         elif self.flag_is_clear(flagN):
             self.bpl(addr, mod[1:])
         else:
-            self.clc(mod[0])
+            self.cond_clc(mod[0])
             self.bcc(addr, mod[1:])
 
     def label(self, name):
