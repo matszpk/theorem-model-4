@@ -859,15 +859,23 @@ class Memory:
     
     def def_segment(self, name):
         if name in self.labels:
-            new_flags = (self.labels[name][1][:], self.labels[name][2])
+            new_flags = (
+                    self.labels[name][1] if self.labels[name][1]!=None else None,
+                    self.labels[name][2])
             self.labels[name] = [self.pc, *new_flags]
-            self.flags = new_flags[0][:]
-            self.acc = new_flags[1]
+            if new_flags[0] != None:
+                self.flags = new_flags[0][:]
+            else:
+                self.clearflags()
+            if new_flags[1] != None:
+                self.acc = new_flags[1]
+            else:
+                self.clearacc()
         else:
             self.labels[name] = [self.pc, None, None]
             # new flag in segment: all undefined
             self.clearflags()
-            self.clear_acc()
+            self.clearacc()
     
     def def_label(self, name):
         if name in self.labels:
