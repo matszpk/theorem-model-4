@@ -715,6 +715,14 @@ class Memory:
             imms[im] = -1
     
     def jmp(self, addr, mod=[True,True,True,True]):
+        self.bne(addr, mod[0:2])
+        self.bpl(addr, mod[2:4])
+    
+    def jmpc(self, addr, mod=[True,True,True]):
+        self.clc(mod[0])
+        self.bcc(addr, mod[1:])
+    
+    def cond_jmp(self, addr, mod=[True,True,True,True]):
         if self.flag_is_clear(flagC):
             self.bcc(addr, mod[2:4])
         elif self.flag_is_clear(flagZ):
@@ -727,7 +735,7 @@ class Memory:
             self.bne(addr, mod[0:2])
             self.bpl(addr, mod[2:4])
     
-    def jmpc(self, addr, mod=[True,True,True]):
+    def cond_jmpc(self, addr, mod=[True,True,True]):
         if self.flag_is_clear(flagC):
             self.bcc(addr, mod[1:])
         elif self.flag_is_clear(flagZ):
