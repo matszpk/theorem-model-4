@@ -657,8 +657,8 @@ class Memory:
                                     self.labels[addr][2], self.acc)
                 self.bcc(self.labels[addr][0], mod)
             else:
-                self.bcc(-100000, mod)
                 self.labels[addr] = [-1000000, bflags, self.acc]
+                self.bcc(-100000, mod)
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bcc | instr_addr(addr), mod)
         else:
@@ -679,8 +679,8 @@ class Memory:
                                     self.labels[addr][2], self.acc)
                 self.bne(self.labels[addr][0], mod)
             else:
-                self.bne(-100000, mod)
                 self.labels[addr] = [-1000000, bflags, self.acc]
+                self.bne(-100000, mod)
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bne | instr_addr(addr), mod)
         else:
@@ -702,8 +702,8 @@ class Memory:
                                     self.labels[addr][2], self.acc)
                 self.bvc(self.labels[addr][0], mod)
             else:
-                self.bvc(-100000, mod)
                 self.labels[addr] = [-1000000, bflags, self.acc]
+                self.bvc(-100000, mod)
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bvc | instr_addr(addr), mod)
         else:
@@ -724,8 +724,8 @@ class Memory:
                                     self.labels[addr][2], self.acc)
                 self.bpl(self.labels[addr][0], mod)
             else:
-                self.bpl(-100000, mod)
                 self.labels[addr] = [-1000000, bflags, self.acc]
+                self.bpl(-100000, mod)
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bpl | instr_addr(addr), mod)
         else:
