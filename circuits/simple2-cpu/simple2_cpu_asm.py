@@ -390,13 +390,16 @@ class Memory:
                         if not determined_acc:
                             self.acc = acc_undef
                 elif self.flag_is_clear(flag_N):
-                    if not determined_Z:
-                        self.set_flag(flag_Z, flag_undef)
-                    elif (imm&0x7f) == 0x7f:
+                    if (imm&0x7f) == 0x7f:
                         self.acc = 0x7f
+                        self.set_flag(flag_Z, flag_clear)
                     elif (imm&0x7f) != 0:
                         if not determined_acc:
                             self.acc = acc_undef
+                        self.set_flag(flag_Z, flag_clear)
+                    else:
+                        if not determined_Z:
+                            self.set_flag(flag_Z, flag_undef)
                 else:
                     if not determined_N:
                         self.set_flag(flag_N, flag_undef)
@@ -435,12 +438,24 @@ class Memory:
                     determined_acc = True
             
             if imm!=acc_undef:
-                if (imm&0x80) != 0 and not determined_N:
-                    self.set_flag(flag_N, flag_undef)
-                if imm != 0 and not determined_Z:
-                    self.set_flag(flag_Z, flag_undef)
-                if not determined_acc:
-                    self.acc = acc_undef
+                if (imm&0x80) != 0:
+                    if self.flag_is_clear(flag_N):
+                        self.set_flag(flag_N, flag_set)
+                    elif self.flag_is_set(flag_N):
+                        self.set_flag(flag_N, flag_clear)
+                if (imm&0x7f) != 0:
+                    if not determined_acc:
+                        self.acc = acc_undef
+                    if self.flag_is_not_set(flag_N):
+                        if not determined_Z:
+                            self.set_flag(flag_Z, flag_undef)
+                    else:
+                        self.set_flag(flag_Z, flag_clear)
+                else:
+                    if self.flag_is_set(flag_N):
+                        self.set_flag(flag_Z, flag_clear)
+                        if not determined_acc:
+                            self.acc = acc_undef
             else:
                 if not determined_N:
                     self.set_flag(flag_N, flag_undef)
