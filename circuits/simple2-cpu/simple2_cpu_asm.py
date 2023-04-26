@@ -67,8 +67,6 @@ def name_proc_ret(proc):
 def name_proc_start(proc):
     return '__start_'+proc+'_start'
 
-# TODO: write subroutine handling
-
 """
 Assemblying program should be done by using assemble method which argument is function that
 generates code. Function should return start address from assemble method will start
