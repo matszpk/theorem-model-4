@@ -56,7 +56,6 @@ def join_flags(flags_a, flags_b, acc_a, acc_b):
     return flags_out, acc_out
 
 # TODO: write subroutine handling
-# TODO: extend flags handling (add label handling)
 
 """
 Assemblying program should be done by using assemble method which argument is function that
