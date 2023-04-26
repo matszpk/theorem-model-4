@@ -915,11 +915,14 @@ class Memory:
         global imms
         imms = dict()
         for i in range(0,stages):
-            self.clear_label_flags()
-            for j in range(0,2):
-                self.clearflags()
-                self.clearacc()
-                start=codegen()
+            self.clearflags()
+            self.clearacc()
+            start=codegen()
+        self.clear_label_flags()
+        for i in range(0,stages):
+            self.clearflags()
+            self.clearacc()
+            start=codegen()
         imm_pc = self.pc
         start=codegen()
         join_imms(imms, self.imms(range(start,self.pc)))
