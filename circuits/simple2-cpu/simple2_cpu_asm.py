@@ -31,17 +31,28 @@ def instr_addr(addr):
     return (((addr>>8)&0xf)<<4) | ((addr&0xff)<<8)
 
 def join_flags(flags_a, flags_b, acc_a, acc_b):
-    flags_out = [flags_a[0],flags_a[1],flags_a[2],flags_a[3]]
-    for i in range(0,4):
-        if flags_a[i]==flag_undef or flags_b[i]==flag_undef:
-            flags_out[i] = flag_undef
-        elif flags_a[i] != flags_b[i]:
-            flags_out[i] = flag_undef
-    acc_out = acc_a
-    if acc_a==acc_undef or acc_b==acc_undef:
-        acc_out = acc_undef
-    elif acc_a != acc_b:
-        acc_out = acc_undef
+    flags_out = None
+    if flags_a != None:
+        flags_out = [flags_a[0],flags_a[1],flags_a[2],flags_a[3]]
+        if flags_b != None:
+            for i in range(0,4):
+                if flags_a[i]==flag_undef or flags_b[i]==flag_undef:
+                    flags_out[i] = flag_undef
+                elif flags_a[i] != flags_b[i]:
+                    flags_out[i] = flag_undef
+    elif flags_b != None:
+        flags_out = [flags_b[0],flags_b[1],flags_b[2],flags_b[3]]
+    
+    acc_out = None
+    if acc_a != None:
+        acc_out = acc_a
+        if acc_b != None:
+            if acc_a==acc_undef or acc_b==acc_undef:
+                acc_out = acc_undef
+            elif acc_a != acc_b:
+                acc_out = acc_undef
+    elif acc_b != None:
+        acc_out = acc_b
     return flags_out, acc_out
 
 # TODO: write subroutine handling
@@ -77,6 +88,11 @@ class Memory:
     
     def clearacc(self):
         self.acc = acc_undef
+    
+    def clear_label_flags(self):
+        for k in self.labels:
+            self.lalels[k][1] = None
+            self.lalels[k][2] = None
     
     def set_flag(self, flag, value):
         self.flags[flag] = value
@@ -881,6 +897,7 @@ class Memory:
         for i in range(0,stages):
             self.clearflags()
             self.clearacc()
+            self.clear_label_flags()
             start=codegen()
         imm_pc = self.pc
         start=codegen()
@@ -888,12 +905,14 @@ class Memory:
         while self.rest_imms(imms):
             self.clearflags()
             self.clearacc()
+            self.clear_label_flags()
             imm_pc = self.pc
             start=codegen()
             join_imms(imms, self.imms(range(start,self.pc)))
             self.pc = imm_pc
         self.clearflags()
         self.clearacc()
+        self.clear_label_flags()
         imm_pc = self.pc
         codegen()
         
