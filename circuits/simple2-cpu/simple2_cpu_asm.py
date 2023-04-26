@@ -915,7 +915,7 @@ class Memory:
         self.clear_label_flags()
         imm_pc = self.pc
         codegen()
-        
+
 def join_imms(imms1, imms2):
     for (k,v) in imms2.items():
         if v>=0 and (k not in imms1 or imms1[k]<0):
