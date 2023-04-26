@@ -307,7 +307,7 @@ class Memory:
                     determined_N = True
                     self.set_flag(flag_Z, flag_undef)
             
-            if imm!=acc_undef:
+            if imm!=acc_undef and self.acc==acc_undef:
                 if (imm&0x80) == 0:
                     self.set_flag(flag_N, flag_clear)
                 if self.flag_is_clear(flag_N):
@@ -378,7 +378,7 @@ class Memory:
                     self.set_flag(flag_Z, flag_clear)
                     determined_Z = True
             
-            if imm!=acc_undef:
+            if imm!=acc_undef and self.acc==acc_undef:
                 if (imm&0x80) != 0:
                     self.set_flag(flag_N, flag_set)
                 if self.flag_is_set(flag_N):
@@ -402,7 +402,9 @@ class Memory:
                 else:
                     if not determined_N:
                         self.set_flag(flag_N, flag_undef)
-                    if not determined_Z:
+                    if (imm&0x7f) != 0:
+                        self.set_flag(flag_Z, flag_clear)
+                    elif not determined_Z:
                         self.set_flag(flag_Z, flag_undef)
                     if not determined_acc:
                         self.acc = acc_undef
@@ -436,7 +438,7 @@ class Memory:
                     determined_Z = True
                     determined_acc = True
             
-            if imm!=acc_undef:
+            if imm!=acc_undef and self.acc==acc_undef:
                 if (imm&0x80) != 0:
                     if self.flag_is_clear(flag_N):
                         self.set_flag(flag_N, flag_set)
