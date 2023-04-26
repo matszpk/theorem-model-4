@@ -687,6 +687,7 @@ class Memory:
             self.word16(instr_bne | instr_addr(0), [True,True])
         # for next instruction
         self.set_flag(flag_Z, flag_set)
+        self.acc = 0
     
     def cond_bne(self, addr, mod=[False,False]):
         if mod[0] or mod[1] or self.flag_is_not_set(flag_Z):
