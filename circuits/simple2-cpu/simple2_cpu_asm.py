@@ -64,6 +64,9 @@ def join_flags(flags_a, flags_b, acc_a, acc_b):
 def name_proc_ret(proc):
     return '__ret_'+proc+'_ret'
 
+def name_proc_start(proc):
+    return '__start_'+proc+'_start'
+
 # TODO: write subroutine handling
 
 """
@@ -974,10 +977,33 @@ class Memory:
     def cond_long_call(self, proc):
         self.long_call_x(proc, cond=True)
     
+    def lastcall(self, proc):
+        self.jmp(name_proc_start(proc))
+    
+    def cond_lastcall(self, proc):
+        self.cond_jmp(name_proc_start(proc))
+    
     def start_short_proc(self, proc):
         self.sta(self.l(name_proc_ret(proc))-1)
+        self.def_label(name_proc_start(proc))
     
     def start_long_proc(self, proc):
+        self.sta(self.l(name_proc_ret(proc))-1)
+        self.lda(long_ret_temp)
+        self.sta(self.l(name_proc_ret(proc))-2)
+        self.def_label(name_proc_start(proc))
+    
+    # used for joining routines:
+    # ml.def_segment('rout1')
+    # ml.start_short_proc_next('rout2')
+    # ...
+    # ml.cond_lastcall('rout2') - jump to rout2
+    # ml.def_segment('rout2')
+    #....
+    def start_short_proc_next(self, proc):
+        self.sta(self.l(name_proc_ret(proc))-1)
+    
+    def start_long_proc_next(self, proc):
         self.sta(self.l(name_proc_ret(proc))-1)
         self.lda(long_ret_temp)
         self.sta(self.l(name_proc_ret(proc))-2)
