@@ -165,18 +165,56 @@ class Memory:
             determined = False
             determined_all = False
             if self.acc != acc_undef:
-                if imm!=acc_undef and self.flags[flag_C]!=flag_undef:
+                if imm!=acc_undef :
                     acc = self.acc
                     mem_value = imm
-                    flagc = int(self.flag_is_set(flag_C))
-                    s = (acc + mem_value + flagc) & 0x1ff
-                    fc = (s>>8)&1
-                    a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
-                    fv = (a7&b7&(s7^1)) | ((a7^1)&(b7^1)&s7)
-                    self.acc = s&0xff
-                    self.set_flag(flag_C, fc)
-                    self.set_flag(flag_V, fv)
-                    self.set_flag_NZ(self.acc)
+                    if self.flags[flag_C]!=flag_undef:
+                        flagc = int(self.flag_is_set(flag_C))
+                        s = (acc + mem_value + flagc) & 0x1ff
+                        fc = (s>>8)&1
+                        a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
+                        fv = (a7&b7&(s7^1)) | ((a7^1)&(b7^1)&s7)
+                        self.acc = s&0xff
+                        self.set_flag(flag_C, fc)
+                        self.set_flag(flag_V, fv)
+                        self.set_flag_NZ(self.acc)
+                    else:
+                        s0 = (acc + mem_value) & 0x1ff
+                        fc0 = (s0>>8)&1
+                        a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s0>>7)&1
+                        fv0 = (a7&b7&(s7^1)) | ((a7^1)&(b7^1)&s7)
+                        
+                        s1 = (acc + mem_value + 1) & 0x1ff
+                        fc1 = (s1>>8)&1
+                        a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s1>>7)&1
+                        fv1 = (a7&b7&(s7^1)) | ((a7^1)&(b7^1)&s7)
+                        
+                        if (s0&0xff)==0 and (s1&0xff)==0:
+                            self.set_flag(flag_Z, flag_set)
+                        elif (s0&0xff)!=0 and (s1&0xff)!=0:
+                            self.set_flag(flag_Z, flag_clear)
+                        else:
+                            self.set_flag(flag_Z, flag_undef)
+                        
+                        if (s0&0x80)!=0 and (s1&0x80)!=0:
+                            self.set_flag(flag_N, flag_set)
+                        elif (s0&0x80)==0 and (s1&0x80)==0:
+                            self.set_flag(flag_N, flag_clear)
+                        else:
+                            self.set_flag(flag_N, flag_undef)
+                        
+                        if fc0==fc1:
+                            self.set_flag(flag_C, fc0)
+                        else:
+                            self.set_flag(flag_C, flag_undef)
+                        
+                        if fv0==fv1:
+                            self.set_flag(flag_V, fv0)
+                        else:
+                            self.set_flag(flag_V, flag_undef)
+                        
+                        self.acc = acc_undef
+                        
                     determined = True
                     determined_all = True
                 elif self.flag_is_set(flag_C) and self.acc==0xff:
@@ -229,18 +267,56 @@ class Memory:
             determined = False
             determined_all = False
             if self.acc != acc_undef:
-                if imm!=acc_undef and self.flags[flag_C]!=flag_undef:
+                if imm!=acc_undef:
                     acc = self.acc
                     mem_value = imm
-                    flagc = int(self.flag_is_set(flag_C))
-                    s = (acc + (mem_value^0xff) + flagc) & 0x1ff
-                    fc = (s>>8)&1
-                    a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
-                    fv = (a7&(b7^1)&(s7^1)) | ((a7^1)&b7&s7)
-                    self.acc = s&0xff
-                    self.set_flag(flag_C, fc)
-                    self.set_flag(flag_V, fv)
-                    self.set_flag_NZ(self.acc)
+                    if self.flags[flag_C]!=flag_undef:
+                        flagc = int(self.flag_is_set(flag_C))
+                        s = (acc + (mem_value^0xff) + flagc) & 0x1ff
+                        fc = (s>>8)&1
+                        a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s>>7)&1
+                        fv = (a7&(b7^1)&(s7^1)) | ((a7^1)&b7&s7)
+                        self.acc = s&0xff
+                        self.set_flag(flag_C, fc)
+                        self.set_flag(flag_V, fv)
+                        self.set_flag_NZ(self.acc)
+                    else:
+                        s0 = (acc + (mem_value^0xff)) & 0x1ff
+                        fc0 = (s0>>8)&1
+                        a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s0>>7)&1
+                        fv0 = (a7&(b7^1)&(s7^1)) | ((a7^1)&b7&s7)
+                        
+                        s1 = (acc + (mem_value^0xff) + 1) & 0x1ff
+                        fc1 = (s1>>8)&1
+                        a7,b7,s7 = (acc>>7)&1, (mem_value>>7)&1, (s1>>7)&1
+                        fv1 = (a7&(b7^1)&(s7^1)) | ((a7^1)&b7&s7)
+                        
+                        if (s0&0xff)==0 and (s1&0xff)==0:
+                            self.set_flag(flag_Z, flag_set)
+                        elif (s0&0xff)!=0 and (s1&0xff)!=0:
+                            self.set_flag(flag_Z, flag_clear)
+                        else:
+                            self.set_flag(flag_Z, flag_undef)
+                        
+                        if (s0&0x80)!=0 and (s1&0x80)!=0:
+                            self.set_flag(flag_N, flag_set)
+                        elif (s0&0x80)==0 and (s1&0x80)==0:
+                            self.set_flag(flag_N, flag_clear)
+                        else:
+                            self.set_flag(flag_N, flag_undef)
+                        
+                        if fc0==fc1:
+                            self.set_flag(flag_C, fc0)
+                        else:
+                            self.set_flag(flag_C, flag_undef)
+                        
+                        if fv0==fv1:
+                            self.set_flag(flag_V, fv0)
+                        else:
+                            self.set_flag(flag_V, flag_undef)
+                        
+                        self.acc = acc_undef
+                    
                     determined = True
                     determined_all = True
                 elif self.flag_is_set(flag_C) and self.acc==0xff:
@@ -488,10 +564,18 @@ class Memory:
                 if self.flag_is_set(flag_C):
                     self.acc = (self.acc << 1) + 1
                     self.set_flag_NZ(self.acc)
-                if self.flag_is_clear(flag_C):
+                elif self.flag_is_clear(flag_C):
                     self.acc = (self.acc << 1)
                     self.set_flag_NZ(self.acc)
                 else:
+                    if (self.acc&0x40) != 0:
+                        self.set_flag(flag_N, flag_set)
+                    else:
+                        self.set_flag(flag_N, flag_clear)
+                    if (self.acc&0x7f) != 0:
+                        self.set_flag(flag_Z, flag_clear)
+                    else:
+                        self.set_flag(flag_Z, flag_undef)
                     self.acc = acc_undef
                 self.set_flag(flag_C, new_flag_C)
             else:
@@ -521,10 +605,15 @@ class Memory:
                 if self.flag_is_set(flag_C):
                     self.acc = (self.acc >> 1) + 0x80
                     self.set_flag_NZ(self.acc)
-                if self.flag_is_clear(flag_C):
+                elif self.flag_is_clear(flag_C):
                     self.acc = (self.acc >> 1)
                     self.set_flag_NZ(self.acc)
                 else:
+                    self.set_flag(flag_N, flag_undef)
+                    if (self.acc&0xfe) != 0:
+                        self.set_flag(flag_Z, flag_clear)
+                    else:
+                        self.set_flag(flag_Z, flag_undef)
                     self.acc = acc_undef
                 self.set_flag(flag_C, new_flag_C)
             else:
