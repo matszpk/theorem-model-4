@@ -599,12 +599,7 @@ class Memory:
                 else:
                     self.set_flag(flag_Z, flag_undef)
                 
-                if self.flag_is_set(flag_N):
-                    self.set_flag(flag_C, flag_set)
-                elif self.flag_is_clear(flag_N):
-                    self.set_flag(flag_C, flag_clear)
-                else:
-                    self.set_flag(flag_C, flag_undef)
+                self.set_flag(flag_C, self.flags[flag_N])
                 self.set_flag(flag_N, flag_undef)
         else:
             self.set_flag(flag_N, flag_undef)
