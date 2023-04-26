@@ -125,6 +125,9 @@ class Memory:
     def set_pc(self, pc):
         self.pc = pc&0xfff
     
+    def align_pc(self, align):
+        self.pc = ((self.pc + align - 1) % align) & 0xfff
+    
     def byte(self, a, mod=False):
         self.mem[self.pc] = a & 0xff
         self.mmod[self.pc] = mod
@@ -672,15 +675,12 @@ class Memory:
             bflags = self.flags[:]
             bflags[flag_Z] = flag_clear
             if addr in self.labels:
-                #print("XXbne", addr, bflags, self.labels[addr][1], self.acc)
                 self.labels[addr][1:2] = join_flags(self.labels[addr][1], bflags, \
                                     self.labels[addr][2], self.acc)
                 self.bne(self.labels[addr][0], mod)
-                #print("YYbne", addr, self.labels[addr][1], self.labels[addr][2])
             else:
                 self.bne(-100000, mod)
                 self.labels[addr] = [-1000000, bflags, self.acc]
-                #print("ZZbne", addr, self.labels[addr][1], self.labels[addr][2])
         elif isinstance(addr,int) and addr>=0:
             self.word16(instr_bne | instr_addr(addr), mod)
         else:
