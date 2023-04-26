@@ -104,6 +104,9 @@ class Memory:
     def clearacc(self):
         self.acc = acc_undef
     
+    def clear_ret_pages(self):
+        self.ret_pages = dict()
+    
     def clear_label_flags(self):
         for k in self.labels:
             self.labels[k] = [self.labels[k][0], None, None]
@@ -1135,17 +1138,20 @@ class Memory:
         for i in range(0,stages):
             self.clearflags()
             self.clearacc()
+            self.clear_ret_pages()
             start=codegen()
         
         self.clear_label_flags()
         for i in range(0,stages):
             self.clearflags()
             self.clearacc()
+            self.clear_ret_pages()
             start=codegen()
         
         while self.process_procs_need_long():
             self.clearflags()
             self.clearacc()
+            self.clear_ret_pages()
             start=codegen()
         
         imm_pc = self.pc
