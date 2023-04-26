@@ -92,6 +92,8 @@ class Memory:
         self.labels = dict()
         self.ret_pages = dict()
         self.ret_procs = dict()
+        self.procs_need_long = set()
+        self.long_procs = set()
     
     def clearmod(self):
         self.mmod = [True]*(1<<12)
@@ -105,6 +107,12 @@ class Memory:
     def clear_label_flags(self):
         for k in self.labels:
             self.labels[k] = [self.labels[k][0], None, None]
+    
+    def process_procs_need_long(self):
+        have = len(self.procs_need_long) != 0
+        self.long_procs |= self.procs_need_long
+        self.procs_need_long = set()
+        return have
     
     def set_flag(self, flag, value):
         self.flags[flag] = value
@@ -139,7 +147,7 @@ class Memory:
         self.pc = pc&0xfff
     
     def align_pc(self, align):
-        self.pc = ((self.pc + align - 1) % align) & 0xfff
+        self.pc = (((self.pc + align - 1) // align) * align) & 0xfff
     
     def byte(self, a, mod=False):
         self.mem[self.pc] = a & 0xff
@@ -921,6 +929,14 @@ class Memory:
             self.ret_procs[name] = jmp_name
             self.start_short_proc_next(jmp_name)
     
+    def def_short_long_routine(self, name, jmp_name=None):
+        self.def_segment(name)
+        if jmp_name==None or jmp_name==name:
+            self.start_short_proc(name)
+        else:
+            self.ret_procs[name] = jmp_name
+            self.start_long_proc_next(jmp_name)
+    
     def def_long_routine(self, name, jmp_name=None):
         self.def_segment(name)
         if jmp_name==None or jmp_name==name:
@@ -929,13 +945,39 @@ class Memory:
             self.ret_procs[name] = jmp_name
             self.start_long_proc_next(jmp_name)
     
-    def short_call_x(self, proc, cond=False):
+    def def_long_short_routine(self, name, jmp_name=None):
+        self.def_segment(name)
+        if jmp_name==None or jmp_name==name:
+            self.start_long_proc(name)
+        else:
+            self.ret_procs[name] = jmp_name
+            self.start_short_proc_next(jmp_name)
+    
+    def def_auto_routine(self, name, jmp_name=None):
+        self.def_segment(name)
+        if jmp_name==None or jmp_name==name:
+            if name in self.long_procs:
+                self.start_long_proc(name)
+            else:
+                self.start_short_proc(name)
+        else:
+            self.ret_procs[name] = jmp_name
+            if jmp_name in self.long_procs:
+                self.start_long_proc_next(jmp_name)
+            else:
+                self.start_short_proc_next(jmp_name)
+    
+    # report_needs - report error if long scheme needed
+    def short_call_x(self, proc, cond=False, report_needs=False):
         page = 0
         extra_byte = 0 if cond else 1
         if proc in self.ret_pages:
             page = self.ret_pages[proc]
             if page != ((self.pc+4+extra_byte) & 0xf00):
-                raise(RuntimeError("Wrong page!"))
+                if not report_needs:
+                    raise(RuntimeError("Wrong page!"))
+                else:
+                    self.procs_need_long.add(proc)
         else:
             page = (self.pc+4) & 0xf00
             self.ret_pages[proc] = page
@@ -947,7 +989,10 @@ class Memory:
             else:
                 self.jmpc(proc)
         else:
-            raise(RuntimeError("Address above range!"))
+            if not report_needs:
+                raise(RuntimeError("Address above range!"))
+            else:
+                self.procs_need_long.add(proc)
         proc_ret = name_proc_ret(proc)
         if proc_ret in self.labels:
             if self.labels[proc_ret][1]!=None:
@@ -955,11 +1000,11 @@ class Memory:
             if self.labels[proc_ret][2]!=None:
                 self.acc = self.labels[proc_ret][2]
     
-    def short_call(self, proc):
-        self.short_call_x(proc, cond=False)
+    def short_call(self, proc, report_needs=False):
+        self.short_call_x(proc, cond=False, report_needs=report_needs)
     
-    def cond_short_call(self, proc):
-        self.short_call_x(proc, cond=True)
+    def cond_short_call(self, proc, report_needs=False):
+        self.short_call_x(proc, cond=True, report_needs=report_needs)
     
     def long_call_x(self, proc, cond=False):
         extra_byte = 0 if cond else 1
@@ -987,6 +1032,20 @@ class Memory:
     def cond_long_call(self, proc):
         self.long_call_x(proc, cond=True)
     
+    # automatically choosing convention (short or long)
+    def auto_call(self, proc):
+        if proc in self.long_procs:
+            self.long_call(proc)
+        else:
+            self.short_call(proc, report_needs=True)
+    
+    # automatically choosing convention (short or long)
+    def cond_auto_call(self, proc):
+        if proc in self.long_procs:
+            self.cond_long_call(proc)
+        else:
+            self.cond_short_call(proc, report_needs=True)
+    
     def lastcall(self, proc):
         self.jmp(name_proc_start(proc))
     
@@ -1003,6 +1062,13 @@ class Memory:
         self.sta(self.l(name_proc_ret(proc))-2)
         self.def_label(name_proc_start(proc))
     
+    # automatically choosing convention (short or long)
+    def start_auto_proc(self, proc):
+        if proc in self.long_procs:
+            self.start_long_proc(proc)
+        else:
+            self.start_short_proc(proc)
+    
     # used for joining routines:
     # ml.def_segment('rout1')
     # ml.start_short_proc_next('rout2')
@@ -1018,6 +1084,13 @@ class Memory:
         self.sta(self.l(name_proc_ret(proc))-1)
         self.lda(long_ret_temp)
         self.sta(self.l(name_proc_ret(proc))-2)
+    
+    # automatically choosing convention (short or long)
+    def start_auto_proc_next(self, proc):
+        if proc in self.long_procs:
+            self.start_long_proc_next(proc)
+        else:
+            self.start_short_proc_next(proc)
     
     def ret(self, proc):
         self.jmpc(self.get_ret_page(proc), [False, True, True])
@@ -1063,11 +1136,18 @@ class Memory:
             self.clearflags()
             self.clearacc()
             start=codegen()
+        
         self.clear_label_flags()
         for i in range(0,stages):
             self.clearflags()
             self.clearacc()
             start=codegen()
+        
+        while self.process_procs_need_long():
+            self.clearflags()
+            self.clearacc()
+            start=codegen()
+        
         imm_pc = self.pc
         start=codegen()
         join_imms(imms, self.imms(range(start,self.pc)))
