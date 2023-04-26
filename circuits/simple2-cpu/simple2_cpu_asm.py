@@ -847,26 +847,26 @@ class Memory:
         self.bcc(addr, mod[1:])
     
     def cond_jmp(self, addr, mod=[True,True,True,True]):
-        if self.flag_is_clear(flagC):
+        if self.flag_is_clear(flag_C):
             self.bcc(addr, mod[2:4])
-        elif self.flag_is_clear(flagZ):
+        elif self.flag_is_clear(flag_Z):
             self.bne(addr, mod[2:4])
-        elif self.flag_is_clear(flagV):
+        elif self.flag_is_clear(flag_V):
             self.bvc(addr, mod[2:4])
-        elif self.flag_is_clear(flagN):
+        elif self.flag_is_clear(flag_N):
             self.bpl(addr, mod[2:4])
         else:
             self.bne(addr, mod[0:2])
             self.bpl(addr, mod[2:4])
     
     def cond_jmpc(self, addr, mod=[True,True,True]):
-        if self.flag_is_clear(flagC):
+        if self.flag_is_clear(flag_C):
             self.bcc(addr, mod[1:])
-        elif self.flag_is_clear(flagZ):
+        elif self.flag_is_clear(flag_Z):
             self.bne(addr, mod[1:])
-        elif self.flag_is_clear(flagV):
+        elif self.flag_is_clear(flag_V):
             self.bvc(addr, mod[1:])
-        elif self.flag_is_clear(flagN):
+        elif self.flag_is_clear(flag_N):
             self.bpl(addr, mod[1:])
         else:
             self.cond_clc(mod[0])
@@ -909,11 +909,19 @@ class Memory:
         else:
             self.labels[name] = [self.pc, self.flags, self.acc]
     
+    def def_short_routine(self, name):
+        self.def_segment(name)
+        self.start_short_proc(name)
+    
+    def def_long_routine(self, name):
+        self.def_segment(name)
+        self.start_long_proc(name)
+    
     def short_call_x(self, proc, cond=False):
         page = 0
         extra_byte = 0 if cond else 1
         if proc in self.ret_pages:
-            page = ret_pages[proc]
+            page = self.ret_pages[proc]
             if page != ((self.pc+4+extra_byte) & 0xf00):
                 raise(RuntimeError("Wrong page!"))
         else:
@@ -929,8 +937,11 @@ class Memory:
         else:
             raise(RuntimeError("Address above range!"))
         proc_ret = name_proc_ret(proc)
-        self.flags = self.labels[proc_ret][1][:]
-        self.acc = self.labels[proc_ret][2]
+        if proc_ret in self.labels:
+            if self.labels[proc_ret][1]!=None:
+                self.flags = self.labels[proc_ret][1][:]
+            if self.labels[proc_ret][2]!=None:
+                self.acc = self.labels[proc_ret][2]
     
     def short_call(self, proc):
         self.short_call_x(proc, cond=False)
@@ -942,15 +953,20 @@ class Memory:
         extra_byte = 0 if cond else 1
         addr = self.pc+4+4+extra_byte
         proc_ret = name_proc_ret(proc)
-        ml.lda_imm((self.mem[self.l(proc_ret)-2]&0xf) | ((addr>>4)&0xf0))
-        ml.sta(long_ret_temp)
-        ml.lda_imm(addr&0xff) # ret address
+        proc_ret_val = (self.mem[self.l(proc_ret)-2]&0xf) | ((addr>>4)&0xf0) \
+                if self.l(proc_ret)-2>=0 else 0
+        self.lda_imm(proc_ret_val)
+        self.sta(long_ret_temp)
+        self.lda_imm(addr&0xff) # ret address
         if cond:
             self.cond_jmp(proc)
         else:
             self.jmpc(proc)
-        self.flags = self.labels[proc_ret][1][:]
-        self.acc = self.labels[proc_ret][2]
+        if proc_ret in self.labels:
+            if self.labels[proc_ret][1]!=None:
+                self.flags = self.labels[proc_ret][1][:]
+            if self.labels[proc_ret][2]!=None:
+                self.acc = self.labels[proc_ret][2]
     
     def long_call(self, proc):
         self.long_call_x(proc, cond=False)
@@ -967,15 +983,15 @@ class Memory:
         self.sta(self.l(name_proc_ret(proc))-2)
     
     def ret(self, proc):
-        self.jmpc(get_ret_page(proc), [False, True, True])
+        self.jmpc(self.get_ret_page(proc), [False, True, True])
         self.def_label(name_proc_ret(proc))
     
     def cond_ret(self, proc):
-        self.cond_jmpc(get_ret_page(proc), [False, True, True])
+        self.cond_jmpc(self.get_ret_page(proc), [False, True, True])
         self.def_label(name_proc_ret(proc))
     
     def get_ret_page(self, addr):
-        if proc in self.ret_pages:
+        if addr in self.ret_pages:
             return self.ret_pages[addr]
         else:
             return -10000
