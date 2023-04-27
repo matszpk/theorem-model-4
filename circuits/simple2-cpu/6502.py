@@ -347,6 +347,7 @@ def gencode():
     start = 0
     ml.set_pc(start)
     # create 6502 machine - memory: 16-bit address, 8-bit cell
+    # use 17-bit address for additional memory mapping
     ml.lda_imm(0x11)
     ml.sta(0xffd)
     ml.lda_imm(0x30)
