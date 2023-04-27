@@ -27,12 +27,6 @@ flag_undef = 2
 
 acc_undef = -1
 
-# used to pass extra byte (high byte) for return address to routine
-long_ret_temp = 0xffc
-
-def set_long_ret_temp(r):
-    long_ret_temp = r
-
 def instr_addr(addr):
     return (((addr>>8)&0xf)<<4) | ((addr&0xff)<<8)
 
