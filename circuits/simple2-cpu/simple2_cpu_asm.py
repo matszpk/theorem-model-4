@@ -191,7 +191,7 @@ class Memory:
     
     def words16(self, a, mod=[]):
         for i in range(0, len(a)):
-            m = mod[i*2:(i+1)*2] if i*2<len(mod) else False
+            m = mod[i*2:(i+1)*2] if i*2<len(mod) else [False,False]
             self.word16(a[i], m)
     
     def word32(self, a, mod=[False,False,False,False]):
@@ -200,7 +200,7 @@ class Memory:
     
     def words32(self, a, mod=[]):
         for i in range(0, len(a)):
-            m = mod[i*4:(i+1)*4] if i*4<len(mod) else False
+            m = mod[i*4:(i+1)*4] if i*4<len(mod) else [False,False,False,False]
             self.word32(a[i], m)
     
     def lda(self, addr, mod=[False,False], imm=acc_undef):
