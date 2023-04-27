@@ -552,9 +552,6 @@ class Memory:
                         if not determined_acc:
                             self.acc = acc_undef
                         self.set_flag(flag_Z, flag_clear)
-                    else:
-                        if not determined_Z:
-                            self.set_flag(flag_Z, flag_undef)
                 else:
                     if not determined_N:
                         self.set_flag(flag_N, flag_undef)
