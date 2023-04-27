@@ -302,7 +302,7 @@ class Memory:
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
                     new_acc = acc_undef
-                elif self.flag_is_set(flag_C) or self.acc!=0x00:
+                else:
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
                     new_acc = acc_undef
@@ -404,7 +404,7 @@ class Memory:
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
                     new_acc = acc_undef
-                elif self.flag_is_set(flag_C) or self.acc!=0x00:
+                else:
                     new_flag_N = flag_undef
                     new_flag_Z = flag_undef
                     new_acc = acc_undef
