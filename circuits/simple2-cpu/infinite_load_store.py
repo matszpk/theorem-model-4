@@ -824,7 +824,7 @@ def gencode():
      
     call_proc_8b(native_ldst_down)
     
-    # after ldst up
+    # after ldst down
     ta = 0x8cd
     ml.lda_imm(ta&0xff)
     ml.sta(addr)
