@@ -932,51 +932,13 @@ class Memory:
         else:
             self.labels[name] = [self.pc, self.flags, self.acc]
     
-    def def_short_routine(self, name, jmp_name=None):
+    def def_routine(self, name, jmp_name=None):
         self.def_segment(name)
         if jmp_name==None or jmp_name==name:
-            self.start_short_proc(name)
+            self.start_proc(name)
         else:
             self.ret_procs[name] = jmp_name
-            self.start_short_proc_next(jmp_name)
-    
-    def def_short_long_routine(self, name, jmp_name=None):
-        self.def_segment(name)
-        if jmp_name==None or jmp_name==name:
-            self.start_short_proc(name)
-        else:
-            self.ret_procs[name] = jmp_name
-            self.start_long_proc_next(jmp_name)
-    
-    def def_long_routine(self, name, jmp_name=None):
-        self.def_segment(name)
-        if jmp_name==None or jmp_name==name:
-            self.start_long_proc(name)
-        else:
-            self.ret_procs[name] = jmp_name
-            self.start_long_proc_next(jmp_name)
-    
-    def def_long_short_routine(self, name, jmp_name=None):
-        self.def_segment(name)
-        if jmp_name==None or jmp_name==name:
-            self.start_long_proc(name)
-        else:
-            self.ret_procs[name] = jmp_name
-            self.start_short_proc_next(jmp_name)
-    
-    def def_auto_routine(self, name, jmp_name=None):
-        self.def_segment(name)
-        if jmp_name==None or jmp_name==name:
-            if name in self.long_procs:
-                self.start_long_proc(name)
-            else:
-                self.start_short_proc(name)
-        else:
-            self.ret_procs[name] = jmp_name
-            if jmp_name in self.long_procs:
-                self.start_long_proc_next(jmp_name)
-            else:
-                self.start_short_proc_next(jmp_name)
+            self.start_proc_next(jmp_name)
     
     # report_needs - report error if long scheme needed
     def short_call_x(self, proc, cond=False, report_needs=False):
@@ -1027,7 +989,7 @@ class Memory:
         proc_ret_val = (self.mem[self.l(proc_ret)-2]&0xf) | ((addr>>4)&0xf0) \
                 if self.l(proc_ret)-2>=0 else 0
         self.lda_imm(proc_ret_val)
-        self.sta(long_ret_temp)
+        self.sta(self.l(proc_ret)-2)
         self.lda_imm(addr&0xff) # ret address
         if cond:
             self.cond_jmp(proc)
@@ -1065,45 +1027,20 @@ class Memory:
     def cond_lastcall(self, proc):
         self.cond_jmp(name_proc_start(proc))
     
-    def start_short_proc(self, proc):
+    def start_proc(self, proc):
         self.sta(self.l(name_proc_ret(proc))-1)
         self.def_label(name_proc_start(proc))
-    
-    def start_long_proc(self, proc):
-        self.sta(self.l(name_proc_ret(proc))-1)
-        self.lda(long_ret_temp)
-        self.sta(self.l(name_proc_ret(proc))-2)
-        self.def_label(name_proc_start(proc))
-    
-    # automatically choosing convention (short or long)
-    def start_auto_proc(self, proc):
-        if proc in self.long_procs:
-            self.start_long_proc(proc)
-        else:
-            self.start_short_proc(proc)
     
     # used for joining routines:
     # ml.def_segment('rout1')
-    # ml.start_short_proc_next('rout2')
+    # ml.start_proc_next('rout2')
     # ...
     # ml.cond_lastcall('rout2') - jump to rout2
     # ml.def_segment('rout2')
     #....
-    # or use ml.def_short_routine('rout1','rout2')
-    def start_short_proc_next(self, proc):
+    # or use ml.def_routine('rout1','rout2')
+    def start_proc_next(self, proc):
         self.sta(self.l(name_proc_ret(proc))-1)
-    
-    def start_long_proc_next(self, proc):
-        self.sta(self.l(name_proc_ret(proc))-1)
-        self.lda(long_ret_temp)
-        self.sta(self.l(name_proc_ret(proc))-2)
-    
-    # automatically choosing convention (short or long)
-    def start_auto_proc_next(self, proc):
-        if proc in self.long_procs:
-            self.start_long_proc_next(proc)
-        else:
-            self.start_short_proc_next(proc)
     
     def ret(self, proc):
         self.jmpc(self.get_ret_page(proc), [False, True, True])
