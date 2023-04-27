@@ -1178,6 +1178,10 @@ class Memory:
         self.clear_procs_calls()
         imm_pc = self.pc
         codegen()
+        
+        for l in self.labels:
+            if self.labels[l][0] < 0:
+                raise(RuntimeError("Undefined label: %s"%l))
 
 def join_imms(imms1, imms2):
     for (k,v) in imms2.items():
