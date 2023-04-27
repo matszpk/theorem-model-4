@@ -135,6 +135,10 @@ class Memory:
         for k in self.labels:
             self.labels[k] = [self.labels[k][0], None, None]
     
+    def clear_label_addresses(self):
+        for k in self.labels:
+            self.labels[k][0] = -10000
+    
     def clear_labels_defined(self):
         self.labels_defined = set()
     
@@ -1159,6 +1163,7 @@ class Memory:
         
         self.clear_label_flags()
         for i in range(0,stages):
+            self.clear_label_addresses()
             self.clearflags()
             self.clearacc()
             self.clear_ret_pages()
@@ -1167,6 +1172,15 @@ class Memory:
             start=codegen()
         
         while self.process_procs_need_long():
+            self.clear_label_addresses()
+            self.clearflags()
+            self.clearacc()
+            self.clear_ret_pages()
+            self.clear_procs_calls()
+            self.clear_labels_defined()
+            start=codegen()
+        
+        for i in range(0,stages):
             self.clearflags()
             self.clearacc()
             self.clear_ret_pages()
