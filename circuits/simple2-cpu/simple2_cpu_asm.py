@@ -180,14 +180,29 @@ class Memory:
         self.mmod[self.pc] = mod
         self.pc = (self.pc + 1) & 0xfff
     
+    def bytes(self, a, mod=[]):
+        for i in range(0, len(a)):
+            m = mod[i] if i<len(mod) else False
+            self.byte(a[i], m)
+    
     def word16(self, a, mod=[False,False]):
         self.byte(a&0xff, mod[0])
         self.byte((a>>8)&0xff, mod[1])
     
+    def words16(self, a, mod=[]):
+        for i in range(0, len(a)):
+            m = mod[i*2:(i+1)*2] if i*2<len(mod) else False
+            self.word16(a[i], m)
+    
     def word32(self, a, mod=[False,False,False,False]):
         self.word16(a&0xffff, mod[0:2])
         self.word16((a>>16)&0xffff, mod[2:4])
-
+    
+    def words32(self, a, mod=[]):
+        for i in range(0, len(a)):
+            m = mod[i*4:(i+1)*4] if i*4<len(mod) else False
+            self.word32(a[i], m)
+    
     def lda(self, addr, mod=[False,False], imm=acc_undef):
         if isinstance(addr,int) and addr>=0:
             self.word16(instr_lda | instr_addr(addr), mod)
