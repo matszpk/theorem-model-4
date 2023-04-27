@@ -935,10 +935,10 @@ class Memory:
             self.start_proc_next(jmp_name)
     
     # report_needs - report error if long scheme needed
-    def short_call_x(self, proc, cond=False, report_needs=False):
+    def short_call_x(self, proc, cond=False, clc=False, report_needs=False):
         self.add_proc_call(proc)
         page = 0
-        extra_byte = 0 if cond else 1
+        extra_byte = (0 if cond else 1) + (1 if not clc and not cond else 0)
         if proc in self.ret_pages:
             page = self.ret_pages[proc]
             if page != ((self.pc+4+extra_byte) & 0xf00):
@@ -954,8 +954,10 @@ class Memory:
             self.lda_imm(addr&0xff) # ret address
             if cond:
                 self.cond_jmp(proc)
-            else:
+            elif clc:
                 self.jmpc(proc)
+            else:
+                self.jmp(proc)
         else:
             if not report_needs:
                 raise(RuntimeError("Address above range!"))
@@ -971,12 +973,15 @@ class Memory:
     def short_call(self, proc, report_needs=False):
         self.short_call_x(proc, cond=False, report_needs=report_needs)
     
-    def cond_short_call(self, proc, report_needs=False):
-        self.short_call_x(proc, cond=True, report_needs=report_needs)
+    def clc_short_call(self, proc, report_needs=False):
+        self.short_call_x(proc, cond=False, clc=True, report_needs=report_needs)
     
-    def long_call_x(self, proc, cond=False):
+    def cond_short_call(self, proc, report_needs=False):
+        self.short_call_x(proc, cond=True, clc=False, report_needs=report_needs)
+    
+    def long_call_x(self, proc, cond=False, clc=False):
         self.add_proc_call(proc)
-        extra_byte = 0 if cond else 1
+        extra_byte = (0 if cond else 1) + (1 if not clc and not cond else 0)
         addr = self.pc+4+4+extra_byte
         ret_proc = self.ret_procs[proc] if proc in self.ret_procs else proc
         proc_ret = name_proc_ret(ret_proc)
@@ -987,8 +992,10 @@ class Memory:
         self.lda_imm(addr&0xff) # ret address
         if cond:
             self.cond_jmp(proc)
-        else:
+        elif clc:
             self.jmpc(proc)
+        else:
+            self.jmp(proc)
         if proc_ret in self.labels:
             if self.labels[proc_ret][1]!=None:
                 self.flags = self.labels[proc_ret][1][:]
@@ -996,10 +1003,13 @@ class Memory:
                 self.acc = self.labels[proc_ret][2]
     
     def long_call(self, proc):
-        self.long_call_x(proc, cond=False)
+        self.long_call_x(proc, cond=False, clc=False)
+    
+    def clc_long_call(self, proc):
+        self.long_call_x(proc, cond=False, clc=True)
     
     def cond_long_call(self, proc):
-        self.long_call_x(proc, cond=True)
+        self.long_call_x(proc, cond=True, clc=False)
     
     # automatically choosing convention (short or long)
     def auto_call(self, proc):
@@ -1007,6 +1017,12 @@ class Memory:
             self.long_call(proc)
         else:
             self.short_call(proc, report_needs=True)
+    
+    def clc_auto_call(self, proc):
+        if proc in self.long_procs:
+            self.clc_long_call(proc)
+        else:
+            self.clc_short_call(proc, report_needs=True)
     
     # automatically choosing convention (short or long)
     def cond_auto_call(self, proc):
