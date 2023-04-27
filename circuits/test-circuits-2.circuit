@@ -1,0 +1,66 @@
+main:
+    # pos = 0x8
+    one = nand zero zero
+    # pos = 0x9
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:i0 one .7:zero
+    # pos = 0x11
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x19
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x21
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x29
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x31
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x39
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x41
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x49
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x51
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x59
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x61
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x69
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x71
+    s0 s1 s2 s3 s4 s5 s6 s7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x79
+    x0 x1 x2 x3 = copy_4bit :4:s4
+    # pos = 0x7d
+    o0 o1 o2 o3 o4 o5 o6 o7 = adder_8bit :8:s0 one .7:zero
+    # pos = 0x5
+copy:
+    empty 1
+copy_4bit:
+    empty 4
+xor:
+    n0 = nand i0 i0
+    n1 = nand i1 i1
+    t0 = nand i0 n1
+    t1 = nand n0 i1
+    o0 = nand t0 t1
+full_adder:
+    s0 = xor i0 i1
+    a0 = nand i0 i1
+    a1 = nand s0 i2
+    o0 = xor s0 i2
+    # (i0 and i1) or (s0 and i2)
+    o1 = nand a0 a1
+# i0 - carry, i1-i4 - 4-bit A, i5-i8 - 4-bit B
+carry_adder_4bit:
+    s0 c0 = full_adder i1 i5 i0
+    s1 c1 = full_adder i2 i6 c0
+    s2 c2 = full_adder i3 i7 c1
+    s3 c3 = full_adder i4 i8 c2
+    o0 o1 o2 o3 = copy_4bit s0 s1 s2 s3
+    o4 = copy c3
+adder_8bit:
+    s0 s1 s2 s3 c4 = carry_adder_4bit zero :4:i0 :4:i8
+    s4 s5 s6 s7 ign = carry_adder_4bit c4 :4:i4 :4:i12
+    o0 o1 o2 o3 = copy_4bit :4:s0
+    o4 o5 o6 o7 = copy_4bit :4:s4
