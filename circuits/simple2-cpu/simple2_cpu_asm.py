@@ -876,6 +876,15 @@ class Memory:
             self.spc(0, [True,True])
             imms[im] = -1
     
+    def create(self):
+        self.spc_imm(0)
+    
+    def stop(self):
+        self.spc_imm(1)
+    
+    def unsat(self):
+        self.spc_imm(2)
+    
     def jmp(self, addr, mod=[True,True,True,True]):
         self.bne(addr, mod[0:2])
         self.bpl(addr, mod[2:4])
