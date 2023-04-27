@@ -72,6 +72,26 @@ executing code.
 Methods lda_imm, ... generates instructions that operates on specified immediate.
 Because processor doesn't have immediate mode for instructions, thus assembler
 manages immediates after program code.
+An assembler traces changes of flags applied by any instruction. Method cond_clc, cond_sec,
+cond_b* includes state of flags and add instruction if needed
+(cond_sec add when flag C is not set). The method def_label defines label and any jump
+to this label will join state from jump to this label. A jump (bne,bcc,..) method accepts
+string as label. The def_segment defines label except doesn't include state of flags of current
+code to avoid incorrectly join of state from previous code segment. Code segment can be
+treat as routines as subroutines.
+The jmp - insert unconditional jmp (bne, bpl). The jmpc add unconditional jmp with clc (clc, bcc)
+- 1 byte shorter form. The cond_jmp and cond_jmpc check flags state and uses optimal form
+(for example bne if Z flag is zero).
+The def_routine defines routine to call. The short_call, long_call, auto_call, clc_short_call,
+clc_long_call, clc_auto_call, cond_short_call, cond_long_call, cond_auto_call add code
+that calls given routine. A cond_* just use flag state to optimize this code.
+The clc_* use jmpc (clc, bcc). The *_short_* uses short call form (when return address for
+all calls is in aligned 256-byte boundary).. The *_long_* uses long call form
+(call can be in any place of memory). The *_auto_* uses short or long call if possible
+(resolved while assemblying). The ret method add return instruction. This method should be
+used ONLY ONCE for routine. The lastcall and cond_lastcall call routine in other routine as
+last (no other code later) - in this case define_routine should have defined jmp_name -
+name of last called routine).
 """
 
 class Memory:
