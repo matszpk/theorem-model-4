@@ -102,6 +102,7 @@ class Memory:
         self.flags = [flag_undef,flag_undef,flag_undef,flag_undef]
         self.acc = acc_undef
         self.labels = dict()
+        self.labels_defined = set()
         self.ret_pages = dict()
         self.ret_procs = dict()
         self.procs_calls = dict()
@@ -133,6 +134,9 @@ class Memory:
     def clear_label_flags(self):
         for k in self.labels:
             self.labels[k] = [self.labels[k][0], None, None]
+    
+    def clear_labels_defined(self):
+        self.labels_defined = set()
     
     def process_procs_need_long(self):
         have = len(self.procs_need_long) != 0
@@ -938,6 +942,10 @@ class Memory:
             return -10000000000
     
     def def_segment(self, name):
+        if name in self.labels_defined:
+            raise(RuntimeError('Label %s already defined'%name))
+        self.labels_defined.add(name)
+        
         if name in self.labels:
             new_flags = (
                     self.labels[name][1] if self.labels[name][1]!=None else None,
@@ -959,6 +967,10 @@ class Memory:
         self.current_segment = name
     
     def def_label(self, name):
+        if name in self.labels_defined:
+            raise(RuntimeError('Label %s already defined'%name))
+        self.labels_defined.add(name)
+        
         if name in self.labels:
             old_flags = self.labels[name][1]
             old_acc = self.labels[name][2]
@@ -1142,6 +1154,7 @@ class Memory:
             self.clearacc()
             self.clear_ret_pages()
             self.clear_procs_calls()
+            self.clear_labels_defined()
             start=codegen()
         
         self.clear_label_flags()
@@ -1150,6 +1163,7 @@ class Memory:
             self.clearacc()
             self.clear_ret_pages()
             self.clear_procs_calls()
+            self.clear_labels_defined()
             start=codegen()
         
         while self.process_procs_need_long():
@@ -1157,18 +1171,21 @@ class Memory:
             self.clearacc()
             self.clear_ret_pages()
             self.clear_procs_calls()
+            self.clear_labels_defined()
             start=codegen()
         
         imm_pc = self.pc
         self.clearflags()
         self.clearacc()
         self.clear_procs_calls()
+        self.clear_labels_defined()
         start=codegen()
         join_imms(imms, self.imms(range(start,self.pc)))
         while self.rest_imms(imms):
             self.clearflags()
             self.clearacc()
             self.clear_procs_calls()
+            self.clear_labels_defined()
             imm_pc = self.pc
             start=codegen()
             join_imms(imms, self.imms(range(start,self.pc)))
@@ -1176,6 +1193,7 @@ class Memory:
         self.clearflags()
         self.clearacc()
         self.clear_procs_calls()
+        self.clear_labels_defined()
         imm_pc = self.pc
         codegen()
         
