@@ -87,6 +87,7 @@ class Memory:
         self.procs_calls = dict()
         self.procs_need_long = set()
         self.long_procs = set()
+        self.current_segment = None
     
     def clearmod(self):
         self.mmod = [True]*(1<<12)
@@ -914,6 +915,7 @@ class Memory:
             # new flag in segment: all undefined
             self.clearflags()
             self.clearacc()
+        self.current_segment = name
     
     def def_label(self, name):
         if name in self.labels:
@@ -1052,11 +1054,13 @@ class Memory:
     def start_proc_next(self, proc):
         self.sta(self.l(name_proc_ret(proc))-1)
     
-    def ret(self, proc):
+    def ret(self, proc=None):
+        proc = self.current_segment if proc==None else proc
         self.jmpc(self.get_ret_page(proc), [False, True, True])
         self.def_label(name_proc_ret(proc))
     
-    def cond_ret(self, proc):
+    def cond_ret(self, proc=None):
+        proc = self.current_segment if proc==None else proc
         self.cond_jmpc(self.get_ret_page(proc), [False, True, True])
         self.def_label(name_proc_ret(proc))
     
