@@ -121,11 +121,17 @@ temp1 = ml.pc       # 0xfed
 ml.byte(0, True)
 temp2 = ml.pc       # 0xfee
 ml.byte(0, True)
-temp3 = ml.pc       # 0xfee
+temp3 = ml.pc       # 0xfef
 ml.byte(0, True)
-temp4 = ml.pc       # 0xfee
+temp4 = ml.pc       # 0xff0
 ml.byte(0, True)
-xx_dont_keep_carry = ml.pc
+xx_dont_keep_carry = ml.pc # 0xff1
+ml.byte(0, True)
+iff1 = ml.pc         # 0xff2
+ml.byte(0, True)
+iff2 = ml.pc         # 0xff3
+ml.byte(0, True)
+intmode = ml.pc         # 0xff4
 ml.byte(0, True)
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
@@ -377,6 +383,35 @@ def gencode():
     ml.def_label('op_ld_from_mem')
     ml.lda(mem_val_lo)
     ml.sta(reg1_val_lo)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_ld_a_i')
+    ml.def_segment('op_ld_a_r')
+    ml.lda(nopcode)
+    ml.ana_imm(0x08) # one if LD A,R
+    ml.bne('op_if_ld_a_r')
+    ml.lda(nint)
+    ml.cond_jmpc('op_if_ld_a_r_end')
+    ml.def_segment('op_if_ld_a_r')
+    ml.lda(nrfm)
+    ml.def_label('op_if_ld_a_r_end')
+    ml.sta(nar)
+    
+    ml.lda(iff2)
+    ml.ana_imm(SRFlags.P)   # must be 0xff in iff2
+    ml.ora(nfr)
+    ml.sta(nfr)
+    ml.cond_auto_call('set_zsxy')
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_ld_r_a')
+    ml.lda(nar)
+    ml.sta(nrfm)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_ld_i_a')
+    ml.lda(nar)
+    ml.sta(nint)
     ml.cond_jmpc('ops_code_end')
     
     ml.def_segment('op_push')
@@ -862,8 +897,119 @@ def gencode():
     ml.sta(mem_val_lo)
     ml.cond_jmpc('op_sub')
     
-    ml.def_segment('op_daa')
     
+    # DAA
+    ml.def_segment('op_daa')
+    ml.lda(nar)
+    ml.cond_sec()
+    ml.sbc_imm(0x9a)
+    ml.bcc('op_daa_zero_correct')
+    ml.lda(nfr)
+    ml.ana_imm(SRFlags.C)   # carry
+    ml.bne('op_daa_zero_correct')
+    ml.ora_imm(SRFlags.C)
+    ml.sta(nfr)
+    ml.lda_imm(0x60)
+    ml.cond_jmpc('op_daa_correct_end')
+    ml.def_segment('op_daa_zero_correct')
+    ml.lda(nfr)
+    ml.ana_imm(0xff^SRFlags.C)
+    ml.sta(nfr) # clear carry
+    ml.lda_imm(0)
+    ml.def_label('op_daa_correct_end')
+    ml.sta(temp4)
+    
+    ml.lda(nar)
+    ml.ana_imm(0xf)
+    ml.cond_sec()
+    ml.sbc_imm(0x0a)
+    ml.bcc('op_daa_h_correct_end')
+    ml.lda_imm(6)
+    ml.cond_clc()
+    ml.adc(temp4)
+    ml.sta(temp4)
+    ml.def_label('op_daa_h_correct_end')
+    
+    # negate if N
+    ml.lda(nfr)
+    ml.ana_imm(SRFlags.N)
+    ml.bne('op_daa_sub')
+    ml.lda(nar)
+    ml.cond_clc()
+    ml.adc(temp4)
+    ml.cond_jmpc('op_daa_sub_end')
+    ml.def_segment('op_daa_sub')
+    ml.lda(nar)
+    ml.cond_sec()
+    ml.sbc(temp4)
+    ml.def_label('op_daa_sub_end')
+    ml.sta(nar)
+    ml.sta(temp1)
+    
+    ml.cond_auto_call('set_zsxyp')
+    ml.cond_jmpc('ops_code_end')
+    
+    
+    ml.def_segment('op_cpl')
+    ml.lda(nar)
+    ml.xor_imm(0xff)
+    ml.sta(nar)
+    ml.sta(temp1)
+    ml.cond_auto_call('set_xy_flags')
+    ml.lda(nfr)
+    ml.ora_imm(SRFlags.N|SRFlags.H)
+    ml.sta(nfr)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_neg')
+    ml.lda(nar)
+    ml.sta(mem_val_lo)
+    ml.lda_imm(0)
+    ml.sta(reg1_val_lo)
+    ml.cond_jmpc('op_sub')
+    
+    ml.def_segment('op_ccf')
+    ml.lda(nfr)
+    ml.ana_imm(0xff^SRFlags.C)
+    ml.sta(nfr)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_scf')
+    ml.lda(nfr)
+    ml.ora_imm(SRFlags.C)
+    ml.sta(nfr)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_nop')
+    ml.def_segment('op_halt')
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_im 0')
+    ml.lda_imm(0)
+    ml.sta(intmode)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_im 1')
+    ml.lda_imm(1)
+    ml.sta(intmode)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_im 2')
+    ml.lda_imm(2)
+    ml.sta(intmode)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_di')
+    ml.lda_imm(0)
+    ml.sta(iff1)
+    ml.sta(iff2)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_ei')
+    ml.lda_imm(0xff)
+    ml.sta(iff1)
+    ml.sta(iff2)
+    ml.cond_jmpc('ops_code_end')
     
     ml.def_label('ops_code_end')
     #######################################
