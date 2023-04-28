@@ -128,7 +128,7 @@ ml.byte(0, True)
 xx_dont_keep_carry = ml.pc
 ml.byte(0, True)
 
-SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', '_', 'H', '_2', 'Z', 'S' ]);
+SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
 
 child_mem_val = 0xffc
 child_mem_addr = 0xffd
@@ -159,9 +159,17 @@ def gencode():
     ml.sta(nargr2)
     ml.sta(xx_dont_keep_carry)  # default nonzero
     
+    #################################
+    # code change reset
+    ###################################
+    ml.lda(ml.mem[ml.l('op_sub_ch') + 1 if ml.l('op_sub_ch')>=0 else 0])
+    ml.sta(ml.l('op_sub_ch')+1)
+    ml.lda_imm(ml.mem[ml.l('op_and_ch') if ml.l('op_and_ch')>=0 else 0])
+    ml.sta(ml.l('op_and_ch'))
+    
     # load instruction
     # load opcode
-    ml.cond_auto_call('load_inc_pc')
+    ml.cond_auto_call('load_inc_pc_opcode')
     ##############################
     # decode it
     ml.sta(nopcode)
@@ -193,7 +201,7 @@ def gencode():
     
     # bit opcodes
     ml.def_segment('bit_opcodes')
-    ml.cond_auto_call('load_inc_pc')
+    ml.cond_auto_call('load_inc_pc_opcode')
     ml.sta(nopcode)
     ml.ana_imm(7)
     ml.sta(nargr1)
@@ -562,6 +570,24 @@ def gencode():
     ml.def_label('op_ldi_end')
     ml.cond_jmpc('ops_code_end')
     
+    ml.def_routine('set_xy_flags')
+    ml.lda(temp1)
+    ml.ana_imm(0xff^SRFlags.X^SRFlags.Y)
+    ml.sta(temp2)
+    ml.lda(nfr)
+    ml.ana_imm(0xff^SRFlags.X^SRFlags.Y)
+    ml.ora(temp2)
+    ml.sta(nfr)
+    ml.ret()
+    
+    ml.def_routine('set_zsxy','set_zs')
+    ml.cond_auto_call('set_xy_flags')
+    ml.cond_lastcall('set_zs')
+    
+    ml.def_routine('set_zsxyp','set_zs')
+    ml.cond_auto_call('set_xy_flags')
+    ml.cond_lastcall('set_zsp')
+    
     ml.def_routine('set_zsvb','set_zs')
     ml.rol()
     ml.xor_imm(1)
@@ -765,6 +791,11 @@ def gencode():
     ml.ror()
     ml.cond_jmpc('op_add_cont')
     
+    ml.def_segment('op_cp')
+    # change address of store to temp4 - do not update register
+    ml.lda(temp4&0xff)
+    ml.sta(ml.l('op_sub_ch')+1)
+    
     ml.def_segment('op_sub')
     ml.cond_sec()
     ml.def_label('op_sub_cont')
@@ -773,7 +804,9 @@ def gencode():
     ml.lda(reg1_val_lo)
     ml.sta(temp2)
     ml.sbc(mem_val_lo)
-    ml.sta(reg1_val_lo)
+    # for change code point - for op_cp - changed then we have CP
+    ml.def_label('op_sub_ch')
+    ml.sta(reg1_val_lo, [False, True])
     ml.sta(temp1)
     
     ml.lda(xx_dont_keep_carry)
@@ -794,10 +827,11 @@ def gencode():
     ml.ror()
     ml.cond_jmpc('op_sub_cont')
     
-    ml.def_segment('op_and')
-    ml.lda_imm((instr_and|instr_addr(mem_val_lo))&0xff)
+    ml.def_segment('op_or')
+    ml.lda_imm((instr_ora|instr_addr(mem_val_lo))&0xff)
     ml.sta(ml.l('op_and_ch'))
-    ml.def_label('op_and_cont')
+    
+    ml.def_segment('op_and')
     ml.lda(reg1_val_lo)
     ml.def_label('op_and_ch')
     ml.ana(mem_val_lo, [True, False])
@@ -809,30 +843,10 @@ def gencode():
     ml.cond_auto_call('set_zsp')
     ml.cond_jmpc('ops_code_end')
     
-    ml.def_segment('op_or')
-    ml.lda_imm((instr_ora|instr_addr(mem_val_lo))&0xff)
-    ml.sta(ml.l('op_and_ch'))
-    ml.cond_jmpc('op_and_cont')
-    
     ml.def_segment('op_xor')
     ml.lda_imm((instr_xor|instr_addr(mem_val_lo))&0xff)
     ml.sta(ml.l('op_and_ch'))
-    ml.cond_jmpc('op_and_cont')
-    
-    ml.def_segment('op_cp')
-    ml.cond_sec()
-    ml.lda(mem_val_lo)
-    ml.sta(temp3)
-    ml.lda(reg1_val_lo)
-    ml.sta(temp2)
-    ml.sbc(mem_val_lo)
-    ml.sta(temp1)
-    
-    ml.lda(nfr)
-    ml.ora_imm(SRFlags.N)
-    ml.sta(nfr)
-    ml.cond_auto_call('set_zsvb')
-    ml.cond_jmpc('ops_code_end')
+    ml.cond_jmpc('op_and')
     
     ml.def_segment('op_inc')
     ml.lda_imm(0)
@@ -848,8 +862,23 @@ def gencode():
     ml.sta(mem_val_lo)
     ml.cond_jmpc('op_sub')
     
+    ml.def_segment('op_daa')
+    
+    
     ml.def_label('ops_code_end')
     #######################################
+    
+    ml.def_routine('load_inc_pc_opcode','load_mem_lval')
+    ml.lda(nrfm)
+    ml.cond_sec()
+    ml.adc_imm(0)
+    ml.ana_imm(0x7f)
+    ml.sta(temp4)
+    ml.lda(nrfm)
+    ml.ana_imm(0x80)
+    ml.ora(temp4)
+    ml.sta(nrfm)
+    ml.cond_lastcall('load_inc_pc')
     
     # load byte from pc and increment pc
     # load_inc_pc - routine - load byte from 6502's PC
@@ -900,6 +929,7 @@ def gencode():
     
     # native machine config
     ml.def_label('native_machine')
+    
     ml.byte(0)      # set true for native machine
     return start
 
