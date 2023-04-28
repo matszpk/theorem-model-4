@@ -125,7 +125,7 @@ temp3 = ml.pc       # 0xfef
 ml.byte(0, True)
 temp4 = ml.pc       # 0xff0
 ml.byte(0, True)
-xx_dont_keep_carry = ml.pc # 0xff1
+xx_keep_carry = ml.pc # 0xff1
 ml.byte(0, True)
 iff1 = ml.pc         # 0xff2
 ml.byte(0, True)
@@ -133,8 +133,21 @@ iff2 = ml.pc         # 0xff3
 ml.byte(0, True)
 intmode = ml.pc         # 0xff4
 ml.byte(0, True)
+set_sr_flag = ml.pc     # 0xff5
+ml.byte(0, True)
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
+
+# should be negated in set_sr_flag
+set_sr_flag_nsub = 0x1
+set_sr_flag_N = 0x2
+set_sr_flag_V = 0x4
+set_sr_flag_ZS = 0x8
+set_sr_flag_XY = 0x10
+set_sr_flag_H = 0x20
+set_sr_flag_C = 0x40
+set_sr_flag_P = 0x80
+set_sr_flag_all_zero_n = 0xff^set_sr_flag_nsub
 
 child_mem_val = 0xffc
 child_mem_addr = 0xffd
@@ -159,11 +172,11 @@ def gencode():
     ml.sta(instr_cycles)
     ml.sta(mem_val_loaded)
     ml.sta(op_16bit)
+    ml.sta(xx_keep_carry)  # default nonzero
     
     ml.lda_imm(0x80)    # no register argument
     ml.sta(nargr1)
     ml.sta(nargr2)
-    ml.sta(xx_dont_keep_carry)  # default nonzero
     
     #################################
     # code change reset
@@ -398,11 +411,11 @@ def gencode():
     ml.sta(nar)
     
     ml.lda(iff2)
-    ml.ana_imm(SRFlags.P)   # must be 0xff in iff2
+    ml.ana_imm(SRFlags.H^SRFlags.P)   # must be 0xff in iff2
     ml.ora(nfr)
     ml.sta(nfr)
-    ml.cond_auto_call('set_zsxy')
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_XY^set_sr_flag_ZS^set_sr_flag_N)
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_ld_r_a')
     ml.lda(nar)
@@ -605,7 +618,13 @@ def gencode():
     ml.def_label('op_ldi_end')
     ml.cond_jmpc('ops_code_end')
     
-    ml.def_routine('set_xy_flags')
+    #############################################
+    # set flags
+    ml.def_segment('set_flags')
+    
+    ml.sta(set_sr_flag)
+    ml.ana_imm(set_sr_flag_XY)
+    ml.bne('set_flags_skip_xy')
     ml.lda(temp1)
     ml.ana_imm(0xff^SRFlags.X^SRFlags.Y)
     ml.sta(temp2)
@@ -613,26 +632,36 @@ def gencode():
     ml.ana_imm(0xff^SRFlags.X^SRFlags.Y)
     ml.ora(temp2)
     ml.sta(nfr)
-    ml.ret()
+    ml.def_label('set_flags_skip_xy')
     
-    ml.def_routine('set_vb_flags')
+    ml.lda(set_sr_flag)
+    ml.ana_imm(set_sr_flag_C)
+    ml.bne('set_flags_skip_C')
     ml.rol()
-    ml.xor_imm(1)
-    ml.cond_jmpc('set_vc_flags_cont')
-    
-    ml.def_routine('set_vc_flags')
-    ml.rol()
-    ml.def_label('set_vc_flags_cont')
-    ml.ana_imm(1)
-    ml.ora(nfr)
-    ml.bvc('set_zsvc_no_overflow')
-    ml.ora_imm(SRFlags.P)
-    ml.cond_jmpc('set_zsvc_no_overflow_end')
-    ml.def_segment('set_zsvc_no_overflow')
-    ml.ana_imm(0xff^SRFlags.P)
-    ml.def_label('set_zsvc_no_overflow_end')
+    ml.xor_imm(set_sr_flag)     # set_sr_flag_SUB = 1, xor carry
+    ml.ror()
+    ml.lda(nfr)
+    ml.ana_imm(0xfe)
+    ml.adc_imm(0)   # set carry
     ml.sta(nfr)
+    ml.def_label('set_flags_skip_C')
     
+    ml.lda(set_sr_flag)
+    ml.ana_imm(set_sr_flag_C)
+    ml.bne('set_flags_skip_V')
+    ml.lda(nfr)
+    ml.bvc('set_flags_no_overflow')
+    ml.ora_imm(SRFlags.P)
+    ml.cond_jmpc('set_flags_no_overflow_end')
+    ml.def_segment('set_flags_no_overflow')
+    ml.ana_imm(0xff^SRFlags.P)
+    ml.def_label('set_flags_no_overflow_end')
+    ml.sta(nfr)
+    ml.def_label('set_flags_skip_V')
+    
+    ml.lda(set_sr_flag)
+    ml.ana_imm(set_sr_flag_H)
+    ml.bne('set_flags_skip_H')
     # set half carry
     ml.lda(temp1)   # temp result
     ml.xor(temp2)   # second argument
@@ -643,32 +672,17 @@ def gencode():
     ml.ana_imm(0xff^SRFlags.H)
     ml.ora(temp2)
     ml.sta(nfr)
-    ml.cond_ret()
+    ml.def_label('set_flags_skip_H')
     
-    ml.def_routine('set_zsxy','set_zs')
-    ml.cond_auto_call('set_xy_flags')
-    ml.cond_lastcall('set_zs')
-    
-    ml.def_routine('set_zsxyp','set_zs')
-    ml.cond_auto_call('set_xy_flags')
-    ml.cond_lastcall('set_zsp')
-    
-    ml.def_routine('set_zsvb','set_zs')
-    ml.cond_auto_call('set_vc_flags')
-    ml.cond_lastcall('set_zs')
-    
-    ml.def_routine('set_zsvc','set_zs')
-    ml.cond_auto_call('set_vc_flags')
-    ml.cond_lastcall('set_zs')
-    
-    # temp1 - temporary result
-    ml.def_routine('set_zsp','set_zs')
+    ml.lda(set_sr_flag)
+    ml.ana_imm(set_sr_flag_P)
+    ml.bne('set_flags_skip_P')
     ml.lda(temp1)
     ml.sta(temp3)   # rolled value of temp1
     ml.sta(temp4)   # value of count of one bits in 7 bit
     ml.lda_imm(7)
     ml.sta(temp2)
-    ml.def_label('set_zsp_ploop')
+    ml.def_label('set_flags_ploop')
     ml.lda(temp3)
     ml.rol()
     ml.sta(temp3)
@@ -678,39 +692,59 @@ def gencode():
     ml.clc()
     ml.sbc_imm(0)
     ml.sta(temp2)
-    ml.bne('set_zsp_ploop')
+    ml.bne('set_flags_ploop')
     ml.lda(temp4)
-    ml.bpl('set_zsp_pset')
+    ml.bpl('set_flags_pset')
     ml.lda(nfr)
     ml.ana_imm(0xff^SRFlags.P)
-    ml.cond_jmpc('set_zsp_p_end')
-    ml.def_segment('set_zsp_pset')
+    ml.cond_jmpc('set_flags_p_end')
+    ml.def_segment('set_flags_pset')
     ml.lda(nfr)
     ml.ora_imm(SRFlags.P)
-    ml.def_label('set_zsp_p_end')
+    ml.def_label('set_flags_p_end')
     ml.sta(nfr)
-    ml.cond_lastcall('set_zs')
+    ml.def_label('set_flags_skip_P')
     
-    ml.def_routine('set_zs')
+    ml.lda(set_sr_flag)
+    ml.ana_imm(set_sr_flag_ZS)
+    ml.bne('set_flags_skip_ZS')
+    
     ml.lda(temp1)
-    ml.bne('set_zs_nozero')
+    ml.bne('set_flags_zs_nozero')
     ml.lda(nfr)
     ml.ana_imm(0xff^SRFlags.Z)
     ml.sta(nfr)
-    ml.cond_jmpc('set_zs_nozero_end')
-    ml.def_segment('set_zs_nozero')
-    ml.bpl('set_zs_positive')
+    ml.cond_jmpc('set_flags_zs_nozero_end')
+    ml.def_segment('set_flags_zs_nozero')
+    ml.bpl('set_flags_zs_positive')
     ml.lda(nfr)
     ml.ora_imm(SRFlags.Z|SRFlags.S)
     ml.sta(nfr)
-    ml.cond_jmpc('set_zs_nozero_end')
-    ml.def_segment('set_zs_positive')
+    ml.cond_jmpc('set_flags_zs_nozero_end')
+    ml.def_segment('set_flags_zs_positive')
     ml.lda(nfr)
     ml.ora_imm(SRFlags.Z)
     ml.ana_imm(0xff^SRFlags.S)
     ml.sta(nfr)
-    ml.def_label('set_zs_nozero_end')
-    ml.cond_ret()
+    ml.def_label('set_flags_zs_nozero_end')
+    ml.def_label('set_flags_skip_ZS')
+    
+    ml.lda(set_sr_flag)
+    ml.ana_imm(set_sr_flag_ZS)
+    ml.bne('set_flags_skip_N')
+    ml.lda(set_sr_flag)
+    ml.rol()    # to N
+    ml.ana_imm(0xff^SRFlags.N)
+    ml.sta(temp4)
+    ml.lda(nfr)
+    ml.ana_imm(0xff^SRFlags.N)
+    ml.ora(temp4)
+    ml.sta(nfr)
+    ml.def_label('set_flags_skip_N')
+    
+    ml.cond_jmpc('ops_code_end')
+    # end set flags
+    #############################################
     
     ml.def_segment('op_cpdr')
     ml.def_segment('op_cpd')
@@ -724,20 +758,10 @@ def gencode():
     ml.sta(temp2)
     ml.lda(nar)
     ml.cond_sec()
-    ml.sbc(temp2)
+    ml.sbc(temp2) # for H flag
     ml.sta(temp1)
-    ml.cond_auto_call('set_zs')
-    
-    # halfcarry
-    ml.lda(temp1)
-    ml.xor(temp2)
-    ml.xor(nar)
-    ml.ana_imm(0x10)
-    ml.sta(temp2)
-    ml.lda(nfr)
-    ml.ana_imm(0xff^SRFlags.H)
-    ml.ora(temp2|SRFlags.N)
-    ml.sta(nfr)
+    ml.lda(nar)
+    ml.sta(temp3) # for H flag
     
     # incdec HL and BC
     ml.lda(nopcode)
@@ -803,7 +827,9 @@ def gencode():
     ml.sta(npc+1)
     
     ml.def_label('op_cpi_end')
-    ml.cond_jmpc('ops_code_end')
+    
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_H^set_sr_flag_N^set_sr_flag_nsub)
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_add')
     ml.cond_clc()
@@ -816,17 +842,10 @@ def gencode():
     ml.sta(reg1_val_lo)
     ml.sta(temp1)
     
-    ml.lda(xx_dont_keep_carry)
-    ml.bne('op_add_dont_keep_carry')
-    ml.lda(nfr)
-    ml.ror()    # old carry (keep carry)
-    ml.def_label('op_add_dont_keep_carry')
-    
-    ml.lda(nfr)
-    ml.ana_imm(0xff^SRFlags.N)
-    ml.sta(nfr)
-    ml.cond_auto_call('set_zsvc')
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
+               set_sr_flag_N^set_sr_flag_H)
+    ml.xor_imm(xx_keep_carry)  # xor set_sr_flag_C
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_adc')
     ml.lda(nfr) # get carry
@@ -851,17 +870,10 @@ def gencode():
     ml.sta(reg1_val_lo, [False, True])
     ml.sta(temp1)
     
-    ml.lda(xx_dont_keep_carry)
-    ml.bne('op_sub_dont_keep_carry')
-    ml.lda(nfr)
-    ml.ror()    # old carry (keep carry)
-    ml.def_label('op_sub_dont_keep_carry')
-    
-    ml.lda(nfr)
-    ml.ora_imm(SRFlags.N)
-    ml.sta(nfr)
-    ml.cond_auto_call('set_zsvb')
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
+                set_sr_flag_nsub^set_sr_flag_N^set_sr_flag_H)
+    ml.xor_imm(xx_keep_carry)  # xor set_sr_flag_C
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_sbc')
     ml.lda(nfr) # get carry
@@ -878,12 +890,8 @@ def gencode():
     ml.def_label('op_and_ch')
     ml.ana(mem_val_lo, [True, False])
     ml.sta(reg1_val_lo)
-    
-    ml.lda(nfr)
-    ml.ana_imm(0xff^SRFlags.N)
-    ml.sta(nfr)
-    ml.cond_auto_call('set_zsp')
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_P^set_sr_flag_N)
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_xor')
     ml.lda_imm((instr_xor|instr_addr(mem_val_lo))&0xff)
@@ -891,19 +899,18 @@ def gencode():
     ml.cond_jmpc('op_and')
     
     ml.def_segment('op_inc')
-    ml.lda_imm(0)
-    ml.sta(xx_dont_keep_carry)
+    ml.lda_imm(set_sr_flag_C)
+    ml.sta(xx_keep_carry)
     ml.lda_imm(1)
     ml.sta(mem_val_lo)
     ml.cond_jmpc('op_add')
     
     ml.def_segment('op_dec')
-    ml.lda_imm(0)
-    ml.sta(xx_dont_keep_carry)
+    ml.lda_imm(set_sr_flag_C)
+    ml.sta(xx_keep_carry)
     ml.lda_imm(1)
     ml.sta(mem_val_lo)
     ml.cond_jmpc('op_sub')
-    
     
     # DAA
     ml.def_segment('op_daa')
@@ -953,8 +960,8 @@ def gencode():
     ml.sta(nar)
     ml.sta(temp1)
     
-    ml.cond_auto_call('set_zsxyp')
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm((set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_P^set_sr_flag_H))
+    ml.cond_jmp('set_flags')
     
     
     ml.def_segment('op_cpl')
@@ -962,11 +969,11 @@ def gencode():
     ml.xor_imm(0xff)
     ml.sta(nar)
     ml.sta(temp1)
-    ml.cond_auto_call('set_xy_flags')
     ml.lda(nfr)
-    ml.ora_imm(SRFlags.N|SRFlags.H)
+    ml.ora_imm(SRFlags.H)
     ml.sta(nfr)
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm((set_sr_flag_all_zero_n^set_sr_flag_XY))
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_neg')
     ml.lda(nar)
@@ -1032,21 +1039,17 @@ def gencode():
     ml.sta(reg1_val_hi)
     ml.sta(temp1)
     
-    ml.cond_auto_call('set_zsvc')
-    ml.lda(nfr)
-    ml.ana_imm(0xff^SRFlags.N)
-    ml.sta(nfr)
-    ml.cond_auto_call('set_xy_flags')
-    
-    ml.def_label('op_adc_16_flag_end')
-    
     ml.lda(reg1_val_lo)
-    ml.ora(reg1_val_hi)
-    ml.bne('ops_code_end')
-    ml.lda(nfr)
-    ml.ora_imm(SRFlags.Z)
-    ml.sta(nfr)
-    ml.cond_jmpc('ops_code_end')
+    ml.xor_imm(0xff)
+    ml.bne('op_adc_16_no_z_fix')
+    ml.lda(temp1)
+    ml.ora_imm(2)
+    ml.sta(temp1)
+    ml.def_label('op_adc_16_no_z_fix')
+    
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
+                    set_sr_flag_N^set_sr_flag_H)
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_sbc_16')
     ml.lda(nfr)
@@ -1063,12 +1066,17 @@ def gencode():
     ml.sta(reg1_val_hi)
     ml.sta(temp1)
     
-    ml.cond_auto_call('set_zsvb')
-    ml.lda(nfr)
-    ml.ora_imm(SRFlags.N)
-    ml.sta(nfr)
-    ml.cond_auto_call('set_xy_flags')
-    ml.cond_jmpc('op_adc_16_flag_end')
+    ml.lda(reg1_val_lo)
+    ml.xor_imm(0xff)
+    ml.bne('op_sbc_16_no_z_fix')
+    ml.lda(temp1)
+    ml.ora_imm(2)
+    ml.sta(temp1)
+    ml.def_label('op_sbc_16_no_z_fix')
+    
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
+                    set_sr_flag_N^set_sr_flag_H^set_sr_flag_nsub)
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_add_16')
     ml.cond_clc()
@@ -1083,16 +1091,8 @@ def gencode():
     ml.sta(reg1_val_hi)
     ml.sta(temp1)
     
-    ml.lda(nfr)
-    ml.ana_imm(SRFlags.P)
-    ml.sta(temp4)
-    ml.cond_auto_call('set_vc_flags')
-    ml.lda(nfr)
-    ml.ana_imm(0xff^SRFlags.N^SRFlags.P)
-    ml.ora(temp4)   # old P/V flag
-    ml.sta(nfr)
-    ml.cond_auto_call('set_xy_flags')
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_C^set_sr_flag_P^set_sr_flag_N)
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_inc_16')
     ml.lda(reg1_val_lo)
@@ -1136,9 +1136,8 @@ def gencode():
     ml.rol()
     ml.def_label('op_rla_end')
     ml.sta(temp1)
-    ml.cond_auto_call('set_xy_flags')
-    ml.lda(temp1)
-    ml.cond_jmpc('op_rlca_end')
+    ml.lda_imm((set_sr_flag_all_zero_n^set_sr_flag_XY))
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_rrca')
     ml.lda(nar)
@@ -1164,11 +1163,10 @@ def gencode():
     ml.sta(temp1)
     ml.ror()
     ml.lda(nfr)
-    ml.ana_imm(0xfe^SRFlags.N^SRFlags.H)
-    ml.adc_imm(0)   # copy C to this NFR
+    ml.ana_imm(0xfe^SRFlags.H)
     ml.sta(nfr)
-    ml.cond_auto_call('set_zsxyp')
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_P^set_sr_flag_XY^set_sr_flag_N)
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_rl')
     ml.lda(nfr)
