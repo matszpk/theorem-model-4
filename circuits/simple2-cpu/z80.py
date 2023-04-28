@@ -828,7 +828,8 @@ def gencode():
     
     ml.def_label('op_cpi_end')
     
-    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_H^set_sr_flag_N^set_sr_flag_nsub)
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_H^set_sr_flag_N^
+               set_sr_flag_nsub)
     ml.cond_jmp('set_flags')
     
     ml.def_segment('op_add')
@@ -843,7 +844,7 @@ def gencode():
     ml.sta(temp1)
     
     ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
-               set_sr_flag_N^set_sr_flag_H)
+               set_sr_flag_N^set_sr_flag_H^set_sr_flag_XY)
     ml.xor_imm(xx_keep_carry)  # xor set_sr_flag_C
     ml.cond_jmp('set_flags')
     
@@ -871,7 +872,7 @@ def gencode():
     ml.sta(temp1)
     
     ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
-                set_sr_flag_nsub^set_sr_flag_N^set_sr_flag_H)
+                set_sr_flag_nsub^set_sr_flag_N^set_sr_flag_H^set_sr_flag_XY)
     ml.xor_imm(xx_keep_carry)  # xor set_sr_flag_C
     ml.cond_jmp('set_flags')
     
@@ -890,7 +891,11 @@ def gencode():
     ml.def_label('op_and_ch')
     ml.ana(mem_val_lo, [True, False])
     ml.sta(reg1_val_lo)
-    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_P^set_sr_flag_N)
+    ml.lda(nfr)
+    ml.ana_imm(0xff^SRFlags.H^SRFlags.C)
+    ml.sta(nfr)
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_XY^set_sr_flag_P^
+               set_sr_flag_N)
     ml.cond_jmp('set_flags')
     
     ml.def_segment('op_xor')
@@ -984,6 +989,12 @@ def gencode():
     
     ml.def_segment('op_ccf')
     ml.lda(nfr)
+    ml.rol()
+    ml.rol()
+    ml.rol()
+    ml.rol()
+    ml.ana_imm(0x10)
+    ml.ora(nfr)
     ml.ana_imm(0xff^SRFlags.C)
     ml.sta(nfr)
     ml.cond_jmpc('ops_code_end')
@@ -991,6 +1002,7 @@ def gencode():
     ml.def_segment('op_scf')
     ml.lda(nfr)
     ml.ora_imm(SRFlags.C)
+    ml.ana_imm(0xff^SRFlags.H)
     ml.sta(nfr)
     ml.cond_jmpc('ops_code_end')
     
@@ -1051,7 +1063,7 @@ def gencode():
     ml.sta(temp1)
     ml.def_label('op_adc_16_no_z_fix')
     
-    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_XY^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
                     set_sr_flag_N^set_sr_flag_H)
     ml.xor_imm(temp4)
     ml.cond_jmp('set_flags')
@@ -1087,7 +1099,7 @@ def gencode():
     ml.sta(reg1_val_hi)
     ml.sta(temp1)
     
-    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_C^set_sr_flag_P^set_sr_flag_N)
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_XY^set_sr_flag_C^set_sr_flag_N)
     ml.cond_jmp('set_flags')
     
     ml.def_segment('op_inc_16')
@@ -1117,37 +1129,30 @@ def gencode():
     ml.rol()
     ml.def_label('op_rlca_end')
     ml.sta(nar)
-    ml.def_label('op_rlca_end2')
     ml.ror()
-    ml.lda(nfr)
-    ml.ana_imm(0xfe^SRFlags.N^SRFlags.H)
-    ml.adc_imm(0)   # copy C to this NFR
-    ml.sta(nfr)
-    ml.cond_jmpc('ops_code_end')
+    ml.lda_imm((set_sr_flag_all_zero_n^set_sr_flag_XY^set_sr_flag_N))
+    ml.cond_jmp('set_flags')
     
     ml.def_segment('op_rla')
     ml.lda(nfr)
     ml.ror()
     ml.lda(nar)
     ml.rol()
-    ml.def_label('op_rla_end')
-    ml.sta(temp1)
-    ml.lda_imm((set_sr_flag_all_zero_n^set_sr_flag_XY))
-    ml.cond_jmp('set_flags')
+    ml.cond_jmp('op_rlca_end')
     
     ml.def_segment('op_rrca')
     ml.lda(nar)
     ml.ror()
     ml.lda(nar)
     ml.ror()
-    ml.cond_jmpc('op_rla_end')
+    ml.cond_jmp('op_rlca_end')
     
     ml.def_segment('op_rra')
     ml.lda(nfr)
     ml.ror()
     ml.lda(nar)
     ml.ror()
-    ml.cond_jmpc('op_rla_end')
+    ml.cond_jmp('op_rlca_end')
     
     ml.def_segment('op_rlc')
     ml.lda(reg1_val_lo)
@@ -1161,7 +1166,8 @@ def gencode():
     ml.lda(nfr)
     ml.ana_imm(0xfe^SRFlags.H)
     ml.sta(nfr)
-    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_P^set_sr_flag_XY^set_sr_flag_N)
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_P^set_sr_flag_XY^
+               set_sr_flag_N)
     ml.cond_jmp('set_flags')
     
     ml.def_segment('op_rl')
