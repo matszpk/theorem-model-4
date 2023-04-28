@@ -992,6 +992,7 @@ class Memory:
         else:
             self.ret_procs[name] = jmp_name
             self.start_proc_next(jmp_name)
+            self.def_label(name_proc_start(name))
     
     # report_needs - report error if long scheme needed
     def short_call_x(self, proc, cond=False, clc=False, report_needs=False):
