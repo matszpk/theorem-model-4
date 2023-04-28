@@ -135,6 +135,9 @@ intmode = ml.pc         # 0xff4
 ml.byte(0, True)
 set_sr_flag = ml.pc     # 0xff5
 ml.byte(0, True)
+bit_imm = ml.pc   # 0xff6
+ml.byte(0, True)
+
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
 
@@ -1269,6 +1272,63 @@ def gencode():
     ml.sta(mem_val_lo)
     ml.cond_jmp('op_rld_end')
     
+    ml.def_segment('op_bit')
+    ml.lda(bit_imm)
+    ml.ora_imm(ml.l('bit_table'))
+    ml.sta(ml.l('op_bit_ch')+1)
+    ml.lda(reg1_val_lo)
+    ml.def_label('op_bit_ch')
+    ml.ana(ml.l('bit_table'), [False, True])
+    ml.sta(temp1)
+    ml.bne('op_bit_nozero')
+    ml.lda(nfr)
+    ml.ora_imm(SRFlags.P)
+    ml.cond_jmp('op_bit_zero_end')
+    ml.def_label('op_bit_nozero')
+    ml.lda(nfr)
+    ml.ana_imm(0xff^SRFlags.P)
+    ml.def_label('op_bit_zero_end')
+    ml.ora_imm(SRFlags.H)
+    ml.sta(nfr)
+    ml.lda(reg1_val_lo)
+    ml.ana_imm(0xff^SRFlags.X^SRFlags.Y)
+    ml.sta(temp2)
+    ml.lda(nfr)
+    ml.ana_imm(SRFlags.X^SRFlags.Y)
+    ml.ora(temp2)
+    ml.sta(nfr)
+    
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^ set_sr_flag_N)
+    ml.cond_jmp('set_flags')
+    
+    ml.def_segment('op_set')
+    ml.lda(bit_imm)
+    ml.ora_imm(ml.l('bit_table'))
+    ml.sta(ml.l('op_set_ch')+1)
+    ml.lda(reg1_val_lo)
+    ml.def_label('op_set_ch')
+    ml.ora(ml.l('bit_table'), [False, True])
+    ml.sta(reg1_val_lo)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_res')
+    ml.lda(bit_imm)
+    ml.ora_imm(ml.l('bit_table'))
+    ml.sta(ml.l('op_res_ch')+1)
+    ml.def_label('op_res_ch')
+    ml.lda(ml.l('bit_table'), [False, True])
+    ml.xor_imm(0xff)
+    ml.ana(reg1_val_lo)
+    ml.sta(reg1_val_lo)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_jp')
+    ml.lda(mem_val_lo)
+    ml.sta(npc)
+    ml.lda(mem_val_hi)
+    ml.sta(npc+1)
+    ml.cond_jmpc('ops_code_end')
+    
     ml.def_label('ops_code_end')
     #######################################
     
@@ -1333,8 +1393,12 @@ def gencode():
     
     # native machine config
     ml.def_label('native_machine')
-    
     ml.byte(0)      # set true for native machine
+
+    ml.align_pc(8)
+    ml.def_label('bit_table')
+    ml.bytes([1,2,4,8,16,32,64,128])
+    
     return start
 
 ml.assemble(gencode)
