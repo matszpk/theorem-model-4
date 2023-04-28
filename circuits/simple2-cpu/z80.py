@@ -137,6 +137,8 @@ set_sr_flag = ml.pc     # 0xff5
 ml.byte(0, True)
 bit_imm = ml.pc   # 0xff6
 ml.byte(0, True)
+jcc_imm = ml.pc   # 0xff7
+ml.byte(0, True)
 
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
@@ -1274,7 +1276,7 @@ def gencode():
     
     ml.def_segment('op_bit')
     ml.lda(bit_imm)
-    ml.ora_imm(ml.l('bit_table'))
+    ml.ora_imm(ml.l('bit_table')&0xff)
     ml.sta(ml.l('op_bit_ch')+1)
     ml.lda(reg1_val_lo)
     ml.def_label('op_bit_ch')
@@ -1303,7 +1305,7 @@ def gencode():
     
     ml.def_segment('op_set')
     ml.lda(bit_imm)
-    ml.ora_imm(ml.l('bit_table'))
+    ml.ora_imm(ml.l('bit_table')&0xff)
     ml.sta(ml.l('op_set_ch')+1)
     ml.lda(reg1_val_lo)
     ml.def_label('op_set_ch')
@@ -1313,7 +1315,7 @@ def gencode():
     
     ml.def_segment('op_res')
     ml.lda(bit_imm)
-    ml.ora_imm(ml.l('bit_table'))
+    ml.ora_imm(ml.l('bit_table')&0xff)
     ml.sta(ml.l('op_res_ch')+1)
     ml.def_label('op_res_ch')
     ml.lda(ml.l('bit_table'), [False, True])
@@ -1322,11 +1324,97 @@ def gencode():
     ml.sta(reg1_val_lo)
     ml.cond_jmpc('ops_code_end')
     
+    ml.def_segment('op_jr_e')
     ml.def_segment('op_jp')
     ml.lda(mem_val_lo)
     ml.sta(npc)
     ml.lda(mem_val_hi)
     ml.sta(npc+1)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_call')
+    ml.lda(nspl)
+    ml.cond_clc()
+    ml.sbc_imm(1)
+    ml.sta(nspl)
+    ml.sta(child_mem_addr)
+    ml.lda(nsph)
+    ml.sbc_imm(0)
+    ml.sta(nsph)
+    ml.sta(child_mem_addr+1)
+    # store to stack will be after this stage
+    ml.cond_jmpc('op_jp')
+    
+    ml.def_segment('op_ret')
+    ml.lda(nspl)
+    ml.cond_clc()
+    ml.sbc_imm(1)
+    ml.sta(nspl)
+    ml.sta(child_mem_addr)
+    ml.lda(nsph)
+    ml.sbc_imm(0)
+    ml.sta(nsph)
+    ml.sta(child_mem_addr+1)
+    # store to stack will be after this stage
+    ml.cond_jmpc('op_jp')
+    
+    ml.def_routine('cond_get')
+    ml.lda(jcc_imm)
+    ml.ror()
+    ml.ana_imm(3)
+    ml.ora_imm(ml.l('jcc_table')&0xff)
+    ml.sta(ml.l('cond_get_ch')+1)
+    
+    ml.lda(nfr)
+    ml.bcc('cond_get_skip_neg')
+    ml.xor_imm(0xff)
+    ml.def_label('cond_get_skip_neg')
+    ml.def_label('cond_get_ch')
+    ml.ana(ml.l('jcc_table'),[False,True])
+    # zero - if satisfied, nonzero if unsatisfied
+    ml.cond_ret()
+    
+    ml.def_segment('op_jp_cc')
+    ml.cond_auto_call('cond_get')
+    ml.bne('ops_code_end')
+    ml.bpl('op_jp')
+    
+    ml.def_segment('op_call_cc')
+    ml.cond_auto_call('cond_get')
+    ml.bne('ops_code_end')
+    ml.bpl('op_call')
+    
+    ml.def_segment('op_ret_cc')
+    ml.cond_auto_call('cond_get')
+    ml.bne('ops_code_end')
+    ml.bpl('op_ret')
+    
+    ml.def_segment('op_jr_e_c')
+    ml.lda_imm(3)
+    ml.sta(jcc_imm)
+    ml.cond_jmpc('op_jp_cc')
+    
+    ml.def_segment('op_jr_e_nc')
+    ml.lda_imm(2)
+    ml.sta(jcc_imm)
+    ml.cond_jmpc('op_jp_cc')
+    
+    ml.def_segment('op_jr_e_z')
+    ml.lda_imm(1)
+    ml.sta(jcc_imm)
+    ml.cond_jmpc('op_jp_cc')
+    
+    ml.def_segment('op_jr_e_nz')
+    ml.lda_imm(0)
+    ml.sta(jcc_imm)
+    ml.cond_jmpc('op_jp_cc')
+    
+    ml.def_segment('op_djnz')
+    ml.lda(nbr)
+    ml.cond_clc()
+    ml.sbc_imm(0)
+    ml.sta(nbr)
+    ml.bne('op_jr_e')
     ml.cond_jmpc('ops_code_end')
     
     ml.def_label('ops_code_end')
@@ -1398,6 +1486,9 @@ def gencode():
     ml.align_pc(8)
     ml.def_label('bit_table')
     ml.bytes([1,2,4,8,16,32,64,128])
+    ml.align_pc(4)
+    ml.def_label('jcc_table')
+    ml.bytes([SRFlags.Z,SRFlags.C,SRFlags.P,SRFlags.S])
     
     return start
 
