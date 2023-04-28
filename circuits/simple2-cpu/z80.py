@@ -1117,7 +1117,7 @@ def gencode():
     ml.def_label('ops_code_end')
     #######################################
     
-    ml.def_routine('load_inc_pc_opcode','load_mem_lval')
+    ml.def_routine('load_inc_pc_opcode','load_mem_val')
     ml.lda(nrfm)
     ml.cond_sec()
     ml.adc_imm(0)
