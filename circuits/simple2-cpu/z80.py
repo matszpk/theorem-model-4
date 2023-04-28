@@ -1039,6 +1039,10 @@ def gencode():
     ml.sta(reg1_val_hi)
     ml.sta(temp1)
     
+    ml.lda_imm(0)
+    ml.def_label('op_adc_16_end')
+    ml.sta(temp4)
+    
     ml.lda(reg1_val_lo)
     ml.xor_imm(0xff)
     ml.bne('op_adc_16_no_z_fix')
@@ -1049,6 +1053,7 @@ def gencode():
     
     ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
                     set_sr_flag_N^set_sr_flag_H)
+    ml.xor_imm(temp4)
     ml.cond_jmp('set_flags')
     
     ml.def_segment('op_sbc_16')
@@ -1066,17 +1071,8 @@ def gencode():
     ml.sta(reg1_val_hi)
     ml.sta(temp1)
     
-    ml.lda(reg1_val_lo)
-    ml.xor_imm(0xff)
-    ml.bne('op_sbc_16_no_z_fix')
-    ml.lda(temp1)
-    ml.ora_imm(2)
-    ml.sta(temp1)
-    ml.def_label('op_sbc_16_no_z_fix')
-    
-    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_V^set_sr_flag_C^
-                    set_sr_flag_N^set_sr_flag_H^set_sr_flag_nsub)
-    ml.cond_jmp('set_flags')
+    ml.lda_imm(set_sr_flag_nsub)
+    ml.cond_jmp('op_adc_16')
     
     ml.def_segment('op_add_16')
     ml.cond_clc()
