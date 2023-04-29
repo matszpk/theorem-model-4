@@ -13,138 +13,140 @@ args = ap.parse_args()
 
 ml = Memory()
 
-ml.set_pc(0xfc0)
-npc = ml.pc # 0xfc0: program counter
+ml.set_pc(0xfb0)
+npc = ml.pc # 0xfb0: program counter
 ml.word16(args.pc, [True,True])
-nix = ml.pc # 0xfc2: IX register
+nix = ml.pc # 0xfb2: IX register
 ml.word16(0, [True,True])
 nixl = nix+1
 nixh = nix
-niy = ml.pc # 0xfc4: IY register
+niy = ml.pc # 0xfb4: IY register
 ml.word16(0, [True,True])
 niyl = niy+1
 niyh = niy
-nsp = ml.pc # 0xfc6: SP register
+nsp = ml.pc # 0xfb6: SP register
 ml.word16(0, [True,True])
 nspl = niy+1
 nsph = niy
 
-nbr = ml.pc # 0xfc8: B
+nbr = ml.pc # 0xfb8: B
 ml.byte(0, True)
-ncr = ml.pc # 0xfc9: C
+ncr = ml.pc # 0xfb9: C
 ml.byte(0, True)
-ndr = ml.pc # 0xfca: D
+ndr = ml.pc # 0xfba: D
 ml.byte(0, True)
-ner = ml.pc # 0xfcb: E
+ner = ml.pc # 0xfbb: E
 ml.byte(0, True)
-nhr = ml.pc # 0xfcc: H
+nhr = ml.pc # 0xfbc: H
 ml.byte(0, True)
-nlr = ml.pc # 0xfcd: L
+nlr = ml.pc # 0xfbd: L
 ml.byte(0, True)
-nfr = ml.pc # 0xfce: F
+nfr = ml.pc # 0xfbe: F
 ml.byte(0, True)
-nar = ml.pc # 0xfcf: A
+nar = ml.pc # 0xfbf: A
 ml.byte(0, True)
-nbra = ml.pc # 0xfd0: B'
+nbra = ml.pc # 0xfc0: B'
 ml.byte(0, True)
-ncra = ml.pc # 0xfd1: C'
+ncra = ml.pc # 0xfc1: C'
 ml.byte(0, True)
-ndra = ml.pc # 0xfd2: D'
+ndra = ml.pc # 0xfc2: D'
 ml.byte(0, True)
-nera = ml.pc # 0xfd3: E'
+nera = ml.pc # 0xfc3: E'
 ml.byte(0, True)
-nhra = ml.pc # 0xfd4: H'
+nhra = ml.pc # 0xfc4: H'
 ml.byte(0, True)
-nlra = ml.pc # 0xfd5: L'
+nlra = ml.pc # 0xfc5: L'
 ml.byte(0, True)
-nfra = ml.pc # 0xfd6: F'
+nfra = ml.pc # 0xfc6: F'
 ml.byte(0, True)
-nara = ml.pc # 0xfd7: A'
-ml.byte(0, True)
-
-nint = ml.pc # 0xfd8: Int reg
-ml.byte(0, True)
-nrfm = ml.pc # 0xfd9: Int refresh reg
+nara = ml.pc # 0xfc7: A'
 ml.byte(0, True)
 
-nopfx = ml.pc # 0xfda: opcode prefix
+nint = ml.pc # 0xfc8: Int reg
 ml.byte(0, True)
-nopcode = ml.pc # 0xfdb:
+nrfm = ml.pc # 0xfc9: Int refresh reg
 ml.byte(0, True)
-narg1 = ml.pc # 0xfdc:
+
+nopfx = ml.pc # 0xfca: opcode prefix
 ml.byte(0, True)
-narg2 = ml.pc # 0xfdd:
+nopcode = ml.pc # 0xfcb:
+ml.byte(0, True)
+narg1 = ml.pc # 0xfcc:
+ml.byte(0, True)
+narg2 = ml.pc # 0xfcd:
 # nargs: register argument:
 # 0x80 - no register argument (value)
 # 0x0-0x5,0x7 - register
 # 0x6 - (hl)
 ml.byte(0, True)
-nargr1 = ml.pc # 0xfde
+nargr1 = ml.pc # 0xfce
 ml.byte(0, True)
-bit_imm = ml.pc   # 0xff6
-jcc_imm = ml.pc   # 0xff7
-rst_imm = ml.pc   # 0xff7
-nargr2 = ml.pc # 0xfdf
+bit_imm = ml.pc
+jcc_imm = ml.pc
+rst_imm = ml.pc
+nargr2 = ml.pc # 0xfcf
 ml.byte(0, True)
 
-mem_val_lo = ml.pc   # 0xfe0
+mem_val_lo = ml.pc   # 0xfd0
 reg2_val_lo = mem_val_lo
 ml.byte(0, True)
-mem_val_hi = ml.pc   # 0xfe1
+mem_val_hi = ml.pc   # 0xfd1
 reg2_val_hi = mem_val_hi
 ml.byte(0, True)
 
-reg1_val_lo = ml.pc   # 0xfe2
+reg1_val_lo = ml.pc   # 0xfd2
 ml.byte(0, True)
-reg1_val_hi = ml.pc   # 0xfe3
-ml.byte(0, True)
-
-addrmode = ml.pc     # 0xfe4  addr mode
-ml.byte(0, True)
-mem_val_loaded = ml.pc  # 0xfe5
-ml.byte(0, True)
-op_16bit = ml.pc
+reg1_val_hi = ml.pc   # 0xfd3
 ml.byte(0, True)
 
-mm_mem_val = ml.pc # 0xfe6
+addrmode = ml.pc     # 0xfd4  addr mode
+ml.byte(0, True)
+mem_val_loaded = ml.pc  # 0xfd5
+ml.byte(0, True)
+op_16bit = ml.pc    # 0xfd6
+ml.byte(0, True)
+
+mm_mem_val = ml.pc # 0xfd7
 ml.byte(0x00, True)
-mm_mem_addr = ml.pc # 0xfe7
+mm_mem_addr = ml.pc # 0xfd8
 ml.word16(0, [True, True])
-mm_mem_temp = ml.pc # 0xfe9
+mm_mem_temp = ml.pc # 0xfda
 ml.byte(0x00, True)
 # cycles - really number T states
-instr_cycles = ml.pc # 0xfea
+instr_cycles = ml.pc # 0xfdb
 ml.byte(0, True)
-old_instr_cycles = ml.pc  # 0xfeb
+old_instr_cycles = ml.pc  # 0xfdc
 ml.byte(0, True)
-instr_index = ml.pc   # 0xfec
+instr_index = ml.pc   # 0xfdd
 ml.byte(0, True)
 
-temp1 = ml.pc       # 0xfed
+temp1 = ml.pc       # 0xfde
 ml.byte(0, True)
-temp2 = ml.pc       # 0xfee
+temp2 = ml.pc       # 0xfdf
 ml.byte(0, True)
-temp3 = ml.pc       # 0xfef
+temp3 = ml.pc       # 0xfe0
 ml.byte(0, True)
-temp4 = ml.pc       # 0xff0
+temp4 = ml.pc       # 0xfe1
 ml.byte(0, True)
-xx_keep_carry = ml.pc # 0xff1
+xx_keep_carry = ml.pc # 0xfe2
 ml.byte(0, True)
-iff1 = ml.pc         # 0xff2
+iff1 = ml.pc         # 0xfe3
 ml.byte(0, True)
-iff2 = ml.pc         # 0xff3
+iff2 = ml.pc         # 0xfe4
 ml.byte(0, True)
-intmode = ml.pc         # 0xff4
+intmode = ml.pc         # 0xfe5
 ml.byte(0, True)
-set_sr_flag = ml.pc     # 0xff5
+set_sr_flag = ml.pc     # 0xfe6
 ml.byte(0, True)
-io_port_lo = ml.pc     # 0xff6
+io_port_lo = ml.pc     # 0xfe7
 ml.byte(0, True)
-io_port_hi = ml.pc     # 0xff7
+io_port_hi = ml.pc     # 0xfe8
 ml.byte(0, True)
-io_port_out = ml.pc     # 0xff8
+io_port_out = ml.pc     # 0xfe9
 ml.byte(0, True)
-io_port_in = ml.pc     # 0xff9
+io_port_in = ml.pc     # 0xfea
+ml.byte(0, True)
+idx_prefix = ml.pc      # 0xfeb
 ml.byte(0, True)
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
@@ -221,6 +223,8 @@ def gencode():
     ml.xor_imm(0xed^0xfd)
     ml.bne('main_opcodes')
     ml.bpl('iy_opcodes')
+    
+    # HINT: treat DD (IX) FD (IY) as replaced of HL for main opcodes.
     
     # main opcodes
     ml.def_segment('main_opcodes')
