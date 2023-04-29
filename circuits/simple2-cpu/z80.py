@@ -186,6 +186,7 @@ def gencode():
     ml.sta(mem_val_loaded)
     ml.sta(op_16bit)
     ml.sta(xx_keep_carry)  # default nonzero
+    ml.sta(idx_prefix)
     
     ml.lda_imm(0x80)    # no register argument
     ml.sta(nargr1)
@@ -201,6 +202,7 @@ def gencode():
     
     # load instruction
     # load opcode
+    ml.def_label('start_decode')
     ml.cond_auto_call('load_inc_pc_opcode')
     ##############################
     # decode it
@@ -259,12 +261,20 @@ def gencode():
     
     # IX opcodes
     ml.def_segment('ix_opcodes')
-    
+    ml.lda(idx_prefix)
+    ml.bne('decode_unsat')
+    ml.lda_imm(1)
+    ml.sta(idx_prefix)
+    ml.cond_jmpc('start_decode')
     # end of IX opcodes
     
     # IY opcodes
     ml.def_segment('iy_opcodes')
-    
+    ml.lda(idx_prefix)
+    ml.bne('decode_unsat')
+    ml.lda_imm(2)
+    ml.sta(idx_prefix)
+    ml.cond_jmpc('start_decode')
     # end of IY opcodes
     
     # misc opcodes
@@ -272,6 +282,8 @@ def gencode():
     
     ################
     # end of decode
+    ml.def_label('decode_unsat')
+    ml.unsat()
     ml.def_label('decode_end')
     
     ##################################
