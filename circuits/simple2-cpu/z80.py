@@ -137,6 +137,13 @@ ml.byte(0, True)
 intmode = ml.pc         # 0xff4
 ml.byte(0, True)
 set_sr_flag = ml.pc     # 0xff5
+ml.byte(0, True)
+io_port_lo = ml.pc     # 0xff6
+ml.byte(0, True)
+io_port_hi = ml.pc     # 0xff7
+ml.byte(0, True)
+io_port_out = ml.pc     # 0xff8
+ml.byte(0, True)
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
 
@@ -1526,6 +1533,24 @@ def gencode():
     ml.lda(child_mem_val)
     
     ml.def_segment('load_mem_val_end')
+    ml.cond_ret()
+    
+    #####################################
+    # read_input
+    ml.def_routine('read_io_port')
+    # example code
+    ml.lda(io_port_out)
+    ml.xor(io_port_lo)
+    ml.xor(io_port_hi)
+    ml.cond_ret()
+    
+    #####################################
+    # read_input
+    ml.def_routine('write_io_port')
+    # example code
+    ml.xor(io_port_lo)
+    ml.xor(io_port_hi)
+    ml.sta(io_port_out)
     ml.cond_ret()
     
     # native machine config
