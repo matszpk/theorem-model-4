@@ -138,8 +138,6 @@ intmode = ml.pc         # 0xff4
 ml.byte(0, True)
 set_sr_flag = ml.pc     # 0xff5
 
-
-
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
 
 # should be negated in set_sr_flag
