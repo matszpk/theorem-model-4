@@ -999,13 +999,14 @@ class Memory:
         self.add_proc_call(proc)
         page = 0
         extra_byte = (0 if cond else 1) + (1 if not clc and not cond else 0)
-        if proc in self.ret_pages:
-            page = self.ret_pages[proc]
+        ret_proc = self.ret_procs[proc] if proc in self.ret_procs else proc
+        if ret_proc in self.ret_pages:
+            page = self.ret_pages[ret_proc]
             if page != ((self.pc+4+extra_byte) & 0xf00):
                 if not report_needs:
                     raise(RuntimeError("Wrong page!"))
                 else:
-                    self.procs_need_long.add(proc)
+                    self.procs_need_long.add(ret_proc)
         else:
             page = (self.pc+4) & 0xf00
             self.ret_pages[proc] = page
