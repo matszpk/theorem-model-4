@@ -456,6 +456,12 @@ def gencode():
     ml.sta(reg1_val_lo)
     ml.cond_jmpc('ops_code_end')
     
+    ml.def_label('op_end_with_store')
+    ml.def_label('op_ld16_to_mem')
+    ml.def_label('op_ld_to_mem')
+    ml.cond_auto_call('store_mem_arg')
+    ml.cond_jmpc('ops_code_end')
+    
     ml.def_segment('op_ld_a_i')
     ml.def_segment('op_ld_a_r')
     ml.lda(nopcode)
@@ -483,12 +489,6 @@ def gencode():
     ml.def_segment('op_ld_i_a')
     ml.lda(nar)
     ml.sta(nint)
-    ml.cond_jmpc('ops_code_end')
-    
-    ml.def_label('op_end_with_store')
-    ml.def_label('op_ld16_to_mem')
-    ml.def_label('op_ld_to_mem')
-    ml.cond_auto_call('store_mem_arg')
     ml.cond_jmpc('ops_code_end')
     
     ml.def_segment('op_push')
