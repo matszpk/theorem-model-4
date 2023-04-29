@@ -139,6 +139,8 @@ bit_imm = ml.pc   # 0xff6
 ml.byte(0, True)
 jcc_imm = ml.pc   # 0xff7
 ml.byte(0, True)
+rst_imm = ml.pc   # 0xff7
+ml.byte(0, True)
 
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
@@ -1372,7 +1374,6 @@ def gencode():
     ml.lda(npc)
     ml.sta(mem_val_hi)
     ml.cond_auto_call('push_arg')
-    # store to stack will be after this stage
     ml.cond_jmpc('op_jp')
     
     ml.def_segment('op_ret')
@@ -1381,7 +1382,6 @@ def gencode():
     ml.sta(mem_val_lo)
     ml.lda(reg1_val_hi)
     ml.sta(mem_val_hi)
-    # store to stack will be after this stage
     ml.cond_jmpc('op_jp')
     
     ml.def_routine('cond_get')
@@ -1441,6 +1441,34 @@ def gencode():
     ml.sbc_imm(0)
     ml.sta(nbr)
     ml.bne('op_jr_e')
+    ml.cond_jmpc('ops_code_end')
+    
+    # simple operation - doesn't include interrupt handling
+    ml.def_segment('op_retn')
+    ml.def_segment('op_reti')
+    ml.lda(iff2)
+    ml.sta(iff1)
+    ml.cond_jmpc('op_ret')
+    
+    ml.def_segment('op_rst')
+    ml.lda(npc)
+    ml.sta(mem_val_lo)
+    ml.lda(npc)
+    ml.sta(mem_val_hi)
+    ml.cond_auto_call('push_arg')
+    ml.lda(rst_imm)
+    ml.rol()
+    ml.rol()
+    ml.rol()
+    ml.ana_imm(0x38)
+    ml.sta(child_mem_addr)
+    ml.lda_imm(0)
+    ml.sta(child_mem_addr+1)
+    ml.cond_auto_call('load_reg_arg')
+    ml.lda(reg1_val_lo)
+    ml.sta(npc)
+    ml.lda(reg1_val_hi)
+    ml.sta(npc)
     ml.cond_jmpc('ops_code_end')
     
     ml.def_label('ops_code_end')
