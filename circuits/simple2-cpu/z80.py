@@ -144,6 +144,8 @@ io_port_hi = ml.pc     # 0xff7
 ml.byte(0, True)
 io_port_out = ml.pc     # 0xff8
 ml.byte(0, True)
+io_port_in = ml.pc     # 0xff9
+ml.byte(0, True)
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
 
@@ -1496,6 +1498,118 @@ def gencode():
     ml.lda_imm((set_sr_flag_all_zero_n^set_sr_flag_XY^set_sr_flag_P^set_sr_flag_N))
     ml.cond_jmp('set_flags')
     
+    ml.def_segment('op_ini')
+    ml.def_segment('op_ind')
+    ml.def_segment('op_inir')
+    ml.def_segment('op_indr')
+    
+    # change N flag
+    ml.lda_imm(set_sr_flag_nsub)
+    ml.sta(temp4)
+    
+    ml.lda(ncr)
+    ml.sta(io_port_lo)
+    ml.lda(nbr)
+    ml.sta(io_port_hi)
+    ml.cond_auto_call('read_io_port')
+    ml.sta(mem_val_lo)
+    
+    ml.lda(nlr)
+    ml.sta(child_mem_addr)
+    ml.lda(nhr)
+    ml.sta(child_mem_addr+1)
+    ml.cond_auto_call('store_mem_val')
+    
+    ml.def_label('op_inid_cont')
+    
+    ml.lda(nbr)
+    ml.cond_clc()
+    ml.sbc_imm(0)
+    ml.sta(nbr)
+    ml.sta(temp1)
+    
+    ml.lda(nopcode)
+    ml.ana_imm(8)
+    ml.bne('op_ind_dec')
+    ml.lda(nlr)
+    ml.cond_sec()
+    ml.adc_imm(0)
+    ml.sta(nlr)
+    ml.lda(nhr)
+    ml.adc_imm(0)
+    ml.sta(nhr)
+    ml.cond_jmpc('op_ind_dec_end')
+    ml.def_segment('op_ind_dec')
+    ml.lda(nlr)
+    ml.cond_clc()
+    ml.sbc_imm(0)
+    ml.sta(nlr)
+    ml.lda(nhr)
+    ml.sbc_imm(0)
+    ml.sta(nhr)
+    ml.def_label('op_ind_dec_end')
+    
+    ml.lda(nopcode)
+    ml.ana_imm(0x10)
+    ml.bne('op_inid_end')
+    ml.lda(nbr)
+    ml.xor_imm(0xff)
+    ml.bne('op_inid_end')   # if B=0 then end
+    
+    ml.lda(npc)
+    ml.cond_clc()
+    ml.sbc_imm(1)
+    ml.sta(npc)
+    ml.lda(npc+1)
+    ml.sbc_imm(0)
+    ml.sta(npc+1)
+    
+    ml.def_label('op_inid_end')
+    # TODO: fix flags
+    ml.lda_imm(set_sr_flag_all_zero_n^set_sr_flag_ZS^set_sr_flag_XY^set_sr_flag_N)
+    ml.xor_imm(temp4)
+    ml.cond_jmp('set_flags')
+    
+    ml.def_segment('op_out_n_a')
+    ml.lda(narg1)
+    ml.sta(io_port_lo)
+    ml.lda(nar)
+    ml.sta(io_port_hi)
+    ml.sta(io_port_in)
+    ml.cond_auto_call('write_io_port')
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_out_n_r')
+    ml.lda(ncr)
+    ml.sta(io_port_lo)
+    ml.lda(nbr)
+    ml.sta(io_port_hi)
+    ml.lda(reg1_val_lo)
+    ml.sta(io_port_in)
+    ml.cond_auto_call('write_io_port')
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_outi')
+    ml.def_segment('op_outd')
+    ml.def_segment('op_outir')
+    ml.def_segment('op_outdr')
+    
+    # change N flag
+    ml.lda_imm(0)
+    ml.sta(temp4)
+    
+    ml.lda(ncr)
+    ml.sta(io_port_lo)
+    ml.lda(nbr)
+    ml.sta(io_port_hi)
+    ml.lda(nlr)
+    ml.sta(child_mem_addr)
+    ml.lda(nhr)
+    ml.sta(child_mem_addr+1)
+    ml.cond_auto_call('load_mem_val')
+    ml.cond_auto_call('write_io_port')
+    ml.cond_jmpc('op_inid_cont')
+    
     ml.def_label('ops_code_end')
     #######################################
     
@@ -1571,6 +1685,7 @@ def gencode():
     # read_input
     ml.def_routine('write_io_port')
     # example code
+    ml.lda(io_port_in)
     ml.xor(io_port_lo)
     ml.xor(io_port_hi)
     ml.sta(io_port_out)
