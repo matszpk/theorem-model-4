@@ -1473,6 +1473,29 @@ def gencode():
     ml.sta(npc)
     ml.cond_jmpc('ops_code_end')
     
+    ml.def_segment('op_in_a_n')
+    ml.lda(narg1)
+    ml.sta(io_port_lo)
+    ml.lda(nar)
+    ml.sta(io_port_hi)
+    ml.cond_auto_call('read_io_port')
+    ml.sta(nar)
+    ml.cond_jmpc('ops_code_end')
+    
+    ml.def_segment('op_in_r_c')
+    ml.lda(ncr)
+    ml.sta(io_port_lo)
+    ml.lda(nbr)
+    ml.sta(io_port_hi)
+    ml.cond_auto_call('read_io_port')
+    ml.sta(reg1_val_lo)
+    ml.sta(temp1)
+    ml.lda(nfr)
+    ml.ana_imm(0xff^SRFlags.H)
+    ml.sta(nfr)
+    ml.lda_imm((set_sr_flag_all_zero_n^set_sr_flag_XY^set_sr_flag_P^set_sr_flag_N))
+    ml.cond_jmp('set_flags')
+    
     ml.def_label('ops_code_end')
     #######################################
     
