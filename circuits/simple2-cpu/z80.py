@@ -81,6 +81,9 @@ narg2 = ml.pc # 0xfdd:
 ml.byte(0, True)
 nargr1 = ml.pc # 0xfde
 ml.byte(0, True)
+bit_imm = ml.pc   # 0xff6
+jcc_imm = ml.pc   # 0xff7
+rst_imm = ml.pc   # 0xff7
 nargr2 = ml.pc # 0xfdf
 ml.byte(0, True)
 
@@ -134,13 +137,7 @@ ml.byte(0, True)
 intmode = ml.pc         # 0xff4
 ml.byte(0, True)
 set_sr_flag = ml.pc     # 0xff5
-ml.byte(0, True)
-bit_imm = ml.pc   # 0xff6
-ml.byte(0, True)
-jcc_imm = ml.pc   # 0xff7
-ml.byte(0, True)
-rst_imm = ml.pc   # 0xff7
-ml.byte(0, True)
+
 
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
