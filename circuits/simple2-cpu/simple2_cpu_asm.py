@@ -1118,9 +1118,19 @@ class Memory:
         self.jmpc(self.get_ret_page(proc), [False, True, True])
         self.def_label(name_proc_ret(proc))
     
+    def nc_ret(self, proc=None):
+        proc = self.current_segment if proc==None else proc
+        self.jmp(self.get_ret_page(proc), [False, True, True])
+        self.def_label(name_proc_ret(proc))
+    
     def cond_ret(self, proc=None):
         proc = self.current_segment if proc==None else proc
         self.cond_jmpc(self.get_ret_page(proc), [False, True, True])
+        self.def_label(name_proc_ret(proc))
+    
+    def cond_nc_ret(self, proc=None):
+        proc = self.current_segment if proc==None else proc
+        self.cond_jmp(self.get_ret_page(proc), [False, True, True])
         self.def_label(name_proc_ret(proc))
     
     def get_ret_page(self, addr):
