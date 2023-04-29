@@ -214,7 +214,12 @@ def gencode():
     ml.def_label('decode_x1')
     ml.xor_imm(0xcb^0xdd)
     ml.bne('decode_x2')
-    ml.bpl('ix_opcodes')
+    
+    ml.lda(idx_prefix)
+    ml.bne('decode_unsat')
+    ml.lda_imm(1)
+    ml.sta(idx_prefix)
+    ml.cond_jmpc('start_decode')
     
     ml.def_label('decode_x2')
     ml.xor_imm(0xdd^0xed)
@@ -224,7 +229,12 @@ def gencode():
     ml.def_label('decode_x3')
     ml.xor_imm(0xed^0xfd)
     ml.bne('main_opcodes')
-    ml.bpl('iy_opcodes')
+    
+    ml.lda(idx_prefix)
+    ml.bne('decode_unsat')
+    ml.lda_imm(2)
+    ml.sta(idx_prefix)
+    ml.cond_jmpc('start_decode')
     
     # HINT: treat DD (IX) FD (IY) as replaced of HL for main opcodes.
     
@@ -256,26 +266,7 @@ def gencode():
     ml.ror()
     ml.ana_imm(7)
     ml.sta(narg2)
-    
     # end of bit opcodes
-    
-    # IX opcodes
-    ml.def_segment('ix_opcodes')
-    ml.lda(idx_prefix)
-    ml.bne('decode_unsat')
-    ml.lda_imm(1)
-    ml.sta(idx_prefix)
-    ml.cond_jmpc('start_decode')
-    # end of IX opcodes
-    
-    # IY opcodes
-    ml.def_segment('iy_opcodes')
-    ml.lda(idx_prefix)
-    ml.bne('decode_unsat')
-    ml.lda_imm(2)
-    ml.sta(idx_prefix)
-    ml.cond_jmpc('start_decode')
-    # end of IY opcodes
     
     # misc opcodes
     ml.def_segment('misc_opcodes')
