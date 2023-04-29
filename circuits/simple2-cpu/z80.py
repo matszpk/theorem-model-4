@@ -1610,7 +1610,7 @@ def gencode():
     ml.cond_auto_call('write_io_port')
     ml.cond_jmpc('op_inid_cont')
     
-    ml.def_label('ops_code_end')
+    ml.def_segment('ops_code_end')
     #######################################
     
     ml.def_routine('load_inc_pc_opcode','load_mem_val')
