@@ -76,80 +76,80 @@ ml.byte(0, True)
 narg2 = ml.pc # 0xfcd:
 ml.byte(0, True)
 # displacement for indexed addressing
-nidx_d = ml.pc # 0xfcd:
+nidx_d = ml.pc # 0xfce:
 ml.byte(0, True)
 # nargs: register argument:
 # 0x80 - no register argument (value)
 # 0x0-0x5,0x7 - register
 # 0x6 - (hl)
-nargr1 = ml.pc # 0xfce
+nargr1 = ml.pc # 0xfcf
 ml.byte(0, True)
 bit_imm = ml.pc
 jcc_imm = ml.pc
 rst_imm = ml.pc
-nargr2 = ml.pc # 0xfcf
+nargr2 = ml.pc # 0xfd0
 ml.byte(0, True)
 
-mem_val_lo = ml.pc   # 0xfd0
+mem_val_lo = ml.pc   # 0xfd1
 reg2_val_lo = mem_val_lo
 ml.byte(0, True)
-mem_val_hi = ml.pc   # 0xfd1
+mem_val_hi = ml.pc   # 0xfd2
 reg2_val_hi = mem_val_hi
 ml.byte(0, True)
 
-reg1_val_lo = ml.pc   # 0xfd2
+reg1_val_lo = ml.pc   # 0xfd3
 ml.byte(0, True)
-reg1_val_hi = ml.pc   # 0xfd3
-ml.byte(0, True)
-
-addrmode = ml.pc     # 0xfd4  addr mode
-ml.byte(0, True)
-mem_val_loaded = ml.pc  # 0xfd5
-ml.byte(0, True)
-op_16bit = ml.pc    # 0xfd6
+reg1_val_hi = ml.pc   # 0xfd4
 ml.byte(0, True)
 
-mm_mem_val = ml.pc # 0xfd7
+addrmode = ml.pc     # 0xfd5  addr mode
+ml.byte(0, True)
+mem_val_loaded = ml.pc  # 0xfd6
+ml.byte(0, True)
+op_16bit = ml.pc    # 0xfd7
+ml.byte(0, True)
+
+mm_mem_val = ml.pc # 0xfd8
 ml.byte(0x00, True)
-mm_mem_addr = ml.pc # 0xfd8
+mm_mem_addr = ml.pc # 0xfd9
 ml.word16(0, [True, True])
-mm_mem_temp = ml.pc # 0xfda
+mm_mem_temp = ml.pc # 0xfdb
 ml.byte(0x00, True)
 # cycles - really number T states
-instr_cycles = ml.pc # 0xfdb
+instr_cycles = ml.pc # 0xfdc
 ml.byte(0, True)
-old_instr_cycles = ml.pc  # 0xfdc
+old_instr_cycles = ml.pc  # 0xfdd
 ml.byte(0, True)
-instr_index = ml.pc   # 0xfdd
+instr_index = ml.pc   # 0xfde
 ml.byte(0, True)
 
-temp1 = ml.pc       # 0xfde
+temp1 = ml.pc       # 0xfdf
 ml.byte(0, True)
-temp2 = ml.pc       # 0xfdf
+temp2 = ml.pc       # 0xfe0
 ml.byte(0, True)
-temp3 = ml.pc       # 0xfe0
+temp3 = ml.pc       # 0xfe1
 ml.byte(0, True)
-temp4 = ml.pc       # 0xfe1
+temp4 = ml.pc       # 0xfe2
 ml.byte(0, True)
-xx_keep_carry = ml.pc # 0xfe2
+xx_keep_carry = ml.pc # 0xfe3
 ml.byte(0, True)
-iff1 = ml.pc         # 0xfe3
+iff1 = ml.pc         # 0xfe4
 ml.byte(0, True)
-iff2 = ml.pc         # 0xfe4
+iff2 = ml.pc         # 0xfe5
 ml.byte(0, True)
-intmode = ml.pc         # 0xfe5
+intmode = ml.pc         # 0xfe6
 ml.byte(0, True)
-set_sr_flag = ml.pc     # 0xfe6
+set_sr_flag = ml.pc     # 0xfe7
 ml.byte(0, True)
-io_port_lo = ml.pc     # 0xfe7
+io_port_lo = ml.pc     # 0xfe8
 ml.byte(0, True)
-io_port_hi = ml.pc     # 0xfe8
+io_port_hi = ml.pc     # 0xfe9
 ml.byte(0, True)
-io_port_out = ml.pc     # 0xfe9
+io_port_out = ml.pc     # 0xfea
 ml.byte(0, True)
-io_port_in = ml.pc     # 0xfea
+io_port_in = ml.pc     # 0xfeb
 ml.byte(0, True)
-idx_prefix = ml.pc      # 0xfeb
+idx_prefix = ml.pc      # 0xfec
 ml.byte(0, True)
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
