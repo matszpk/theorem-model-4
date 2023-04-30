@@ -74,11 +74,14 @@ ml.byte(0, True)
 narg1 = ml.pc # 0xfcc:
 ml.byte(0, True)
 narg2 = ml.pc # 0xfcd:
+ml.byte(0, True)
+# displacement for indexed addressing
+nidx_d = ml.pc # 0xfcd:
+ml.byte(0, True)
 # nargs: register argument:
 # 0x80 - no register argument (value)
 # 0x0-0x5,0x7 - register
 # 0x6 - (hl)
-ml.byte(0, True)
 nargr1 = ml.pc # 0xfce
 ml.byte(0, True)
 bit_imm = ml.pc
@@ -325,7 +328,7 @@ def gencode():
     # IX index addressing
     ml.lda(nix)
     ml.cond_clc()
-    ml.adc(narg1)
+    ml.adc(nidx_d)
     ml.sta(child_mem_addr)
     ml.lda(nix+1)
     ml.adc_imm(0)
@@ -338,7 +341,7 @@ def gencode():
     # IY index addressing
     ml.lda(niy)
     ml.cond_clc()
-    ml.adc(narg1)
+    ml.adc(nidx_d)
     ml.sta(child_mem_addr)
     ml.lda(niy+1)
     ml.adc_imm(0)
