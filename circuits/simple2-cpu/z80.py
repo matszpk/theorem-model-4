@@ -318,7 +318,11 @@ def gencode():
     ml.sta(child_mem_addr+1)
     ml.cond_jmpc('am_code_end')
     
-    ml.def_segment('am_ix_idx')
+    ml.def_segment('am_hl')
+    ml.lda(idx_prefix)
+    ml.xor_imm(1)
+    ml.bne('am_hl_no_ix')
+    # IX index addressing
     ml.lda(nix)
     ml.cond_clc()
     ml.adc(narg1)
@@ -328,7 +332,10 @@ def gencode():
     ml.sta(child_mem_addr+1)
     ml.cond_jmpc('am_code_end')
     
-    ml.def_segment('am_iy_idx')
+    ml.def_label('am_hl_no_ix')
+    ml.xor_imm(1^2)
+    ml.bne('am_hl_no_iy')
+    # IY index addressing
     ml.lda(niy)
     ml.cond_clc()
     ml.adc(narg1)
@@ -338,7 +345,7 @@ def gencode():
     ml.sta(child_mem_addr+1)
     ml.cond_jmpc('am_code_end')
     
-    ml.def_segment('am_hl')
+    ml.def_label('am_hl_no_iy')
     ml.lda(nlr)
     ml.cond_jmpc('am_indreg_prep')
     
