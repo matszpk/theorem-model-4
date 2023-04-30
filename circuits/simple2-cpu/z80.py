@@ -309,7 +309,7 @@ def gencode():
     # fix reg arg1
     ml.lda_imm(3)
     ml.cond_clc()
-    ml.adc(idx_prefix)
+    ml.adc(idx_prefix)  # to 4 or 5 (IX, or IY)
     ml.sta(narg1)
     ml.cond_jmpc('idx_fix_16_bit_reg_end')
     
@@ -320,7 +320,7 @@ def gencode():
     # fix reg arg2
     ml.lda_imm(3)
     ml.cond_clc()
-    ml.adc(idx_prefix)
+    ml.adc(idx_prefix)  # to 4 or 5 (IX, or IY)
     ml.sta(narg2)
     
     ml.def_label('idx_fix_16_bit_reg_end')
