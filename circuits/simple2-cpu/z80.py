@@ -184,10 +184,11 @@ class AddrMode(IntEnum):
     Reg16AndAF = 64    # 16bit reg1 4..5 (BC,DE,HL,AF)
     RegSwap = 128      # swap registers (reg1<->reg2)
 
-class AddrMode(IntEnum):
+class AddrMode2(IntEnum):
     Imm3Bit = 1  # in opcode
     MemWrite = 2
     RegToMem = 4
+    Implied = 8
 
 child_mem_val = 0xffc
 child_mem_addr = 0xffd
