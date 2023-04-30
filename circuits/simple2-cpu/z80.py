@@ -113,7 +113,7 @@ ml.byte(0, True)
 #############
 addrmode = ml.pc     # 0xfd6  addr mode
 ml.byte(0, True)
-mem_access = ml.pc
+addrmode2 = ml.pc
 ml.byte(0, True)
 mem_val_loaded = ml.pc  # 0xfd7
 ml.byte(0, True)
@@ -184,7 +184,10 @@ class AddrMode(IntEnum):
     Reg16AndAF = 64    # 16bit reg1 4..5 (BC,DE,HL,AF)
     RegSwap = 128      # swap registers (reg1<->reg2)
 
-IMemAccess = IntEnum('IMemAccess', [ 'None', 'RegToMem', 'WriteMem' ])
+class AddrMode(IntEnum):
+    Imm3Bit = 1  # in opcode
+    MemWrite = 2
+    RegToMem = 4
 
 child_mem_val = 0xffc
 child_mem_addr = 0xffd
