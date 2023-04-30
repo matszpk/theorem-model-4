@@ -79,9 +79,17 @@ ml.byte(0, True)
 nidx_d = ml.pc # 0xfce:
 ml.byte(0, True)
 # nargs: register argument:
+# for 8-bit operations:
 # 0x80 - no register argument (value)
 # 0x0-0x5,0x7 - register
-# 0x6 - (hl)
+# 0x6 - (hl) or (ix+d) or (iy+d)
+# for 16-bit operations:
+# 0x80 - no register argument (value)
+# 0x0 - BC
+# 0x1 - DE
+# 0x2 - HL (or IX, or IY)
+# 0x3 - AF
+# 0x7 - SP
 nargr1 = ml.pc # 0xfcf
 nargr_dest = ml.pc
 ml.byte(0, True)
