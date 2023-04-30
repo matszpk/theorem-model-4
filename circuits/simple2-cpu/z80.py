@@ -317,7 +317,6 @@ def gencode():
     ml.lda(nargr2)
     ml.xor_imm(0x2)
     ml.bne('decode_unsat')
-    ml.bpl('idx_fix_16_bit_reg_end')
     # fix reg arg2
     ml.lda_imm(3)
     ml.cond_clc()
