@@ -83,6 +83,7 @@ ml.byte(0, True)
 # 0x0-0x5,0x7 - register
 # 0x6 - (hl)
 nargr1 = ml.pc # 0xfcf
+narg_dest = ml.pc
 ml.byte(0, True)
 bit_imm = ml.pc
 jcc_imm = ml.pc
