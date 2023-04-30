@@ -1,5 +1,10 @@
 ## THEOREM-MODEL-4 CIRCUIT CODE:
 
+Any inputs or outputs are single boolean values (bits). TheoremModel4 defines circuits and
+machines in that simpliest level. Any circuit is list of call of NAND or other circuits
+that can call NAND and other circuits. The noticed NAND is just simple NAND gate that
+return 0 if all inputs are 1 and returns 1 if otherwise.
+
 The code of circuit in TheoremModel4 is set of defined circuits. The circuit can have
 maximum 128 inputs and 128 outputs. Inputs of circuit treat as previous internal outputs
 in circuit. Internal outputs are numbered from 0 to 127. Internal outputs in circuit can be
