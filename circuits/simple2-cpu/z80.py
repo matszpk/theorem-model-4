@@ -85,80 +85,78 @@ ml.byte(0, True)
 # 0x6 - (hl) or (ix+d) or (iy+d)
 # for 16-bit operations:
 # 0x80 - no register argument (value)
-# 0x0 - BC
-# 0x1 - DE
-# 0x2 - HL (or IX, or IY)
-# 0x3 - AF
-# 0x7 - SP
+# 0x0 - BC, 0x1 - DE, 0x2 - HL, 0x3 - AF
+# 0x4 - IX, 0x5 - IY, 0x7 - SP
 nargr1 = ml.pc # 0xfcf
 nargr_dest = ml.pc
 ml.byte(0, True)
-bit_imm = ml.pc
-jcc_imm = ml.pc
-rst_imm = ml.pc
 nargr2 = ml.pc # 0xfd0
 ml.byte(0, True)
+bit_imm = ml.pc # 0xfd1
+jcc_imm = ml.pc
+rst_imm = ml.pc
+ml.byte(0, True)
 
-mem_val_lo = ml.pc   # 0xfd1
+mem_val_lo = ml.pc   # 0xfd2
 reg2_val_lo = mem_val_lo
 ml.byte(0, True)
-mem_val_hi = ml.pc   # 0xfd2
+mem_val_hi = ml.pc   # 0xfd3
 reg2_val_hi = mem_val_hi
 ml.byte(0, True)
 
-reg1_val_lo = ml.pc   # 0xfd3
+reg1_val_lo = ml.pc   # 0xfd4
 ml.byte(0, True)
-reg1_val_hi = ml.pc   # 0xfd4
-ml.byte(0, True)
-
-addrmode = ml.pc     # 0xfd5  addr mode
-ml.byte(0, True)
-mem_val_loaded = ml.pc  # 0xfd6
-ml.byte(0, True)
-op_16bit = ml.pc    # 0xfd7
+reg1_val_hi = ml.pc   # 0xfd5
 ml.byte(0, True)
 
-mm_mem_val = ml.pc # 0xfd8
+addrmode = ml.pc     # 0xfd6  addr mode
+ml.byte(0, True)
+mem_val_loaded = ml.pc  # 0xfd7
+ml.byte(0, True)
+op_16bit = ml.pc    # 0xfd8
+ml.byte(0, True)
+
+mm_mem_val = ml.pc # 0xfd9
 ml.byte(0x00, True)
-mm_mem_addr = ml.pc # 0xfd9
+mm_mem_addr = ml.pc # 0xfda
 ml.word16(0, [True, True])
-mm_mem_temp = ml.pc # 0xfdb
+mm_mem_temp = ml.pc # 0xfdc
 ml.byte(0x00, True)
 # cycles - really number T states
-instr_cycles = ml.pc # 0xfdc
+instr_cycles = ml.pc # 0xfdd
 ml.byte(0, True)
-old_instr_cycles = ml.pc  # 0xfdd
+old_instr_cycles = ml.pc  # 0xfde
 ml.byte(0, True)
-instr_index = ml.pc   # 0xfde
+instr_index = ml.pc   # 0xfdf
 ml.byte(0, True)
 
-temp1 = ml.pc       # 0xfdf
+temp1 = ml.pc       # 0xfe0
 ml.byte(0, True)
-temp2 = ml.pc       # 0xfe0
+temp2 = ml.pc       # 0xfe1
 ml.byte(0, True)
-temp3 = ml.pc       # 0xfe1
+temp3 = ml.pc       # 0xfe2
 ml.byte(0, True)
-temp4 = ml.pc       # 0xfe2
+temp4 = ml.pc       # 0xfe3
 ml.byte(0, True)
-xx_keep_carry = ml.pc # 0xfe3
+xx_keep_carry = ml.pc # 0xfe4
 ml.byte(0, True)
-iff1 = ml.pc         # 0xfe4
+iff1 = ml.pc         # 0xfe5
 ml.byte(0, True)
-iff2 = ml.pc         # 0xfe5
+iff2 = ml.pc         # 0xfe6
 ml.byte(0, True)
-intmode = ml.pc         # 0xfe6
+intmode = ml.pc         # 0xfe7
 ml.byte(0, True)
-set_sr_flag = ml.pc     # 0xfe7
+set_sr_flag = ml.pc     # 0xfe8
 ml.byte(0, True)
-io_port_lo = ml.pc     # 0xfe8
+io_port_lo = ml.pc     # 0xfe9
 ml.byte(0, True)
-io_port_hi = ml.pc     # 0xfe9
+io_port_hi = ml.pc     # 0xfea
 ml.byte(0, True)
-io_port_out = ml.pc     # 0xfea
+io_port_out = ml.pc     # 0xfeb
 ml.byte(0, True)
-io_port_in = ml.pc     # 0xfeb
+io_port_in = ml.pc     # 0xfec
 ml.byte(0, True)
-idx_prefix = ml.pc      # 0xfec
+idx_prefix = ml.pc      # 0xfed
 ml.byte(0, True)
 
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
@@ -283,10 +281,57 @@ def gencode():
     # misc opcodes
     ml.def_segment('misc_opcodes')
     
-    ################
-    # end of decode
+    ####################
+    # fix for indexes
+    # fix and check operation
+    ml.lda(idx_prefix)
+    ml.bne('do_idx_fix')
+    ml.bpl('no_idx_fix')
+    ml.def_label('do_idx_fix')
+    
+    ml.lda(op_16bit)
+    ml.bne('idx_fix_16_bit_reg')
+    ml.lda(nargr1)
+    ml.def_label('idx_check_reg')
+    ml.xor_imm(0x6)
+    ml.bne('no_idx_fix_8bit_narg1')
+    ml.bpl('no_idx_fix')    # good. no fix needed
+    ml.def_label('no_idx_fix_8bit_narg1')
+    ml.lda(nargr2)
+    ml.xor_imm(0x6)
+    ml.bne('decode_unsat')  # undefined instruction
+    ml.bpl('no_idx_fix')    # good. no fix needed
+    
+    ml.def_segment('idx_fix_16_bit_reg')
+    ml.lda(nargr1)
+    ml.xor_imm(0x2)
+    ml.bne('no_idx_fix_16bit_narg1')
+    # fix reg arg1
+    ml.lda_imm(3)
+    ml.cond_clc()
+    ml.adc(idx_prefix)
+    ml.sta(narg1)
+    ml.cond_jmpc('idx_fix_16_bit_reg_end')
+    
+    ml.def_segment('no_idx_fix_16bit_narg1')
+    ml.lda(nargr2)
+    ml.xor_imm(0x2)
+    ml.bne('decode_unsat')
+    ml.bpl('idx_fix_16_bit_reg_end')
+    # fix reg arg2
+    ml.lda_imm(3)
+    ml.cond_clc()
+    ml.adc(idx_prefix)
+    ml.sta(narg2)
+    
+    ml.def_label('idx_fix_16_bit_reg_end')
+    
+    ml.def_label('no_idx_fix')
+    
     ml.def_label('decode_unsat')
     ml.unsat()
+    ##################################
+    # end of decode
     ml.def_label('decode_end')
     
     ##################################
