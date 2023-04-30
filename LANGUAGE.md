@@ -60,3 +60,54 @@ cpu_instr_0_n cpu_instr_1_n cpu_instr_2_n cpu_instr_3_n = not_4bit \
         cpu_instr_0 cpu_instr_1 cpu_instr_2 cpu_instr_3
 ...
 ```
+
+# EXECUTION MODEL.
+
+Any instruction in any circuit is executed in order (first to last).
+Maximal nesting of circuit is 8.
+
+TheoeremModel4 defines machine that have access to memory. The execution of that machine
+is execution of main circuit by passing memory value as some inputs to this circuit and
+get some outputs as memory address and read/write indicator. The first is primal machine
+which execution defined by circuit in TM4 language. Next machines can be defined as
+code in primal machine language.
+
+Machine defines two parameters:
+* cell_len_bits - number of bits in cell as 2^cell_len_bits.
+* address_len - number of bits in memory address.
+
+Inputs for machine circuit:
+
+* state - circuit state that from previous circuit execution or initial state if first execution.
+* mem_value - value return from memory if memory read.
+
+Outputs for machine circuit:
+
+* state - returned new circuit state.
+* mem_value - new memory value that will be stored into memory cell with given memory address
+  if mem_rw is true.
+* mem_rw - if true then mem_value will be stored into memory cell.
+* mem_address - given memory address from memory will be read or written.
+* create - create new nested machine (actually nested memory).
+* stop - stop machine. If stop and create are true then we have unsatisfied state.
+
+A memory address is cell address, not bit or byte address.
+
+# CREATION MODEL
+
+If create bit is set then 2*address_len bits in memory defines two parameters of next machine:
+* first address_len bits - defines new address_len.
+* second address_len bits - defines new cell_len_bits.
+
+After machine creation. Last cells of memory of current machine is memory addres to
+memory cell of next machine. The number of these cells with new address to new nachine is
+number of cells needed to store memory address to new memory.
+Previous cells of current memory is memory cell value - it can have read memory value or
+write operation causes writing to new memory in given memory address.
+The number of these cells with new address to new nachine is
+number of cells needed to store cell of new memory.
+
+For example if current cell_len_bits=3 (cell_len is 8 bits) and current address_len=12
+(4096 bytes of memory) then new_cell_bits=4 (cell_len is 16 bits) and new_address_len=18
+then cells with address 0xffb and 0xffc is new cell and cells
+with addresses 0xffd,0xffe,0xfff holds new memory address.
