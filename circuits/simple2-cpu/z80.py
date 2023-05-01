@@ -299,6 +299,75 @@ def gencode():
     # misc opcodes
     ml.def_segment('misc_opcodes')
     
+    #################################
+    # decode addressing mode
+    ml.lda(addrmode)
+    ml.xor_imm(0xff)
+    ml.sta(temp4)
+    ml.ana_imm(AddrMode.RegLow)
+    ml.bne('amdec_no_reglow')
+    ml.lda(nopcode)
+    ml.ana_imm(7)
+    ml.sta(nargr1)
+    ml.def_label('amdec_no_reglow')
+    
+    ml.lda(temp4)
+    ml.ana_imm(AddrMode.RegHigh)
+    ml.bne('amdec_no_reghigh')
+    ml.lda(nopcode)
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ana_imm(7)
+    ml.sta(nargr2)
+    ml.def_label('amdec_no_reghigh')
+    
+    # swap regs
+    ml.lda(temp4)
+    ml.ana_imm(AddrMode.RegSwap)
+    ml.bne('amdec_no_regswap')
+    ml.lda(nargr1)
+    ml.sta(temp1)
+    ml.lda(nargr2)
+    ml.sta(nargr1)
+    ml.lda(temp1)
+    ml.sta(nargr2)
+    ml.def_label('amdec_no_regswap')
+    
+    ml.lda(temp4)
+    ml.ana_imm(AddrMode.Reg16AndAF|AddrMode.Reg16AndSP)
+    ml.bne('amdec_no_reg16_and_af')
+    ml.lda(nopcode)
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ana_imm(3)
+    ml.sta(nargr1)
+    ml.xor_imm(3)
+    ml.bne('amdec_no_reg16_and_af') # if not AF
+    ml.lda(temp4)
+    ml.ana_imm(AddrMode.Reg16AndSP)
+    ml.bne('amdec_no_reg16_and_sp')
+    ml.lda(nargr1)  # fix for SP
+    ml.ora_imm(4)
+    ml.sta(nargr1)
+    ml.def_label('amdec_no_reg16_and_sp')
+    ml.def_label('amdec_no_reg16_and_af')
+    
+    ml.lda(addrmode2)
+    ml.xor_imm(0xff)
+    ml.sta(temp4)
+    ml.ana_imm(AddrMode2.Imm3Bit)
+    ml.bne('am2dec_no_imm3bit')
+    ml.lda(nopcode)
+    ml.ror()
+    ml.ror()
+    ml.ror()
+    ml.ana_imm(7)
+    ml.sta(bit_imm)
+    ml.def_label('am2dec_no_imm3bit')
+    
     ####################
     # fix for indexes
     # fix and check operation
@@ -349,9 +418,6 @@ def gencode():
     
     ml.def_label('idx_fix_16_bit_reg_end')
     ml.def_label('no_idx_fix')
-    
-    #################################
-    # put register values
     
     ##################################
     # end of decode
