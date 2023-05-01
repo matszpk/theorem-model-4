@@ -14,37 +14,36 @@ args = ap.parse_args()
 ml = Memory()
 
 ml.set_pc(0xfb0)
-npc = ml.pc # 0xfb0: program counter
-ml.word16(args.pc, [True,True])
-nix = ml.pc # 0xfb2: IX register
+nbr = ml.pc # 0xfb0: B
+ml.byte(0, True)
+ncr = ml.pc # 0xfb1: C
+ml.byte(0, True)
+ndr = ml.pc # 0xfb2: D
+ml.byte(0, True)
+ner = ml.pc # 0xfb3: E
+ml.byte(0, True)
+nhr = ml.pc # 0xfb4: H
+ml.byte(0, True)
+nlr = ml.pc # 0xfb5: L
+ml.byte(0, True)
+nfr = ml.pc # 0xfb6: F
+ml.byte(0, True)
+nar = ml.pc # 0xfb7: A
+ml.byte(0, True)
+nix = ml.pc # 0xfb8: IX register
 ml.word16(0, [True,True])
 nixl = nix+1
 nixh = nix
-niy = ml.pc # 0xfb4: IY register
+niy = ml.pc # 0xfba: IY register
 ml.word16(0, [True,True])
 niyl = niy+1
 niyh = niy
-nsp = ml.pc # 0xfb6: SP register
+npc = ml.pc # 0xfbc: program counter
+ml.word16(args.pc, [True,True])
+nsp = ml.pc # 0xfbe: SP register
 ml.word16(0, [True,True])
 nspl = niy+1
 nsph = niy
-
-nbr = ml.pc # 0xfb8: B
-ml.byte(0, True)
-ncr = ml.pc # 0xfb9: C
-ml.byte(0, True)
-ndr = ml.pc # 0xfba: D
-ml.byte(0, True)
-ner = ml.pc # 0xfbb: E
-ml.byte(0, True)
-nhr = ml.pc # 0xfbc: H
-ml.byte(0, True)
-nlr = ml.pc # 0xfbd: L
-ml.byte(0, True)
-nfr = ml.pc # 0xfbe: F
-ml.byte(0, True)
-nar = ml.pc # 0xfbf: A
-ml.byte(0, True)
 nbra = ml.pc # 0xfc0: B'
 ml.byte(0, True)
 ncra = ml.pc # 0xfc1: C'
@@ -228,6 +227,10 @@ def gencode():
     ml.lda_imm(ml.mem[ml.l('op_and_ch') if ml.l('op_and_ch')>=0 else 0])
     ml.sta(ml.l('op_and_ch'))
     
+    ml.lda_imm(instr_clc)
+    ml.sta('put_reg1')
+    ml.sta('put_reg2')
+    
     # load instruction
     # load opcode
     ml.def_label('start_decode')
@@ -368,7 +371,7 @@ def gencode():
     ml.sta(bit_imm)
     ml.def_label('am2dec_no_imm3bit')
     
-    ####################
+    #################################
     # fix for indexes
     # fix and check operation
     ml.lda(idx_prefix)
@@ -422,6 +425,38 @@ def gencode():
     ##################################
     # end of decode
     ml.def_label('decode_end')
+    
+    ####################################
+    # put registers
+    ml.clc()
+    ml.lda(op_16bit)
+    ml.bne('put_reg_16')
+    ml.lda_imm(instr_ror)
+    ml.sta('put_reg1')
+    ml.sta('put_reg2')
+    ml.def_label('put_reg_16')
+    
+    ml.lda(nargr1)
+    ml.bpl('put_reg1')
+    ml.bcc('no_put_reg1')
+    ml.def_label('put_reg1')
+    ml.clc(True)
+    ml.ora_imm(nbr&0xff)
+    ml.sta(ml.l('put_reg1_ch')+1)
+    ml.def_label('put_reg1_ch')
+    ml.lda(nbr, [False,True])
+    
+    ml.def_label('no_put_reg1')
+    ml.lda(nargr2)
+    ml.bpl('put_reg2')
+    ml.bcc('no_put_reg2')
+    ml.def_label('put_reg2')
+    ml.clc(True)
+    ml.ora_imm(nbr&0xff)
+    ml.sta(ml.l('put_reg2_ch')+1)
+    ml.def_label('put_reg2_ch')
+    ml.lda(nbr, [False,True])
+    ml.def_label('no_put_reg2')
     
     ##################################
     # addressing modes
