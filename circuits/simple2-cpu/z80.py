@@ -12,7 +12,7 @@ args = ap.parse_args()
 args = ap.parse_args()
 
 ml = Memory()
-
+# Order of these register is important - used while trasnferring to nargX
 ml.set_pc(0xfb0)
 nbr = ml.pc # 0xfb0: B
 ml.byte(0, True)
@@ -439,23 +439,36 @@ def gencode():
     ml.lda(nargr1)
     ml.bpl('put_reg1')
     ml.bcc('no_put_reg1')
-    ml.def_label('put_reg1')
+    ml.def_segment('put_reg1')
     ml.clc(True)
     ml.ora_imm(nbr&0xff)
     ml.sta(ml.l('put_reg1_ch')+1)
+    ml.adc(1)
+    ml.sta(ml.l('put_reg1_ch2')+1)
     ml.def_label('put_reg1_ch')
     ml.lda(nbr, [False,True])
+    ml.sta(reg1_val_lo)
+    ml.def_label('put_reg1_ch2')
+    ml.lda(nbr, [False,True])
+    ml.sta(reg1_val_hi)
     
     ml.def_label('no_put_reg1')
     ml.lda(nargr2)
     ml.bpl('put_reg2')
     ml.bcc('no_put_reg2')
-    ml.def_label('put_reg2')
+    ml.def_segment('put_reg2')
     ml.clc(True)
     ml.ora_imm(nbr&0xff)
     ml.sta(ml.l('put_reg2_ch')+1)
+    ml.adc(1)
+    ml.sta(ml.l('put_reg2_ch2')+1)
     ml.def_label('put_reg2_ch')
     ml.lda(nbr, [False,True])
+    ml.sta(reg2_val_lo)
+    ml.def_label('put_reg2_ch2')
+    ml.lda(nbr, [False,True])
+    ml.sta(reg2_val_hi)
+    
     ml.def_label('no_put_reg2')
     
     ##################################
