@@ -1,3 +1,6 @@
+################################
+# UNFINISHED! AND UNTESTED!
+
 from simple2_cpu_asm import *
 from sys import stdout
 from enum import *
@@ -186,7 +189,7 @@ class AddrMode(IntEnum):
 
 class AddrMode2(IntEnum):
     Imm3Bit = 1  # in opcode
-    MemWrite = 2
+    Write = 2
     RegToMem = 4
     Implied = 8
 
@@ -427,8 +430,21 @@ def gencode():
     # end of decode
     ml.def_label('decode_end')
     
+    ml.lda(nargr1)
+    ml.xor_imm(6)
+    ml.bne('do_get_reg')
+    ml.lda(nargr2)
+    ml.xor_imm(6)
+    ml.bne('do_get_reg')
+    
+    ml.lda(addrmode)
+    ml.ana_imm(0xff^0x7)
+    ml.ora_imm(AddrMode.AMHL)
+    ml.cond_jmpc('no_get_reg')
+    
     ####################################
     # get register and put reg_val
+    ml.def_segment('do_get_reg')
     ml.clc()
     ml.lda(op_16bit)
     ml.bne('get_reg_16')
@@ -472,6 +488,7 @@ def gencode():
     ml.sta(reg2_val_hi)
     
     ml.def_label('no_get_reg2')
+    ml.def_label('no_get_reg')
     
     ##################################
     # addressing modes
@@ -1778,6 +1795,10 @@ def gencode():
     ml.lda(addrmode)
     ml.ana_imm(AddrMode2.Implied)
     ml.bne('no_put_reg')
+    ml.lda(addrmode)
+    ml.ana_imm(AddrMode2.Write)
+    ml.bne('put_reg')
+    ml.bpl('no_put_reg')
     ###########################################
     # put register value into register
     
