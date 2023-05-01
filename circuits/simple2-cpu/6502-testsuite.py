@@ -42,7 +42,8 @@ def cleanup():
 
 cleanup()
 
-def run_testcase(name, exp_list, mem_list, pc=0, acc=0, xind=0, yind=0, sp=0xff, sr=0):
+def run_testcase(name, exp_list, mem_list, pc=0, acc=0, xind=0, yind=0, sp=0xff, sr=0, \
+                 unsat=False):
     global tests_passed, tests_failed
     # prepare test
     shutil.copyfile('6502progbase.raw', '6502prog.raw')
@@ -58,6 +59,10 @@ def run_testcase(name, exp_list, mem_list, pc=0, acc=0, xind=0, yind=0, sp=0xff,
     cp = subprocess.run([THEOREM_MODEL, 'run-machine', CIRCUIT, '3', '0', '6502mem.raw',
                 '6502prog.raw', '-f', '6502memdump.raw,6502progdump.raw'], capture_output=True)
     if cp.returncode != 0:
+        if b'Unsatisfied execution' in cp.stderr and unsat:
+            tests_passed += 1
+            print("TEST", name, "PASSED")
+            return
         print("State:", cp)
         raise(RuntimeError('{}: Error while running testcase'.format(name)))
     # get outputs
@@ -2238,6 +2243,7 @@ try:
     # Commodore 64 native
     
     #########################
+    
     cp = subprocess.run([PYTHON, CG6502, '-N', '-C', '--create=0xcf'], capture_output=True)
     if cp.returncode != 0:
         raise(RuntimeError('Error while running code generation of 6502'))
@@ -2473,6 +2479,101 @@ try:
     
     test_inc_last(0xcf3a, 1, 2)
     test_inc_last(0xce3a, 2, 1)
+    
+    
+    cp = subprocess.run([PYTHON, CG6502, '--no-interrupt=1'], capture_output=True)
+    if cp.returncode != 0:
+        raise(RuntimeError('Error while running code generation of 6502'))
+    with open('6502progbase.raw','wb') as f:
+        f.write(cp.stdout)
+
+    with open('6502membase.raw','wb') as f:
+        f.write(b'\x00'*(1<<16))
+    
+    def test_chsr_unsat(name, opcode, bit, clr, sr):
+        run_testcase('{} unsat sr={}'.format(name, sr),
+            [],
+            [ (0x200, [opcode&0xff, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=0, sr=sr, unsat=True)
+    
+    def test_brk_unsat(sr):
+        run_testcase('brk unat sr={}'.format(sr),
+            [],
+            [ (0x200, [0x00, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=0, sr=sr, unsat=True)
+    
+    def test_brk_unsat(sr):
+        run_testcase('rti unsat sr={}'.format(sr),
+            [],
+            [ (0x200, [0x40, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=0, sr=sr, unsat=True)
+    
+    def test_cli_unsat(sr): test_chsr_unsat('cli', 0x58, 2, True, sr)
+    def test_sei_unsat(sr): test_chsr_unsat('sei', 0x78, 2, False, sr)
+    def test_plp_unsat(val, sp, sr):
+        run_testcase('plp unsat val={} sp={} sr={}'.format(val, sp, sr),
+            [],
+            [
+                # stack
+                (0x100 + ((sp+1)&0xff), [val]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x28, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=1, yind=2, sp=sp, unsat=True)
+    
+    for i in sr_flags_values:
+        test_cli_unsat(i)
+        test_sei_unsat(i)
+        test_brk_unsat(i)
+    test_plp(0x15, 0xdd, 0x06)
+    test_plp_unsat(0x11, 0xdd, 0x06)
+    
+    cp = subprocess.run([PYTHON, CG6502, '--no-interrupt=2'], capture_output=True)
+    if cp.returncode != 0:
+        raise(RuntimeError('Error while running code generation of 6502'))
+    with open('6502progbase.raw','wb') as f:
+        f.write(cp.stdout)
+
+    with open('6502membase.raw','wb') as f:
+        f.write(b'\x00'*(1<<16))
+    
+    def test_chsr_unsat(name, opcode, bit, clr, sr):
+        run_testcase('{} unsat sr={}'.format(name, sr),
+            [],
+            [ (0x200, [opcode&0xff, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=0, sr=sr, unsat=True)
+    
+    def test_brk_unsat(sr):
+        run_testcase('brk unat sr={}'.format(sr),
+            [],
+            [ (0x200, [0x00, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=0, sr=sr, unsat=True)
+    
+    def test_brk_unsat(sr):
+        run_testcase('rti unsat sr={}'.format(sr),
+            [],
+            [ (0x200, [0x40, 0x04]) ],   # instructions. last is undefined (stop)
+            pc=0x200, acc=0, sr=sr, unsat=True)
+    
+    def test_cli_unsat(sr): test_chsr_unsat('cli', 0x58, 2, True, sr)
+    def test_sei_unsat(sr): test_chsr_unsat('sei', 0x78, 2, False, sr)
+    def test_plp_unsat(val, sp, sr):
+        run_testcase('plp unsat val={} sp={} sr={}'.format(val, sp, sr),
+            [],
+            [
+                # stack
+                (0x100 + ((sp+1)&0xff), [val]),
+                # instructions. last is undefined (stop)
+                (0x200, [0x28, 0x04])
+            ],
+            pc=0x200, acc=3, sr=sr, xind=1, yind=2, sp=sp, unsat=True)
+    
+    for i in sr_flags_values:
+        test_cli_unsat(i)
+        test_sei_unsat(i)
+        test_brk_unsat(i)
+    test_plp(0x11, 0xdd, 0x06)
+    test_plp_unsat(0x15, 0xdd, 0x06)
     
     #########################
     # Summary

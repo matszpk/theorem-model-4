@@ -14,6 +14,7 @@ ap.add_argument('-N', '--native', action='store_true')
 ap.add_argument('--create', type=lambda x: int(x,0), default=-1)
 ap.add_argument('--create_jsr', type=lambda x: int(x,0), default=-1)
 ap.add_argument('-C', '--commodore64', action='store_true')
+ap.add_argument('--no-interrupt', type=lambda x: int(x,0), default=0)
 ap.add_argument('-I', '--info', action='store_true')
 
 args = ap.parse_args()
@@ -24,13 +25,15 @@ create_jsr = args.create_jsr
 args.create
 commodore64 = args.commodore64
 
+SRFlags = IntFlag('Flags', [ 'C', 'Z', 'I', 'D', 'B', '_', 'V', 'N' ]);
+
 ml = Memory()
 
 ml.set_pc(0xfe0)
 npc = ml.pc # 0xfe0: program counter
 ml.word16(args.pc, [True,True])
 nsr = ml.pc # 0xfe2: processor status
-ml.byte(args.sr, True)
+ml.byte(args.sr | (SRFlags.I if args.no_interrupt==1 else 0), True)
 nsp = ml.pc # 0xfe3: stack pointer
 ml.byte(args.sp, True)
 nacc = ml.pc # 0xfe4:
@@ -84,7 +87,8 @@ AddrMode = IntEnum('AddrMode',
             'abs', 'absx', 'absy'
         ], start=0)
 
-SRFlags = IntFlag('Flags', [ 'C', 'Z', 'I', 'D', 'B', '_', 'V', 'N' ]);
+no_interrupt = -10000
+interrupt_setup = -10000
 
 am_imp = -10000
 am_imm = -10000
@@ -140,6 +144,7 @@ op_pha = -10000
 op_php = -10000
 op_pla = -10000
 op_plp = -10000
+op_plp_real = -10000
 op_rol = -10000
 op_rol_a = -10000
 op_ror = -10000
@@ -255,6 +260,8 @@ def gencode():
     global addr_mode_end
     global addr_mode_table
     global native_machine
+    global no_interrupt
+    global interrupt_setup
     global load_mem_val, load_mem_val_ch
     global store_mem_val, store_mem_val_ch
     global load_mem_val_native, load_mem_val_end
@@ -1237,6 +1244,8 @@ def gencode():
     ml.bcc(op_clc_rest)
 
     op_cli = ml.pc
+    ml.lda(no_interrupt)
+    ml.bne(op_und)
     ml.lda_imm(0xff^SRFlags.I)
     ml.bcc(op_clc_rest)
 
@@ -1284,6 +1293,8 @@ def gencode():
     ml.bcc(op_and_rest)
 
     op_rti = ml.pc
+    ml.lda(no_interrupt)
+    ml.bne(op_und)
     call_proc_8b(op_pull)
     ml.sta(nsr)
     call_proc_8b(op_pull)
@@ -1323,6 +1334,8 @@ def gencode():
     ml.bcc(main_loop)
 
     op_brk = ml.pc
+    ml.lda(no_interrupt)
+    ml.bne(op_und)
     ml.lda(npc)
     #ml.clc()
     ml.adc_imm(1)   # old_pc+2
@@ -1366,6 +1379,12 @@ def gencode():
     op_plp = ml.pc
     call_proc_8b(op_pull)
     ml.sta(nsr)
+    ml.ana_imm(SRFlags.I)
+    ml.xor(interrupt_setup)
+    ml.bne(ml.pc+4)
+    ml.bpl(main_loop)
+    ml.lda(no_interrupt)
+    ml.bne(op_und)
     ml.bcc(main_loop)
     
     op_rts = ml.pc
@@ -1691,6 +1710,8 @@ def gencode():
     ml.bcc(op_sec_rest)
 
     op_sei = ml.pc
+    ml.lda(no_interrupt)
+    ml.bne(op_und)
     ml.lda_imm(SRFlags.I)
     ml.bcc(op_sec_rest)
 
@@ -1954,6 +1975,10 @@ def gencode():
     
     native_machine = ml.pc
     ml.byte(int(args.native))      # set true for native machine
+    no_interrupt = ml.pc
+    ml.byte(args.no_interrupt)      # set true for no interrupts
+    interrupt_setup = ml.pc
+    ml.byte(SRFlags.I if args.no_interrupt==1 else 0)
     
     return start
 
