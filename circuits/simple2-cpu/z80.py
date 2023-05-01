@@ -229,8 +229,8 @@ def gencode():
     ml.sta(ml.l('op_and_ch'))
     
     ml.lda_imm(instr_clc)
-    ml.sta('put_reg1')
-    ml.sta('put_reg2')
+    ml.sta('get_reg1')
+    ml.sta('get_reg2')
     
     # load instruction
     # load opcode
@@ -1775,8 +1775,12 @@ def gencode():
     ml.def_segment('ops_code_end')
     #######################################
     
+    ml.lda(addrmode)
+    ml.ana_imm(AddrMode2.Implied)
+    ml.bne('no_put_reg')
     ###########################################
     # put register value into register
+    
     ml.def_label('put_reg')
     ml.lda(reg1_val_lo, [False, True])
     ml.def_label('put_reg_ch')
@@ -1788,6 +1792,8 @@ def gencode():
     ml.def_label('put_reg_ch2')
     ml.sta(ncr, [False, True])
     ml.def_label('no_put_reg_16bit')
+    
+    ml.def_label('no_put_reg')
     
     ####################################
     # extra routines
