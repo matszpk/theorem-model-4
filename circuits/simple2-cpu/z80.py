@@ -162,6 +162,7 @@ ml.byte(0, True)
 idx_prefix = ml.pc      # 0xfed
 ml.byte(0, True)
 
+
 SRFlags = IntFlag('Flags', [ 'C', 'N', 'P', 'X', 'H', 'Y', 'Z', 'S' ]);
 
 # should be negated in set_sr_flag
@@ -427,49 +428,50 @@ def gencode():
     ml.def_label('decode_end')
     
     ####################################
-    # put registers
+    # get register and put reg_val
     ml.clc()
     ml.lda(op_16bit)
-    ml.bne('put_reg_16')
+    ml.bne('get_reg_16')
     ml.lda_imm(instr_ror)
-    ml.sta('put_reg1')
-    ml.sta('put_reg2')
-    ml.def_label('put_reg_16')
-    
+    ml.sta('get_reg1')
+    ml.sta('get_reg2')
+    ml.def_label('get_reg_16')
     ml.lda(nargr1)
-    ml.bpl('put_reg1')
-    ml.bcc('no_put_reg1')
-    ml.def_segment('put_reg1')
+    ml.bpl('get_reg1')
+    ml.bcc('no_get_reg1')
+    ml.def_segment('get_reg1')
     ml.clc(True)
     ml.ora_imm(nbr&0xff)
+    ml.sta(ml.l('get_reg1_ch')+1)
     ml.sta(ml.l('put_reg1_ch')+1)
     ml.ora_imm(1)
+    ml.sta(ml.l('get_reg1_ch2')+1)
     ml.sta(ml.l('put_reg1_ch2')+1)
-    ml.def_label('put_reg1_ch')
+    ml.def_label('get_reg1_ch')
     ml.lda(nbr, [False,True])
     ml.sta(reg1_val_lo)
-    ml.def_label('put_reg1_ch2')
+    ml.def_label('get_reg1_ch2')
     ml.lda(nbr, [False,True])
     ml.sta(reg1_val_hi)
     
-    ml.def_label('no_put_reg1')
+    ml.def_label('no_get_reg1')
     ml.lda(nargr2)
-    ml.bpl('put_reg2')
-    ml.bcc('no_put_reg2')
-    ml.def_segment('put_reg2')
+    ml.bpl('get_reg2')
+    ml.bcc('no_get_reg2')
+    ml.def_segment('get_reg2')
     ml.clc(True)
     ml.ora_imm(nbr&0xff)
-    ml.sta(ml.l('put_reg2_ch')+1)
+    ml.sta(ml.l('get_reg2_ch')+1)
     ml.ora_imm(1)
-    ml.sta(ml.l('put_reg2_ch2')+1)
-    ml.def_label('put_reg2_ch')
+    ml.sta(ml.l('get_reg2_ch2')+1)
+    ml.def_label('get_reg2_ch')
     ml.lda(nbr, [False,True])
     ml.sta(reg2_val_lo)
-    ml.def_label('put_reg2_ch2')
+    ml.def_label('get_reg2_ch2')
     ml.lda(nbr, [False,True])
     ml.sta(reg2_val_hi)
     
-    ml.def_label('no_put_reg2')
+    ml.def_label('no_get_reg2')
     
     ##################################
     # addressing modes
@@ -1773,6 +1775,22 @@ def gencode():
     ml.def_segment('ops_code_end')
     #######################################
     
+    ###########################################
+    # put register value into register
+    ml.def_label('put_reg')
+    ml.lda(reg1_val_lo, [False, True])
+    ml.def_label('put_reg_ch')
+    ml.sta(nbr, [False, True])
+    
+    ml.lda(op_16bit)
+    ml.bpl('no_put_reg_16bit')
+    ml.lda(reg1_val_hi, [False, True])
+    ml.def_label('put_reg_ch2')
+    ml.sta(ncr, [False, True])
+    ml.def_label('no_put_reg_16bit')
+    
+    ####################################
+    # extra routines
     ml.def_routine('load_inc_pc_opcode','load_mem_val')
     ml.lda(nrfm)
     ml.cond_sec()
