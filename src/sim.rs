@@ -2,7 +2,7 @@ use crate::convert::*;
 use crate::parser::*;
 
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use std::path::Path;
 
 #[derive(thiserror::Error, Debug)]
@@ -11,6 +11,8 @@ pub enum DumpError {
     IO(#[from] io::Error),
     #[error("Numeric error: {0}")]
     Num(#[from] std::num::TryFromIntError),
+    #[error("Bad data")]
+    Bad,
 }
 
 // runtime environment
@@ -310,6 +312,57 @@ impl Circuit {
         }
         file.write_all(&self.circuit)?;
         Ok(())
+    }
+
+    pub fn new_from_dump(path: impl AsRef<Path>) -> Result<Circuit, DumpError> {
+        let mut file = File::open(path)?;
+        let mut main_data: [u8; 3] = [0, 0, 0];
+        file.read_exact(main_data.as_mut_slice())?;
+        let input_len = main_data[0];
+        let output_len = main_data[1];
+        let subcircuit_len = main_data[2];
+        let mut subcircuits = Vec::<SubcircuitInfo>::new();
+        for i in 0..subcircuit_len {
+            let sc_location = if i == 0 {
+                let mut sc_pos_raw: [u8; 2] = [0, 0];
+                file.read_exact(sc_pos_raw.as_mut_slice())?;
+                u16::from_le_bytes(sc_pos_raw)
+            } else {
+                let mut sc_data_raw: [u8; 1] = [0];
+                file.read_exact(sc_data_raw.as_mut_slice())?;
+                let location: u16 = if sc_data_raw[0] < 128 {
+                    sc_data_raw[0] as u16
+                } else {
+                    let mut sc_data_raw_2: [u8; 1] = [0];
+                    file.read_exact(sc_data_raw_2.as_mut_slice())?;
+                    ((sc_data_raw[0] & 0x7f) as u16) | ((sc_data_raw_2[0] as u16) << 7)
+                };
+                location + u16::try_from(subcircuits[0].location).unwrap()
+            };
+
+            let mut sc_data_1: [u8; 1] = [0];
+            file.read_exact(sc_data_1.as_mut_slice())?;
+            let (sc_input_len, sc_output_len) = if sc_data_1[0] < 128 {
+                ((sc_data_1[0] & 7) + 1, (sc_data_1[0] >> 3) + 1)
+            } else {
+                let mut sc_data_2: [u8; 1] = [0];
+                file.read_exact(sc_data_2.as_mut_slice())?;
+                (sc_data_1[0] & 0x7f, sc_data_2[0])
+            };
+            subcircuits.push(SubcircuitInfo {
+                location: sc_location as usize,
+                input_len: sc_input_len,
+                output_len: sc_output_len,
+            });
+        }
+        let mut circuit = vec![];
+        file.read_to_end(&mut circuit)?;
+        Ok(Circuit {
+            circuit,
+            subcircuits,
+            input_len,
+            output_len,
+        })
     }
 }
 

@@ -47,6 +47,18 @@ pub enum ConvertError {
     WrongRepeatCount(Statement, String),
 }
 
+impl From<Circuit> for CircuitDebug {
+    fn from(circuit: Circuit) -> Self {
+        let sc_len = circuit.subcircuits.len();
+        CircuitDebug {
+            circuit,
+            subcircuits: HashMap::from_iter(
+                (0..sc_len).map(|x| (x.to_string(), x.try_into().unwrap())),
+            ),
+        }
+    }
+}
+
 impl TryFrom<Vec<ParsedSubcircuit>> for CircuitDebug {
     type Error = ConvertError;
 

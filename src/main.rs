@@ -26,6 +26,8 @@ struct Cli {
 struct CheckCircuitArgs {
     #[clap(help = "Set circuit filename")]
     circuit: PathBuf,
+    #[clap(short, long, help = "Read circuit as dump")]
+    read_dump: bool,
 }
 
 #[derive(Parser)]
@@ -38,6 +40,8 @@ struct RunCircuitArgs {
     input: Option<String>,
     #[clap(short, long, help = "Set trace mode")]
     trace: bool,
+    #[clap(short, long, help = "Read circuit as dump")]
+    read_dump: bool,
 }
 
 #[derive(Parser)]
@@ -48,6 +52,8 @@ struct TestCircuitArgs {
     testsuite: Option<PathBuf>,
     #[clap(short, long, help = "Set trace mode")]
     trace: bool,
+    #[clap(short, long, help = "Read circuit as dump")]
+    read_dump: bool,
 }
 
 #[derive(Parser)]
@@ -56,6 +62,8 @@ struct DumpCircuitArgs {
     circuit: PathBuf,
     #[clap(help = "Set output filename")]
     output: PathBuf,
+    #[clap(short, long, help = "Read circuit as dump")]
+    read_dump: bool,
 }
 
 #[derive(Parser)]
@@ -76,6 +84,8 @@ struct RunMachineArgs {
     dump: bool,
     #[clap(short, long, help = "Set memory dump to files")]
     file_dump: Option<String>,
+    #[clap(short, long, help = "Read circuit as dump")]
+    read_dump: bool,
 }
 
 #[derive(Subcommand)]
@@ -94,31 +104,41 @@ enum Commands {
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    let circuit_file_name = match cli.command {
-        Commands::Check(ref r) => r.circuit.clone(),
-        Commands::Run(ref r) => r.circuit.clone(),
-        Commands::Test(ref r) => r.circuit.clone(),
-        Commands::Dump(ref r) => r.circuit.clone(),
-        Commands::RunMachine(ref r) => r.circuit.clone(),
+    let (circuit_file_name, read_dump) = match cli.command {
+        Commands::Check(ref r) => (r.circuit.clone(), r.read_dump),
+        Commands::Run(ref r) => (r.circuit.clone(), r.read_dump),
+        Commands::Test(ref r) => (r.circuit.clone(), r.read_dump),
+        Commands::Dump(ref r) => (r.circuit.clone(), r.read_dump),
+        Commands::RunMachine(ref r) => (r.circuit.clone(), r.read_dump),
     };
 
-    let input = divide_lines(&read_to_string(circuit_file_name).unwrap());
-    let circuit = match parse_circuit_all(&input) {
-        Ok((_, parsed)) => match CircuitDebug::try_from(parsed) {
-            Ok(circuit) => circuit,
+    let circuit = if !read_dump {
+        let input = divide_lines(&read_to_string(circuit_file_name).unwrap());
+        match parse_circuit_all(&input) {
+            Ok((_, parsed)) => match CircuitDebug::try_from(parsed) {
+                Ok(circuit) => circuit,
+                Err(e) => {
+                    eprintln!("Convert Error: {}", e);
+                    return ExitCode::FAILURE;
+                }
+            },
             Err(e) => {
-                eprintln!("Convert Error: {}", e);
+                match e {
+                    nom::Err::Error(e) | nom::Err::Failure(e) => {
+                        eprintln!("Error: {}", convert_error(input.as_str(), e))
+                    }
+                    e => eprintln!("Error: {}", e),
+                }
                 return ExitCode::FAILURE;
             }
-        },
-        Err(e) => {
-            match e {
-                nom::Err::Error(e) | nom::Err::Failure(e) => {
-                    eprintln!("Error: {}", convert_error(input.as_str(), e))
-                }
-                e => eprintln!("Error: {}", e),
+        }
+    } else {
+        match Circuit::new_from_dump(circuit_file_name) {
+            Ok(c) => c.into(),
+            Err(e) => {
+                eprintln!("Error {}", e);
+                return ExitCode::FAILURE;
             }
-            return ExitCode::FAILURE;
         }
     };
 
