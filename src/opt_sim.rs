@@ -473,7 +473,7 @@ mod tests {
             let output2 = opt_circ1.run_circuit(&input, 8);
             assert_eq!(output1, output2, "xor3 {}", i);
         }
-        
+
         // overlapping output in data
         // circuit:
         //      main:

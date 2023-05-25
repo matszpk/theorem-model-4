@@ -87,6 +87,8 @@ struct RunMachineArgs {
     file_dump: Option<String>,
     #[clap(short, long, help = "Read circuit as dump")]
     read_dump: bool,
+    #[clap(value_enum, short = 'R', long, help = "Use specified runner")]
+    runner: Option<RunnerType>,
 }
 
 #[derive(Subcommand)]
@@ -105,12 +107,14 @@ enum Commands {
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    let (circuit_file_name, read_dump) = match cli.command {
-        Commands::Check(ref r) => (r.circuit.clone(), r.read_dump),
-        Commands::Run(ref r) => (r.circuit.clone(), r.read_dump),
-        Commands::Test(ref r) => (r.circuit.clone(), r.read_dump),
-        Commands::Dump(ref r) => (r.circuit.clone(), r.read_dump),
-        Commands::RunMachine(ref r) => (r.circuit.clone(), r.read_dump),
+    let (circuit_file_name, read_dump, runner_type) = match cli.command {
+        Commands::Check(ref r) => (r.circuit.clone(), r.read_dump, RunnerType::default()),
+        Commands::Run(ref r) => (r.circuit.clone(), r.read_dump, RunnerType::default()),
+        Commands::Test(ref r) => (r.circuit.clone(), r.read_dump, RunnerType::default()),
+        Commands::Dump(ref r) => (r.circuit.clone(), r.read_dump, RunnerType::default()),
+        Commands::RunMachine(ref r) => {
+            (r.circuit.clone(), r.read_dump, r.runner.unwrap_or_default())
+        }
     };
 
     let circuit = if !read_dump {
@@ -268,7 +272,7 @@ fn main() -> ExitCode {
             }
         }
         Commands::RunMachine(r) => {
-            let mut pm = PrimalMachine::new(circuit.circuit, r.cell_len_bits as u32);
+            let mut pm = PrimalMachine::new(circuit.circuit, r.cell_len_bits as u32, runner_type);
             let mut memories = vec![];
             for memory in &r.memory {
                 memories.push(match std::fs::read(memory) {

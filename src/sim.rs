@@ -2,6 +2,8 @@ use crate::convert::*;
 use crate::opt_sim::*;
 use crate::parser::*;
 
+use clap::ValueEnum;
+
 use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
@@ -369,8 +371,16 @@ impl Circuit {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+pub enum RunnerType {
+    #[default]
+    Normal,
+    Optimized,
+}
+
 pub struct PrimalMachine {
     circuit: Circuit,
+    opt_circuit: Option<OptCircuit>,
     cell_len_bits: u32, // in bits
     address_len: u32,   // in bits
     pub memory: Vec<u8>,
@@ -386,7 +396,7 @@ pub struct SecondMachine {
 }
 
 impl PrimalMachine {
-    pub fn new(circuit: Circuit, cell_len_bits: u32) -> Self {
+    pub fn new(circuit: Circuit, cell_len_bits: u32, runner: RunnerType) -> Self {
         assert!(circuit.output_len > circuit.input_len + 4);
         let address_len = (circuit.output_len - (circuit.input_len) - 3) as u32;
         assert!(cell_len_bits + address_len < usize::BITS + 3);
@@ -402,7 +412,11 @@ impl PrimalMachine {
             1
         };
         Self {
-            circuit,
+            circuit: circuit.clone(),
+            opt_circuit: match runner {
+                RunnerType::Normal => None,
+                RunnerType::Optimized => Some(OptCircuit::new(circuit.clone(), None)),
+            },
             cell_len_bits,
             address_len,
             memory: vec![0; mem_len],
@@ -515,7 +529,11 @@ impl PrimalMachine {
                         .collect::<String>()
                 );
             }
-            let output = self.circuit.run(&input, circuit_trace);
+            let output = if let Some(opt_circuit) = self.opt_circuit.as_mut() {
+                opt_circuit.run_circuit(&input, input_len)
+            } else {
+                self.circuit.run(&input, circuit_trace)
+            };
             // put back to state
             for i in 0..state_len {
                 set_bit(&mut input, i, get_bit(&output, i));
