@@ -409,9 +409,6 @@ impl OptCircuit2 {
         }
         let base = circ_input_len + 1;
         for (i, func) in self.circuit.iter().enumerate() {
-            //let (gi1, gi2) = (*igi1 as usize, *igi2 as usize);
-            //let b1 = memory[gi1 >> 3] >> (gi1 & 7);
-            //let b2 = memory[gi2 >> 3] >> (gi2 & 7);
             let func_input_len = func.input_len as usize;
             let mut input_idx = 0;
             for i in 0..func_input_len {
