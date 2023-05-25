@@ -1,5 +1,7 @@
 use crate::sim::*;
-use std::cmp::min;
+
+use std::cmp::{max, min};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct OptCircuit {
@@ -177,6 +179,331 @@ impl OptCircuit {
         final_output
     }
 }
+
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+struct FuncEntry {
+    input_len: u8,
+    inputs: [u32; 6],
+    outputs: u64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct OptCircuit2 {
+    circuit: Vec<FuncEntry>,
+    pub input_len: u8,
+    pub outputs: Vec<u32>,
+}
+
+impl OptCircuit2 {
+    pub fn new(opt_circuit: OptCircuit) -> Self {
+        // ordering - lowest is input, greater output of gates, ..., greatest - last outputs
+        // ordering - determine step's number of calculation
+        let circ_input_len = opt_circuit.input_len as usize;
+        let circ_len = opt_circuit.circuit.len();
+        // ordering: value: first - step, second - original order
+        let mut ordering = vec![(0u32, 0u32); circ_len];
+        // to next ordering: index - original ordering, value - next ordering
+        let mut rev_ordering = vec![0; circ_len];
+        // functions supplied to entry - ordering order, inputs in ordering order
+        let mut functions = vec![(FuncEntry::default(), HashSet::<u32>::new()); circ_len];
+
+        let base = u32::try_from(circ_input_len + 1).unwrap();
+        for (i, (igi1, igi2)) in opt_circuit.circuit.iter().enumerate() {
+            // get step of calculation for inputs
+            let gs1 = if *igi1 < base {
+                0
+            } else {
+                ordering[i - (*igi1 as usize)].0
+            };
+            let gs2 = if *igi2 < base {
+                0
+            } else {
+                ordering[i - (*igi2 as usize)].0
+            };
+            ordering[i] = (max(gs1, gs2) + 1, u32::try_from(i).unwrap());
+        }
+        ordering.sort(); // more important is order, less important index
+        for (i, (_, j)) in ordering.iter().enumerate() {
+            rev_ordering[*j as usize] = u32::try_from(i).unwrap();
+        }
+
+        let mut step = 0;
+        let mut first_in_step = 0;
+        while first_in_step < circ_len {
+            let first_in_next_step = match ordering.binary_search(&(step + 1, 0)) {
+                Ok(r) => r,
+                Err(r) => r,
+            };
+            for (ord_idx, (_, orig_idx)) in ordering[first_in_step..first_in_next_step]
+                .iter()
+                .enumerate()
+            {
+                // determine function and its inputs
+                let mut func = FuncEntry::default();
+                // hold original index of output
+                let mut cur_tree: Vec<u32> = vec![*orig_idx];
+                let mut inputs: Vec<u32> = vec![u32::try_from(ord_idx).unwrap()];
+
+                // deepening direct input usage
+                loop {
+                    let mut new_inputs: Vec<u32> = vec![];
+
+                    let cur_tree_prev = cur_tree.len();
+                    for ai in &inputs {
+                        if *ai < base {
+                            if !new_inputs.contains(&ai) {
+                                new_inputs.push(*ai);
+                                cur_tree.push(*ai);
+                            }
+                        } else {
+                            // deep
+                            let orig_idx = ordering[(ai - base) as usize].1 as usize;
+                            let (orig_g1, orig_g2) = opt_circuit.circuit[orig_idx];
+                            let g1 = if orig_g1 < base {
+                                orig_g1
+                            } else {
+                                rev_ordering[orig_g1 as usize]
+                            };
+                            let g2 = if orig_g2 < base {
+                                orig_g2
+                            } else {
+                                rev_ordering[orig_g2 as usize]
+                            };
+                            if !new_inputs.contains(&g1) {
+                                new_inputs.push(g1);
+                                cur_tree.push(orig_g1);
+                            }
+                            if !new_inputs.contains(&g2) {
+                                new_inputs.push(g2);
+                                cur_tree.push(orig_g2);
+                            }
+                        }
+                    }
+
+                    if new_inputs.len() < 6 {
+                        // if not greater input than can be handled by function
+                        // then create new function and replace
+                        let mut rev_curtree_map = HashMap::<u32, u32>::new();
+                        for (i, j) in cur_tree.iter().rev().enumerate() {
+                            if !rev_curtree_map.contains_key(j) {
+                                rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
+                            }
+                        }
+
+                        let func_circuit = cur_tree
+                            .iter()
+                            .rev()
+                            .skip(cur_tree.len() - cur_tree_prev)
+                            .map(|x| rev_curtree_map[x])
+                            .collect::<Vec<_>>();
+                        func.input_len = u8::try_from(new_inputs.len()).unwrap();
+                        func.inputs[0..new_inputs.len()]
+                            .copy_from_slice(&new_inputs[0..new_inputs.len()]);
+
+                        // calculate values
+                        let mut calcs = vec![0; (func.input_len as usize) + func_circuit.len()];
+                        for value in 0..(1u64.overflowing_shl(func.input_len.into()).0) {
+                            for i in 0..(func.input_len as usize) {
+                                calcs[i] |= ((value >> i) & 1) << value;
+                            }
+                        }
+                        let not_mask = 1u64
+                            .checked_shl(1 << func.input_len)
+                            .unwrap_or_default()
+                            .overflowing_sub(1)
+                            .0;
+
+                        let input_len = func.input_len as usize;
+                        for (i, gi) in func_circuit.iter().enumerate() {
+                            let (ogi0, ogi1) = opt_circuit.circuit[*gi as usize];
+                            let gi = (
+                                rev_curtree_map[&ogi0] as usize,
+                                rev_curtree_map[&ogi1] as usize,
+                            );
+                            calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
+                        }
+                        func.outputs = *calcs.last().unwrap();
+                    } else {
+                        // simple heuristics
+                        if new_inputs.len() >= 24 {
+                            break; // end of finding
+                        }
+                    }
+                    functions[ord_idx] = (
+                        func,
+                        HashSet::<u32>::from_iter(
+                            cur_tree
+                                .iter()
+                                .rev()
+                                .skip(cur_tree.len() - cur_tree_prev)
+                                .map(|x| ordering[*x as usize].1),
+                        ),
+                    );
+                    inputs = new_inputs.clone();
+                }
+            }
+            first_in_step = first_in_next_step;
+            step += 1;
+        }
+
+        // collect and filter functions and build function tree
+        let mut final_funcs: Vec<FuncEntry> = vec![];
+        let mut final_func_out_idxs = vec![];
+        let mut visited = vec![false; circ_len];
+
+        for ri in 0..circ_len {
+            let i = circ_len - ri - 1;
+            if visited[i] {
+                continue;
+            }
+            let (func, calced_nodes) = &functions[i];
+            final_funcs.push(*func);
+            final_func_out_idxs.push(i);
+            for g in calced_nodes.iter() {
+                visited[*g as usize] = true;
+            }
+        }
+        final_funcs.reverse();
+        final_func_out_idxs.reverse();
+        let final_func_out_map = HashMap::<usize, usize>::from_iter(
+            final_func_out_idxs
+                .into_iter()
+                .enumerate()
+                .map(|(i, x)| (x, i)),
+        );
+        // convert function inputs
+        for func in &mut final_funcs {
+            for v in &mut func.inputs[0..func.input_len as usize] {
+                if *v >= base {
+                    *v = base + u32::try_from(final_func_out_map[&(*v as usize)]).unwrap();
+                }
+            }
+        }
+
+        OptCircuit2 {
+            circuit: final_funcs,
+            input_len: opt_circuit.input_len,
+            outputs: opt_circuit
+                .outputs
+                .into_iter()
+                .map(|x| {
+                    if x < base {
+                        x
+                    } else {
+                        final_func_out_map[&(ordering[x as usize].1 as usize)]
+                            .try_into()
+                            .unwrap()
+                    }
+                })
+                .collect::<Vec<_>>(),
+        }
+    }
+
+    pub fn run_circuit(&self, input: &[u8], input_len: usize) -> [u8; 128 >> 3] {
+        let circ_input_len = self.input_len as usize;
+        let mut memory = vec![0; (self.circuit.len() + circ_input_len + 1 + 7) >> 3];
+        let input_len = min(circ_input_len, input_len);
+        memory[0..(input_len + 7) >> 3].copy_from_slice(&input[0..(input_len + 7) >> 3]);
+        if input_len & 7 != 0 {
+            memory[input_len >> 3] &= ((1u16 << (input_len & 7)) - 1) as u8;
+        }
+        let base = circ_input_len + 1;
+        for (i, func) in self.circuit.iter().enumerate() {
+            //let (gi1, gi2) = (*igi1 as usize, *igi2 as usize);
+            //let b1 = memory[gi1 >> 3] >> (gi1 & 7);
+            //let b2 = memory[gi2 >> 3] >> (gi2 & 7);
+            let func_input_len = func.input_len as usize;
+            let mut input_idx = 0;
+            for i in 0..func_input_len {
+                let idx = func.inputs[i] as usize;
+                input_idx |= ((memory[idx >> 3] >> (idx & 7)) & 1) << i;
+            }
+            let out_idx = base + i;
+            let out_bit = out_idx & 7;
+            let out = (((func.outputs >> input_idx) & 1) as u8) << out_bit;
+            memory[out_idx >> 3] = (memory[out_idx >> 3] & !(1u8 << out_bit)) | out;
+        }
+        let mut final_output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (i, idx) in self.outputs.iter().enumerate() {
+            let idx = *idx as usize;
+            final_output[i >> 3] |= ((memory[idx >> 3] >> (idx & 7)) & 1) << (i & 7);
+        }
+        final_output
+    }
+}
+
+// #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+// pub enum Opt2Entry {
+//     // range of input to argument 1 to gates: (Start, x), (Start+1,x2),...(end-1, xn)
+//     Arg1Range(u32, u32),
+//     // range of input to argument 2 to gates: (Start, x), (Start+1,x2),...(end-1, xn)
+//     Arg2Range(u32, u32),
+// }
+//
+// // parallelize calculation by bitwise operations
+// // aggregate single bit operations into integer bitwise operations
+//
+// #[derive(Clone, Debug, PartialEq)]
+// pub struct OptCircuit2 {
+//     pub circuit: Vec<Opt2Entry>,
+//     pub input_len: u8,
+//     pub outputs: Vec<u32>,
+// }
+//
+// impl OptCircuit2 {
+//     pub fn new(opt_circuit: OptCircuit) -> Self {
+//         // ordering - lowest is input, greater output of gates, ..., greatest - last outputs
+//         // ordering - determine step's number of calculation
+//         let circ_input_len = opt_circuit.input_len as usize;
+//         let circ_len = opt_circuit.circuit.len();
+//         let mut ordering = vec![(0u32, 0u32); circ_len];
+//         // to next ordering: index - next ordering, value - prev ordering
+//         let mut rev_ordering = vec![0, circ_len];
+//         let base = u32::try_from(circ_input_len + 1).unwrap();
+//         for (i, (igi1, igi2)) in opt_circuit.circuit.iter().enumerate() {
+//             // get step of calculation for inputs
+//             let gs1 = if *igi1 < base { 0 }
+//             else { ordering[i - (*igi1 as usize)].0 };
+//             let gs2 = if *igi2 < base { 0 }
+//             else { ordering[i - (*igi2 as usize)].0 };
+//             ordering[i] = (max(gs1, gs2) + 1, u32::try_from(i).unwrap());
+//         }
+//         ordering.sort();    // more important is order, less important index
+//         {
+//             let mut step = 0;
+//             let mut first_in_step = 0;
+//             while first_in_step < circ_len {
+//                 let first_in_next_step = match ordering.binary_search(&(step + 1, 0)) {
+//                     Ok(r) => r,
+//                     Err(r) => r
+//                 };
+//                 // sort ordering for current step
+//                 // arg1: 1 2 3 1 4 3 1 5 2 3 5 -> 1 2 3 1 3 4 1 5
+//                 first_in_step = first_in_next_step;
+//                 step += 1;
+//             }
+//         }
+//
+//         // let mut entry: Vec<Opt2Entry> = vec![];
+//         // let mut cur_order = ordering.first().copied().unwrap_or_default().1;
+//         // let Option<u32>;
+//         // for (o, i) in ordering {
+//         //     if o == cur_order {
+//         //     } else {
+//         //         // new phase
+//         //         entry.push(Opt2Entry::Arg1Range(i, i+1));
+//         //         entry.push(Opt2Entry::Arg2Range(i, i+1));
+//         //         cur_order = o;
+//         //     }
+//         // }
+//
+//         OptCircuit2 {
+//             circuit: vec![],
+//             input_len: opt_circuit.circuit.len().try_into().unwrap(),
+//             outputs: opt_circuit.outputs.clone()
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
