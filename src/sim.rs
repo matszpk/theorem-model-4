@@ -1,9 +1,12 @@
 use crate::convert::*;
+use crate::opt_sim::*;
 use crate::parser::*;
 
 use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
+
+// TODO: optimize run of circuit in TheoremModel4.
 
 #[derive(thiserror::Error, Debug)]
 pub enum DumpError {
@@ -60,7 +63,7 @@ impl Circuit {
         trace: bool,
     ) -> ([u8; 128 >> 3], usize) {
         assert!(level < 8);
-        assert!(input.len() < 128);
+        assert!(input_len <= 128);
         if trace {
             println!(
                 "Input {}",
@@ -1276,9 +1279,9 @@ mod tests {
         set_cell_val1(&mut pm, 0xfc, 0x2341);
         set_cell_val1(&mut pm, 0xf8, 0xacca);
         let sm = pm.machine.as_mut().unwrap();
-        assert_eq!(sm.memory[(0x2341 << 1)], 0xca);
+        assert_eq!(sm.memory[0x2341 << 1], 0xca);
         assert_eq!(sm.memory[(0x2341 << 1) + 1], 0xac);
-        sm.memory[(0xd4b7 << 1)] = 0x1a;
+        sm.memory[0xd4b7 << 1] = 0x1a;
         sm.memory[(0xd4b7 << 1) + 1] = 0xb5;
         set_cell_val1(&mut pm, 0xfc, 0xd4b7);
         for i in 0..4 {

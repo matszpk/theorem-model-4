@@ -1,5 +1,6 @@
 pub mod parser;
 use parser::*;
+pub mod opt_sim;
 pub mod sim;
 use sim::*;
 pub mod convert;
