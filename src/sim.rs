@@ -376,11 +376,13 @@ pub enum RunnerType {
     #[default]
     Normal,
     Optimized,
+    Optimized2,
 }
 
 pub struct PrimalMachine {
     circuit: Circuit,
     opt_circuit: Option<OptCircuit>,
+    opt_circuit_2: Option<OptCircuit2>,
     cell_len_bits: u32, // in bits
     address_len: u32,   // in bits
     pub memory: Vec<u8>,
@@ -414,8 +416,14 @@ impl PrimalMachine {
         Self {
             circuit: circuit.clone(),
             opt_circuit: match runner {
-                RunnerType::Normal => None,
+                RunnerType::Normal | RunnerType::Optimized2 => None,
                 RunnerType::Optimized => Some(OptCircuit::new(circuit.clone(), None)),
+            },
+            opt_circuit_2: match runner {
+                RunnerType::Normal | RunnerType::Optimized => None,
+                RunnerType::Optimized2 => {
+                    Some(OptCircuit2::new(OptCircuit::new(circuit.clone(), None)))
+                }
             },
             cell_len_bits,
             address_len,
@@ -529,7 +537,9 @@ impl PrimalMachine {
                         .collect::<String>()
                 );
             }
-            let output = if let Some(opt_circuit) = self.opt_circuit.as_mut() {
+            let output = if let Some(opt_circuit_2) = self.opt_circuit_2.as_mut() {
+                opt_circuit_2.run_circuit(&input, input_len)
+            } else if let Some(opt_circuit) = self.opt_circuit.as_mut() {
                 opt_circuit.run_circuit(&input, input_len)
             } else {
                 self.circuit.run(&input, circuit_trace)
