@@ -261,6 +261,7 @@ impl OptCircuit2 {
                 while inputs.iter().any(|x| *x >= base) {
                     test_println!("    Step:");
                     let mut new_inputs: Vec<u32> = vec![];
+                    let mut new_cur_tree_pass: Vec<u32> = vec![];
 
                     test_println!("      Gen new inputs:");
                     for ai in &inputs {
@@ -268,7 +269,7 @@ impl OptCircuit2 {
                             test_println!("        Ii {}", ai);
                             if !new_inputs.contains(&ai) {
                                 new_inputs.push(*ai);
-                                cur_tree.push(*ai);
+                                new_cur_tree_pass.push(*ai);
                             }
                         } else {
                             // deep
@@ -291,16 +292,57 @@ impl OptCircuit2 {
                             } else {
                                 base + rev_ordering[(orig_g2 - base) as usize]
                             };
+                            
+                            // optimize not
+                            let (g1, orig_g1) = if orig_g1 >= base {
+                                let (orig_g1x, orig_g2x) = opt_circuit.circuit[
+                                            (orig_g1 - base) as usize];
+                                // same inputs then not - put not gate and get its input
+                                if orig_g1x == orig_g2x {
+                                    let g1x = if orig_g1x < base {
+                                        orig_g1x
+                                    } else {
+                                        base + rev_ordering[(orig_g1x - base) as usize]
+                                    };
+                                    cur_tree.push(orig_g1);
+                                    (g1x, orig_g1x)
+                                } else {
+                                    (g1, orig_g1)
+                                }
+                            } else {
+                                (g1, orig_g1)
+                            };
+                            
+                            let (g2, orig_g2) = if orig_g2 >= base {
+                                let (orig_g1x, orig_g2x) = opt_circuit.circuit[
+                                            (orig_g2 - base) as usize];
+                                // same inputs then not - put not gate and get its input
+                                if orig_g1x == orig_g2x {
+                                    let g1x = if orig_g1x < base {
+                                        orig_g1x
+                                    } else {
+                                        base + rev_ordering[(orig_g1x - base) as usize]
+                                    };
+                                    cur_tree.push(orig_g2);
+                                    (g1x, orig_g1x)
+                                } else {
+                                    (g2, orig_g2)
+                                }
+                            } else {
+                                (g2, orig_g2)
+                            };
+                            
                             if !new_inputs.contains(&g1) {
                                 new_inputs.push(g1);
-                                cur_tree.push(orig_g1);
+                                new_cur_tree_pass.push(orig_g1);
                             }
                             if !new_inputs.contains(&g2) {
                                 new_inputs.push(g2);
-                                cur_tree.push(orig_g2);
+                                new_cur_tree_pass.push(orig_g2);
                             }
                         }
                     }
+                    cur_tree.extend(new_cur_tree_pass);
                     test_println!("      New inputs: {:?}", new_inputs);
                     test_println!("      New cur_tree: {:?}", cur_tree);
 
