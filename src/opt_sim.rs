@@ -368,20 +368,19 @@ impl OptCircuit2 {
 
                         functions[ord_idx] = (
                             func,
-                            HashSet::<u32>::from_iter(cur_tree.iter().rev().skip(input_len).map(
-                                |x| {
-                                    if *x < base {
-                                        *x
-                                    } else {
-                                        rev_ordering[(*x - base) as usize]
-                                    }
-                                },
-                            )),
+                            HashSet::<u32>::from_iter(
+                                cur_tree
+                                    .iter()
+                                    .rev()
+                                    .skip(input_len)
+                                    .filter(|x| **x >= base)
+                                    .map(|x| rev_ordering[(*x - base) as usize]),
+                            ),
                         );
                     } else {
                         test_println!("      New inuts over 6: {}", new_inputs.len());
                         // simple heuristics
-                        if new_inputs.len() > 18 {
+                        if new_inputs.len() > 30 {
                             break; // end of finding
                         }
                     }
@@ -393,25 +392,59 @@ impl OptCircuit2 {
             step += 1;
         }
 
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        enum VisitState {
+            NotVisited,
+            Visited,
+            UsedAsInput,
+        }
+        use VisitState::*;
+
         // collect and filter functions and build function tree
         let mut final_funcs: Vec<FuncEntry> = vec![];
         let mut final_func_out_idxs = vec![];
-        let mut visited = vec![false; circ_len];
+        let mut visited = vec![NotVisited; circ_len];
+
+        // outputs must be always calculated as used as final outputs
+        for v in opt_circuit
+            .outputs
+            .iter()
+            .map(|x| &(ordering[(x - base) as usize].1))
+        {
+            visited[*v as usize] = UsedAsInput;
+        }
 
         for ri in 0..circ_len {
             let i = circ_len - ri - 1;
-            if visited[i] {
+            if visited[i] == Visited {
                 continue;
             }
             let (func, calced_nodes) = &functions[i];
+            test_println!("collect and filter: {} {:?}", i, func);
             final_funcs.push(*func);
             final_func_out_idxs.push(i);
-            for g in calced_nodes.iter() {
-                visited[*g as usize] = true;
+            for g in &func.inputs[0..func.input_len as usize] {
+                visited[*g as usize] = UsedAsInput;
             }
+            test_println!("  visited by : {} {:?}", i, calced_nodes);
+            for g in calced_nodes.iter() {
+                if visited[*g as usize] == NotVisited {
+                    visited[*g as usize] = Visited; // set as
+                }
+            }
+            visited[i] = Visited;
         }
         final_funcs.reverse();
         final_func_out_idxs.reverse();
+        test_println!(
+            "OptCircuit outputs: {:?}",
+            opt_circuit
+                .outputs
+                .iter()
+                .map(|x| &(ordering[(x - base) as usize].1))
+                .collect::<Vec<_>>()
+        );
+        test_println!("final_func_out_idxs: {:?}", final_func_out_idxs);
         let final_func_out_map = HashMap::<usize, usize>::from_iter(
             final_func_out_idxs
                 .into_iter()
@@ -996,5 +1029,36 @@ mod tests {
             let input = [i];
             println!("XX {:b}={:?}", i, opt_circ2.run_circuit(&input, 2));
         }
+
+        let circ1 = Circuit {
+            circuit: vec![
+                128, 0, 1, 2, 3, 4, 5, 6, 7, // xor bits
+                128, 12, 13, 14, 15, 8, 9, 10, 11, // xor next bits
+                129, 0, 4, 129, 1, 5, 129, 2, 6, 129, 3, 7, // xor-4bit
+                0, 0, // xor: not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 18,
+                    input_len: 8,
+                    output_len: 4,
+                },
+                // xor
+                SubcircuitInfo {
+                    location: 30,
+                    input_len: 2,
+                    output_len: 1,
+                },
+            ],
+            input_len: 12,
+            output_len: 4,
+        };
+        let opt_circ1 = OptCircuit::new(circ1.clone(), None);
+        let opt_circ2 = OptCircuit2::new(opt_circ1);
     }
 }
