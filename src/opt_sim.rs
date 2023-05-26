@@ -3,6 +3,18 @@ use crate::sim::*;
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
+#[cfg(test)]
+macro_rules! test_println {
+    () => { println!(); };
+    ($($arg:tt)*) => { println!($($arg)*); };
+}
+
+#[cfg(not(test))]
+macro_rules! test_println {
+    () => {};
+    ($($arg:tt)*) => {};
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct OptCircuit {
     pub circuit: Vec<(u32, u32)>,
@@ -196,6 +208,7 @@ pub struct OptCircuit2 {
 
 impl OptCircuit2 {
     pub fn new(opt_circuit: OptCircuit) -> Self {
+        test_println!("opt_circuit: {:?}", opt_circuit.circuit);
         // ordering - lowest is input, greater output of gates, ..., greatest - last outputs
         // ordering - determine step's number of calculation
         let circ_input_len = opt_circuit.input_len as usize;
@@ -213,19 +226,21 @@ impl OptCircuit2 {
             let gs1 = if *igi1 < base {
                 0
             } else {
-                ordering[i - (*igi1 as usize)].0
+                ordering[(*igi1 - base) as usize].0
             };
             let gs2 = if *igi2 < base {
                 0
             } else {
-                ordering[i - (*igi2 as usize)].0
+                ordering[(*igi2 - base) as usize].0
             };
             ordering[i] = (max(gs1, gs2) + 1, u32::try_from(i).unwrap());
         }
         ordering.sort(); // more important is order, less important index
+        test_println!("Ordering: {:?}", ordering);
         for (i, (_, j)) in ordering.iter().enumerate() {
             rev_ordering[*j as usize] = u32::try_from(i).unwrap();
         }
+        test_println!("RevOrdering: {:?}", rev_ordering);
 
         let mut step = 0;
         let mut first_in_step = 0;
@@ -234,40 +249,53 @@ impl OptCircuit2 {
                 Ok(r) => r,
                 Err(r) => r,
             };
+            test_println!("Step {} {}", first_in_step, first_in_next_step);
             for (ord_idx, (_, orig_idx)) in ordering[first_in_step..first_in_next_step]
                 .iter()
                 .enumerate()
             {
+                let ord_idx = first_in_step + ord_idx;
+                test_println!("  Gate: orig={} order={}", orig_idx, ord_idx);
                 // determine function and its inputs
                 let mut func = FuncEntry::default();
                 // hold original index of output
-                let mut cur_tree: Vec<u32> = vec![*orig_idx];
-                let mut inputs: Vec<u32> = vec![u32::try_from(ord_idx).unwrap()];
+                let mut cur_tree: Vec<u32> = vec![base + *orig_idx];
+                let mut inputs: Vec<u32> = vec![base + u32::try_from(ord_idx).unwrap()];
 
                 // deepening direct input usage
-                loop {
+                while inputs.iter().any(|x| *x >= base) {
+                    test_println!("    Step:");
                     let mut new_inputs: Vec<u32> = vec![];
 
+                    test_println!("      Gen new inputs:");
                     let cur_tree_prev = cur_tree.len();
                     for ai in &inputs {
                         if *ai < base {
+                            test_println!("        Ii {}", ai);
                             if !new_inputs.contains(&ai) {
                                 new_inputs.push(*ai);
                                 cur_tree.push(*ai);
                             }
                         } else {
                             // deep
+                            test_println!("        Gi {}", ai);
                             let orig_idx = ordering[(ai - base) as usize].1 as usize;
                             let (orig_g1, orig_g2) = opt_circuit.circuit[orig_idx];
+                            test_println!(
+                                "        Gi orig_idx={} {} {}",
+                                orig_idx,
+                                orig_g1,
+                                orig_g2
+                            );
                             let g1 = if orig_g1 < base {
                                 orig_g1
                             } else {
-                                rev_ordering[orig_g1 as usize]
+                                base + rev_ordering[(orig_g1 - base) as usize]
                             };
                             let g2 = if orig_g2 < base {
                                 orig_g2
                             } else {
-                                rev_ordering[orig_g2 as usize]
+                                base + rev_ordering[(orig_g2 - base) as usize]
                             };
                             if !new_inputs.contains(&g1) {
                                 new_inputs.push(g1);
@@ -279,6 +307,8 @@ impl OptCircuit2 {
                             }
                         }
                     }
+                    test_println!("      New inputs: {:?}", new_inputs);
+                    test_println!("      New cur_tree: {:?}", cur_tree);
 
                     if new_inputs.len() < 6 {
                         // if not greater input than can be handled by function
@@ -289,16 +319,19 @@ impl OptCircuit2 {
                                 rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
                             }
                         }
+                        test_println!("      rev_cur_tree: {:?}", rev_curtree_map);
 
                         let func_circuit = cur_tree
                             .iter()
                             .rev()
+                            .copied()
                             .skip(cur_tree.len() - cur_tree_prev)
-                            .map(|x| rev_curtree_map[x])
                             .collect::<Vec<_>>();
                         func.input_len = u8::try_from(new_inputs.len()).unwrap();
                         func.inputs[0..new_inputs.len()]
                             .copy_from_slice(&new_inputs[0..new_inputs.len()]);
+                        test_println!("      Func circuit: {:?}", func_circuit);
+                        test_println!("      Func inputs: {:?}", &func.inputs[0..new_inputs.len()]);
 
                         // calculate values
                         let mut calcs = vec![0; (func.input_len as usize) + func_circuit.len()];
@@ -315,17 +348,38 @@ impl OptCircuit2 {
 
                         let input_len = func.input_len as usize;
                         for (i, gi) in func_circuit.iter().enumerate() {
-                            let (ogi0, ogi1) = opt_circuit.circuit[*gi as usize];
+                            test_println!("        calc func {} {}", i, gi);
+                            if *gi < base {
+                                continue;
+                            }
+                            let (ogi0, ogi1) = opt_circuit.circuit[(*gi - base) as usize];
+                            test_println!("        calc inputs {} {}", ogi0, ogi1);
                             let gi = (
                                 rev_curtree_map[&ogi0] as usize,
                                 rev_curtree_map[&ogi1] as usize,
                             );
+                            // revert input order
+                            let gi = (
+                                if gi.0 < input_len {
+                                    input_len - gi.0 - 1
+                                } else {
+                                    gi.0
+                                },
+                                if gi.1 < input_len {
+                                    input_len - gi.1 - 1
+                                } else {
+                                    gi.1
+                                },
+                            );
+                            test_println!("        calc convinputs {:?}", gi);
                             calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
                         }
+                        test_println!("      Func calcs: {:?}", calcs);
                         func.outputs = *calcs.last().unwrap();
                     } else {
+                        test_println!("      New inuts over 6: {}", new_inputs.len());
                         // simple heuristics
-                        if new_inputs.len() >= 24 {
+                        if new_inputs.len() >= 18 {
                             break; // end of finding
                         }
                     }
@@ -336,9 +390,16 @@ impl OptCircuit2 {
                                 .iter()
                                 .rev()
                                 .skip(cur_tree.len() - cur_tree_prev)
-                                .map(|x| ordering[*x as usize].1),
+                                .map(|x| {
+                                    if *x < base {
+                                        *x
+                                    } else {
+                                        rev_ordering[(*x - base) as usize]
+                                    }
+                                }),
                         ),
                     );
+                    test_println!("      Func Nodes: {:?}", functions[ord_idx].1);
                     inputs = new_inputs.clone();
                 }
             }
@@ -379,6 +440,7 @@ impl OptCircuit2 {
                 }
             }
         }
+        test_println!("Final funcs: {:?}", final_funcs);
 
         OptCircuit2 {
             circuit: final_funcs,
@@ -390,7 +452,7 @@ impl OptCircuit2 {
                     if x < base {
                         x
                     } else {
-                        final_func_out_map[&(ordering[x as usize].1 as usize)]
+                        final_func_out_map[&(ordering[(x - base) as usize].1 as usize)]
                             .try_into()
                             .unwrap()
                     }
@@ -922,6 +984,29 @@ mod tests {
             let output1 = circ1.run(&input, false);
             let output2 = opt_circ1.run_circuit(&input, 8);
             assert_eq!(output1, output2, "add0 {}", i);
+        }
+    }
+
+    #[test]
+    fn test_create_opt_circuit_2() {
+        let circ1 = Circuit {
+            circuit: vec![
+                0, 0, // not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![],
+            input_len: 2,
+            output_len: 1,
+        };
+        let opt_circ1 = OptCircuit::new(circ1.clone(), None);
+        let opt_circ2 = OptCircuit2::new(opt_circ1);
+        println!("Out opt_circ2: {:?}", opt_circ2);
+        for i in 0..4 {
+            let input = [i];
+            println!("XX {:b}={:?}", i, opt_circ2.run_circuit(&input, 2));
         }
     }
 }

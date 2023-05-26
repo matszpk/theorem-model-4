@@ -1283,7 +1283,7 @@ mod tests {
             input_len: 6,
             output_len: 6 + 3 + 8,
         };
-        let mut pm = PrimalMachine::new(circ1, 2);
+        let mut pm = PrimalMachine::new(circ1, 2, RunnerType::default());
         pm.set_cell_mem(112, |i| ((11 >> i) & 1) != 0);
         assert_eq!(pm.memory[112 >> 1], 11);
         pm.get_cell_mem(112, |i, v| assert_eq!((11 >> i) & 1 != 0, v));
