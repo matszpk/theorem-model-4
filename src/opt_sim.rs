@@ -366,29 +366,30 @@ impl OptCircuit2 {
                         }
                         test_println!("      Func calcs: {:?}", calcs);
                         func.outputs = *calcs.last().unwrap();
+
+                        functions[ord_idx] = (
+                            func,
+                            HashSet::<u32>::from_iter(
+                                cur_tree
+                                    .iter()
+                                    .rev()
+                                    .skip(cur_tree.len() - cur_tree_prev)
+                                    .map(|x| {
+                                        if *x < base {
+                                            *x
+                                        } else {
+                                            rev_ordering[(*x - base) as usize]
+                                        }
+                                    }),
+                            ),
+                        );
                     } else {
                         test_println!("      New inuts over 6: {}", new_inputs.len());
                         // simple heuristics
-                        if new_inputs.len() >= 18 {
+                        if new_inputs.len() > 18 {
                             break; // end of finding
                         }
                     }
-                    functions[ord_idx] = (
-                        func,
-                        HashSet::<u32>::from_iter(
-                            cur_tree
-                                .iter()
-                                .rev()
-                                .skip(cur_tree.len() - cur_tree_prev)
-                                .map(|x| {
-                                    if *x < base {
-                                        *x
-                                    } else {
-                                        rev_ordering[(*x - base) as usize]
-                                    }
-                                }),
-                        ),
-                    );
                     test_println!("      Func Nodes: {:?}", functions[ord_idx].1);
                     inputs = new_inputs.clone();
                 }
