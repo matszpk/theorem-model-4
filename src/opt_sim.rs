@@ -268,7 +268,6 @@ impl OptCircuit2 {
                     let mut new_inputs: Vec<u32> = vec![];
 
                     test_println!("      Gen new inputs:");
-                    let cur_tree_prev = cur_tree.len();
                     for ai in &inputs {
                         if *ai < base {
                             test_println!("        Ii {}", ai);
@@ -334,7 +333,7 @@ impl OptCircuit2 {
                             .iter()
                             .rev()
                             .copied()
-                            .skip(cur_tree.len() - cur_tree_prev)
+                            .skip(input_len)
                             .collect::<Vec<_>>();
                         test_println!("      Func circuit: {:?}", func_circuit);
 
@@ -369,19 +368,15 @@ impl OptCircuit2 {
 
                         functions[ord_idx] = (
                             func,
-                            HashSet::<u32>::from_iter(
-                                cur_tree
-                                    .iter()
-                                    .rev()
-                                    .skip(cur_tree.len() - cur_tree_prev)
-                                    .map(|x| {
-                                        if *x < base {
-                                            *x
-                                        } else {
-                                            rev_ordering[(*x - base) as usize]
-                                        }
-                                    }),
-                            ),
+                            HashSet::<u32>::from_iter(cur_tree.iter().rev().skip(input_len).map(
+                                |x| {
+                                    if *x < base {
+                                        *x
+                                    } else {
+                                        rev_ordering[(*x - base) as usize]
+                                    }
+                                },
+                            )),
                         );
                     } else {
                         test_println!("      New inuts over 6: {}", new_inputs.len());
