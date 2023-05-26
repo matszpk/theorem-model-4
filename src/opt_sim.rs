@@ -458,11 +458,13 @@ impl OptCircuit2 {
         for func in &mut final_funcs {
             for v in &mut func.inputs[0..func.input_len as usize] {
                 if *v >= base {
-                    *v = base + u32::try_from(final_func_out_map[&(*v as usize)]).unwrap();
+                    *v = base + u32::try_from(final_func_out_map[&((*v - base) as usize)]).unwrap();
                 }
             }
         }
         test_println!("Final funcs: {:?}", final_funcs);
+        test_println!("Optcircuit len: {}", opt_circuit.circuit.len());
+        test_println!("Final funcs len: {}", final_funcs.len());
 
         OptCircuit2 {
             circuit: final_funcs,
@@ -1067,9 +1069,153 @@ mod tests {
             let input = [(i & 0xff).try_into().unwrap(), (i >> 4).try_into().unwrap()];
             let output2 = opt_circ1.run_circuit(&input, 12);
             let output3 = opt_circ2.run_circuit(&input, 12);
-            //assert_eq!(output1, output2, "xor1 {}", i);
-            println!("xor1_1 {:b}={:?}", i, output2);
-            println!("xor1_2 {:b}={:?}", i, output3);
+            assert_eq!(output2, output3, "xor1 {}", i);
+            // println!("xor1_1 {:b}={:?}", i, output2);
+            // println!("xor1_2 {:b}={:?}", i, output3);
+        }
+
+        let circ1 = Circuit {
+            circuit: vec![
+                128, 132, 0, 132, 4, // xor bits
+                128, 132, 9, 196, 8, // xor next bits
+                129, 0, 4, 129, 1, 5, 129, 2, 6, 129, 3, 7, // xor-4bit
+                0, 0, // xor: not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 10,
+                    input_len: 8,
+                    output_len: 4,
+                },
+                // xor
+                SubcircuitInfo {
+                    location: 22,
+                    input_len: 2,
+                    output_len: 1,
+                },
+            ],
+            input_len: 9,
+            output_len: 4,
+        };
+        let opt_circ1 = OptCircuit::new(circ1.clone(), None);
+        let opt_circ2 = OptCircuit2::new(opt_circ1.clone());
+        for i in 0..1 << 9 {
+            let input = [(i & 0xff).try_into().unwrap(), (i >> 4).try_into().unwrap()];
+            let output2 = opt_circ1.run_circuit(&input, 9);
+            let output3 = opt_circ2.run_circuit(&input, 9);
+            assert_eq!(output2, output3, "xor2 {}", i);
+            // println!("xor1_1 {:b}={:?}", i, output2);
+            // println!("xor1_2 {:b}={:?}", i, output3);
+        }
+
+        let circ1 = Circuit {
+            circuit: vec![
+                128, 132, 4, // copy 4-bits
+                129, 132, 0, 132, 4, // xor bits
+                129, 132, 12, 132, 8, // xor next bits
+                130, 0, 4, 130, 1, 5, 130, 2, 6, 130, 3, 7, // xor-4bit
+                0, 0, // xor: not 2=i0
+                1, 1, // not 3=i1
+                0, 3, // nand i0 noti1
+                2, 1, // nand noti0 i1
+                4, 5, // nand t0 t1 -> or(and(i0,noti1),and(noti0,i1))
+            ],
+            subcircuits: vec![
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 13,
+                    input_len: 4,
+                    output_len: 4,
+                },
+                // xor-4bit
+                SubcircuitInfo {
+                    location: 13,
+                    input_len: 8,
+                    output_len: 4,
+                },
+                // xor
+                SubcircuitInfo {
+                    location: 25,
+                    input_len: 2,
+                    output_len: 1,
+                },
+            ],
+            input_len: 8,
+            output_len: 4,
+        };
+        let opt_circ1 = OptCircuit::new(circ1.clone(), None);
+        let opt_circ2 = OptCircuit2::new(opt_circ1.clone());
+        for i in 0..1u16 << 8 {
+            let input = [(i & 0xff).try_into().unwrap(), (i >> 4).try_into().unwrap()];
+            let output2 = opt_circ1.run_circuit(&input, 8);
+            let output3 = opt_circ2.run_circuit(&input, 8);
+            assert_eq!(output2, output3, "xor3 {}", i);
+            // println!("xor1_1 {:b}={:?}", i, output2);
+            // println!("xor1_2 {:b}={:?}", i, output3);
+        }
+
+        let circ1 = Circuit {
+            circuit: vec![
+                0x7f, 0x7f, 0x85, 0x88, 0x00, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x09, 0x08, 0xc7, 0x7f,
+                0x85, 0x88, 0x11, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x19, 0x08, 0xc7, 0x7f, 0x85, 0x88,
+                0x21, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x29, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x31, 0x08,
+                0xc7, 0x7f, 0x85, 0x88, 0x39, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x41, 0x08, 0xc7, 0x7f,
+                0x85, 0x88, 0x49, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x51, 0x08, 0xc7, 0x7f, 0x85, 0x88,
+                0x59, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x61, 0x08, 0xc7, 0x7f, 0x85, 0x88, 0x69, 0x08,
+                0xc7, 0x7f, 0x81, 0x84, 0x75, 0x85, 0x88, 0x71, 0x08, 0xc7, 0x7f, 0x00, 0x00, 0x01,
+                0x01, 0x00, 0x03, 0x02, 0x01, 0x04, 0x05, 0x82, 0x00, 0x01, 0x00, 0x01, 0x03, 0x02,
+                0x82, 0x03, 0x02, 0x04, 0x05, 0x83, 0x01, 0x05, 0x00, 0x83, 0x02, 0x06, 0x0a, 0x83,
+                0x03, 0x07, 0x0c, 0x83, 0x04, 0x08, 0x0e, 0x81, 0x09, 0x0b, 0x0d, 0x0f, 0x80, 0x10,
+                0x84, 0x7f, 0x84, 0x00, 0x84, 0x08, 0x84, 0x14, 0x84, 0x04, 0x84, 0x0c, 0x81, 0x84,
+                0x10, 0x81, 0x84, 0x15,
+            ],
+            subcircuits: vec![
+                SubcircuitInfo {
+                    location: 95,
+                    input_len: 1,
+                    output_len: 1,
+                },
+                SubcircuitInfo {
+                    location: 95,
+                    input_len: 4,
+                    output_len: 4,
+                },
+                SubcircuitInfo {
+                    location: 95,
+                    input_len: 2,
+                    output_len: 1,
+                },
+                SubcircuitInfo {
+                    location: 105,
+                    input_len: 3,
+                    output_len: 2,
+                },
+                SubcircuitInfo {
+                    location: 117,
+                    input_len: 9,
+                    output_len: 5,
+                },
+                SubcircuitInfo {
+                    location: 140,
+                    input_len: 16,
+                    output_len: 8,
+                },
+            ],
+            input_len: 8,
+            output_len: 8,
+        };
+        let opt_circ1 = OptCircuit::new(circ1.clone(), None);
+        let opt_circ2 = OptCircuit2::new(opt_circ1.clone());
+        for i in 0..=255 {
+            let input = [i];
+            let output2 = opt_circ1.run_circuit(&input, 8);
+            let output3 = opt_circ2.run_circuit(&input, 8);
+            assert_eq!(output2, output3, "add {}", i);
         }
     }
 }
