@@ -315,11 +315,12 @@ impl OptCircuit2 {
                         func.inputs[0..new_inputs.len()]
                             .copy_from_slice(&new_inputs[0..new_inputs.len()]);
                         test_println!("      Func inputs: {:?}", &func.inputs[0..new_inputs.len()]);
-                        
+                        let input_len = func.input_len as usize;
+
                         // if not greater input than can be handled by function
                         // then create new function and replace
                         let mut rev_curtree_map = HashMap::<u32, u32>::new();
-                        for (i, j) in new_inputs.iter().enumerate() {
+                        for (i, j) in cur_tree[cur_tree.len() - input_len..].iter().enumerate() {
                             rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
                         }
                         for (i, j) in cur_tree.iter().rev().enumerate() {
@@ -350,7 +351,6 @@ impl OptCircuit2 {
                             .overflowing_sub(1)
                             .0;
 
-                        let input_len = func.input_len as usize;
                         for (i, gi) in func_circuit.iter().enumerate() {
                             test_println!("        calc func {} {}", i, gi);
                             if *gi < base {
@@ -361,7 +361,7 @@ impl OptCircuit2 {
                                 rev_curtree_map[&ogi0] as usize,
                                 rev_curtree_map[&ogi1] as usize,
                             );
-                            test_println!("        calc convinputs {:?} to {}", gi, input_len+i);
+                            test_println!("        calc convinputs {:?} to {}", gi, input_len + i);
                             calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
                         }
                         test_println!("      Func calcs: {:?}", calcs);
@@ -443,8 +443,10 @@ impl OptCircuit2 {
                         x
                     } else {
                         u32::try_from(
-                            final_func_out_map[&(ordering[(x - base) as usize].1 as usize)])
-                            .unwrap() + base
+                            final_func_out_map[&(ordering[(x - base) as usize].1 as usize)],
+                        )
+                        .unwrap()
+                            + base
                     }
                 })
                 .collect::<Vec<_>>(),
