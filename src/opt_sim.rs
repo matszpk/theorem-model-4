@@ -310,7 +310,7 @@ impl OptCircuit2 {
                     test_println!("      New inputs: {:?}", new_inputs);
                     test_println!("      New cur_tree: {:?}", cur_tree);
 
-                    if new_inputs.len() < 6 {
+                    if new_inputs.len() <= 6 {
                         func.input_len = u8::try_from(new_inputs.len()).unwrap();
                         func.inputs[0..new_inputs.len()]
                             .copy_from_slice(&new_inputs[0..new_inputs.len()]);
