@@ -409,9 +409,10 @@ impl OptCircuit2 {
         for v in opt_circuit
             .outputs
             .iter()
+            .filter(|x| **x >= base)
             .map(|x| rev_ordering[(x - base) as usize])
         {
-            println!(" visited as output {}", v);
+            test_println!(" visited as output {}", v);
             visited[v as usize] = UsedAsInput;
         }
 
