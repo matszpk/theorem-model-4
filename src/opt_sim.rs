@@ -311,9 +311,17 @@ impl OptCircuit2 {
                     test_println!("      New cur_tree: {:?}", cur_tree);
 
                     if new_inputs.len() < 6 {
+                        func.input_len = u8::try_from(new_inputs.len()).unwrap();
+                        func.inputs[0..new_inputs.len()]
+                            .copy_from_slice(&new_inputs[0..new_inputs.len()]);
+                        test_println!("      Func inputs: {:?}", &func.inputs[0..new_inputs.len()]);
+                        
                         // if not greater input than can be handled by function
                         // then create new function and replace
                         let mut rev_curtree_map = HashMap::<u32, u32>::new();
+                        for (i, j) in new_inputs.iter().enumerate() {
+                            rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
+                        }
                         for (i, j) in cur_tree.iter().rev().enumerate() {
                             if !rev_curtree_map.contains_key(j) {
                                 rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
@@ -327,11 +335,7 @@ impl OptCircuit2 {
                             .copied()
                             .skip(cur_tree.len() - cur_tree_prev)
                             .collect::<Vec<_>>();
-                        func.input_len = u8::try_from(new_inputs.len()).unwrap();
-                        func.inputs[0..new_inputs.len()]
-                            .copy_from_slice(&new_inputs[0..new_inputs.len()]);
                         test_println!("      Func circuit: {:?}", func_circuit);
-                        test_println!("      Func inputs: {:?}", &func.inputs[0..new_inputs.len()]);
 
                         // calculate values
                         let mut calcs = vec![0; (func.input_len as usize) + func_circuit.len()];
@@ -353,25 +357,11 @@ impl OptCircuit2 {
                                 continue;
                             }
                             let (ogi0, ogi1) = opt_circuit.circuit[(*gi - base) as usize];
-                            test_println!("        calc inputs {} {}", ogi0, ogi1);
                             let gi = (
                                 rev_curtree_map[&ogi0] as usize,
                                 rev_curtree_map[&ogi1] as usize,
                             );
-                            // revert input order
-                            let gi = (
-                                if gi.0 < input_len {
-                                    input_len - gi.0 - 1
-                                } else {
-                                    gi.0
-                                },
-                                if gi.1 < input_len {
-                                    input_len - gi.1 - 1
-                                } else {
-                                    gi.1
-                                },
-                            );
-                            test_println!("        calc convinputs {:?}", gi);
+                            test_println!("        calc convinputs {:?} to {}", gi, input_len+i);
                             calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
                         }
                         test_println!("      Func calcs: {:?}", calcs);
@@ -452,9 +442,9 @@ impl OptCircuit2 {
                     if x < base {
                         x
                     } else {
-                        final_func_out_map[&(ordering[(x - base) as usize].1 as usize)]
-                            .try_into()
-                            .unwrap()
+                        u32::try_from(
+                            final_func_out_map[&(ordering[(x - base) as usize].1 as usize)])
+                            .unwrap() + base
                     }
                 })
                 .collect::<Vec<_>>(),
