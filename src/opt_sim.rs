@@ -351,7 +351,7 @@ impl OptCircuit2 {
                             .0;
 
                         for (i, gi) in func_circuit.iter().enumerate() {
-                            test_println!("        calc func {} {}", i, gi);
+                            test_println!("        calc func {} {} {}", i, gi, *gi - base);
                             if *gi < base {
                                 continue;
                             }
@@ -409,8 +409,9 @@ impl OptCircuit2 {
         for v in opt_circuit
             .outputs
             .iter()
-            .map(|x| ordering[(x - base) as usize].1)
+            .map(|x| rev_ordering[(x - base) as usize])
         {
+            println!(" visited as output {}", v);
             visited[v as usize] = UsedAsInput;
         }
 
@@ -424,7 +425,9 @@ impl OptCircuit2 {
             final_funcs.push(*func);
             final_func_out_idxs.push(i);
             for g in &func.inputs[0..func.input_len as usize] {
-                visited[*g as usize] = UsedAsInput;
+                if *g >= base {
+                    visited[(*g - base) as usize] = UsedAsInput;
+                }
             }
             test_println!("  visited by : {} {:?}", i, calced_nodes);
             for g in calced_nodes.iter() {
@@ -441,7 +444,7 @@ impl OptCircuit2 {
             opt_circuit
                 .outputs
                 .iter()
-                .map(|x| ordering[(x - base) as usize].1)
+                .map(|x| rev_ordering[(x - base) as usize])
                 .collect::<Vec<_>>()
         );
         test_println!("final_func_out_idxs: {:?}", final_func_out_idxs);
@@ -472,7 +475,7 @@ impl OptCircuit2 {
                         x
                     } else {
                         u32::try_from(
-                            final_func_out_map[&(ordering[(x - base) as usize].1 as usize)],
+                            final_func_out_map[&(rev_ordering[(x - base) as usize] as usize)],
                         )
                         .unwrap()
                             + base
@@ -1059,6 +1062,14 @@ mod tests {
             output_len: 4,
         };
         let opt_circ1 = OptCircuit::new(circ1.clone(), None);
-        let opt_circ2 = OptCircuit2::new(opt_circ1);
+        let opt_circ2 = OptCircuit2::new(opt_circ1.clone());
+        for i in 0..1 << 12 {
+            let input = [(i & 0xff).try_into().unwrap(), (i >> 4).try_into().unwrap()];
+            let output2 = opt_circ1.run_circuit(&input, 12);
+            let output3 = opt_circ2.run_circuit(&input, 12);
+            //assert_eq!(output1, output2, "xor1 {}", i);
+            println!("xor1_1 {:b}={:?}", i, output2);
+            println!("xor1_2 {:b}={:?}", i, output3);
+        }
     }
 }
