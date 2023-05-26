@@ -167,26 +167,21 @@ impl OptCircuit {
 
     pub fn run_circuit(&self, input: &[u8], input_len: usize) -> [u8; 128 >> 3] {
         let circ_input_len = self.input_len as usize;
-        let mut memory = vec![0; (self.circuit.len() + circ_input_len + 1 + 7) >> 3];
+        let mut memory = vec![false; self.circuit.len() + circ_input_len + 1];
         let input_len = min(circ_input_len, input_len);
-        memory[0..(input_len + 7) >> 3].copy_from_slice(&input[0..(input_len + 7) >> 3]);
-        if input_len & 7 != 0 {
-            memory[input_len >> 3] &= ((1u16 << (input_len & 7)) - 1) as u8;
+        for i in 0..input_len {
+            memory[i] = ((input[i >> 3] >> (i & 7)) & 1) != 0;
         }
         let base = circ_input_len + 1;
         for (i, (igi1, igi2)) in self.circuit.iter().enumerate() {
             let (gi1, gi2) = (*igi1 as usize, *igi2 as usize);
-            let b1 = memory[gi1 >> 3] >> (gi1 & 7);
-            let b2 = memory[gi2 >> 3] >> (gi2 & 7);
             let out_idx = base + i;
-            let out_bit = out_idx & 7;
-            let out = ((!(b1 & b2)) & 1) << out_bit;
-            memory[out_idx >> 3] = (memory[out_idx >> 3] & !(1u8 << out_bit)) | out;
+            memory[out_idx] = !(memory[gi1] & memory[gi2]);
         }
         let mut final_output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for (i, idx) in self.outputs.iter().enumerate() {
             let idx = *idx as usize;
-            final_output[i >> 3] |= ((memory[idx >> 3] >> (idx & 7)) & 1) << (i & 7);
+            final_output[i >> 3] |= u8::from(memory[idx]) << (i & 7);
         }
         final_output
     }
@@ -490,11 +485,10 @@ impl OptCircuit2 {
 
     pub fn run_circuit(&self, input: &[u8], input_len: usize) -> [u8; 128 >> 3] {
         let circ_input_len = self.input_len as usize;
-        let mut memory = vec![0; (self.circuit.len() + circ_input_len + 1 + 7) >> 3];
+        let mut memory = vec![false; self.circuit.len() + circ_input_len + 1];
         let input_len = min(circ_input_len, input_len);
-        memory[0..(input_len + 7) >> 3].copy_from_slice(&input[0..(input_len + 7) >> 3]);
-        if input_len & 7 != 0 {
-            memory[input_len >> 3] &= ((1u16 << (input_len & 7)) - 1) as u8;
+        for i in 0..input_len {
+            memory[i] = ((input[i >> 3] >> (i & 7)) & 1) != 0;
         }
         let base = circ_input_len + 1;
         for (i, func) in self.circuit.iter().enumerate() {
@@ -502,17 +496,15 @@ impl OptCircuit2 {
             let mut input_idx = 0;
             for i in 0..func_input_len {
                 let idx = func.inputs[i] as usize;
-                input_idx |= ((memory[idx >> 3] >> (idx & 7)) & 1) << i;
+                input_idx |= u8::from(memory[idx]) << i;
             }
             let out_idx = base + i;
-            let out_bit = out_idx & 7;
-            let out = (((func.outputs >> input_idx) & 1) as u8) << out_bit;
-            memory[out_idx >> 3] = (memory[out_idx >> 3] & !(1u8 << out_bit)) | out;
+            memory[out_idx] = ((func.outputs >> input_idx) & 1) != 0;
         }
         let mut final_output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for (i, idx) in self.outputs.iter().enumerate() {
             let idx = *idx as usize;
-            final_output[i >> 3] |= ((memory[idx >> 3] >> (idx & 7)) & 1) << (i & 7);
+            final_output[i >> 3] |= u8::from(memory[idx]) << (i & 7);
         }
         final_output
     }
