@@ -409,9 +409,9 @@ impl OptCircuit2 {
         for v in opt_circuit
             .outputs
             .iter()
-            .map(|x| &(ordering[(x - base) as usize].1))
+            .map(|x| ordering[(x - base) as usize].1)
         {
-            visited[*v as usize] = UsedAsInput;
+            visited[v as usize] = UsedAsInput;
         }
 
         for ri in 0..circ_len {
@@ -441,7 +441,7 @@ impl OptCircuit2 {
             opt_circuit
                 .outputs
                 .iter()
-                .map(|x| &(ordering[(x - base) as usize].1))
+                .map(|x| ordering[(x - base) as usize].1)
                 .collect::<Vec<_>>()
         );
         test_println!("final_func_out_idxs: {:?}", final_func_out_idxs);
