@@ -212,9 +212,7 @@ impl OptCircuit2 {
         let mut ordering = vec![(0u32, 0u32); circ_len];
         // to next ordering: index - original ordering, value - next ordering
         let mut rev_ordering = vec![0; circ_len];
-        // functions supplied to entry - ordering order, inputs in ordering order
-        let mut functions = vec![(FuncEntry::default(), HashSet::<u32>::new()); circ_len];
-
+        
         let base = u32::try_from(circ_input_len + 1).unwrap();
         for (i, (igi1, igi2)) in opt_circuit.circuit.iter().enumerate() {
             // get step of calculation for inputs
@@ -237,24 +235,45 @@ impl OptCircuit2 {
         }
         test_println!("RevOrdering: {:?}", rev_ordering);
 
-        let mut step = 0;
-        let mut first_in_step = 0;
-        while first_in_step < circ_len {
-            let first_in_next_step = match ordering.binary_search(&(step + 1, 0)) {
-                Ok(r) => r,
-                Err(r) => r,
-            };
-            test_println!("Step {} {}", first_in_step, first_in_next_step);
-            for (ord_idx, (_, orig_idx)) in ordering[first_in_step..first_in_next_step]
-                .iter()
-                .enumerate()
-            {
-                let ord_idx = first_in_step + ord_idx;
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        enum VisitState {
+            NotVisited,
+            Visited,
+            UsedAsInput,
+        }
+        use VisitState::*;
+
+        // collect and filter functions and build function tree
+        let mut final_funcs: Vec<FuncEntry> = vec![];
+        let mut final_func_out_idxs = vec![];
+        let mut visited = vec![NotVisited; circ_len];
+
+        // outputs must be always calculated as used as final outputs
+        for v in opt_circuit
+            .outputs
+            .iter()
+            .filter(|x| **x >= base)
+            .map(|x| rev_ordering[(x - base) as usize])
+        {
+            test_println!(" visited as output {}", v);
+            visited[v as usize] = UsedAsInput;
+        }
+
+        for ri in 0..circ_len {
+            let i = circ_len - ri - 1;
+            if visited[i] == Visited {
+                continue;
+            }
+            
+            let (func, calced_nodes) = {
+                let ord_idx = i;
+                let orig_idx = ordering[ord_idx].1;
                 test_println!("  Gate: orig={} order={}", orig_idx, ord_idx);
                 // determine function and its inputs
                 let mut func = FuncEntry::default();
+                let mut func_visited = HashSet::new();
                 // hold original index of output
-                let mut cur_tree: Vec<u32> = vec![base + *orig_idx];
+                let mut cur_tree: Vec<u32> = vec![base + orig_idx];
                 let mut inputs: Vec<u32> = vec![base + u32::try_from(ord_idx).unwrap()];
 
                 // deepening direct input usage
@@ -403,16 +422,13 @@ impl OptCircuit2 {
                         test_println!("      Func calcs: {:?}", calcs);
                         func.outputs = *calcs.last().unwrap();
 
-                        functions[ord_idx] = (
-                            func,
-                            HashSet::<u32>::from_iter(
-                                cur_tree
-                                    .iter()
-                                    .rev()
-                                    .skip(input_len)
-                                    .filter(|x| **x >= base)
-                                    .map(|x| rev_ordering[(*x - base) as usize]),
-                            ),
+                        func_visited = HashSet::<u32>::from_iter(
+                            cur_tree
+                                .iter()
+                                .rev()
+                                .skip(input_len)
+                                .filter(|x| **x >= base)
+                                .map(|x| rev_ordering[(*x - base) as usize]),
                         );
                     } else {
                         test_println!("      New inuts over 6: {}", new_inputs.len());
@@ -421,46 +437,13 @@ impl OptCircuit2 {
                             break; // end of finding
                         }
                     }
-                    test_println!("      Func Nodes: {:?}", functions[ord_idx].1);
+                    test_println!("      Func Nodes: {:?}", func_visited);
                     inputs = new_inputs.clone();
                 }
-            }
-            first_in_step = first_in_next_step;
-            step += 1;
-        }
-
-        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-        enum VisitState {
-            NotVisited,
-            Visited,
-            UsedAsInput,
-        }
-        use VisitState::*;
-
-        // collect and filter functions and build function tree
-        let mut final_funcs: Vec<FuncEntry> = vec![];
-        let mut final_func_out_idxs = vec![];
-        let mut visited = vec![NotVisited; circ_len];
-
-        // outputs must be always calculated as used as final outputs
-        for v in opt_circuit
-            .outputs
-            .iter()
-            .filter(|x| **x >= base)
-            .map(|x| rev_ordering[(x - base) as usize])
-        {
-            test_println!(" visited as output {}", v);
-            visited[v as usize] = UsedAsInput;
-        }
-
-        for ri in 0..circ_len {
-            let i = circ_len - ri - 1;
-            if visited[i] == Visited {
-                continue;
-            }
-            let (func, calced_nodes) = &functions[i];
+                (func, func_visited)
+            };
             test_println!("collect and filter: {} {:?}", i, func);
-            final_funcs.push(*func);
+            final_funcs.push(func);
             final_func_out_idxs.push(i);
             for g in &func.inputs[0..func.input_len as usize] {
                 if *g >= base {
