@@ -201,6 +201,60 @@ pub struct OptCircuit2 {
     pub outputs: Vec<u32>,
 }
 
+fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_len: usize) -> u64 {
+    // if not greater input than can be handled by function
+    // then create new function and replace
+    let mut rev_curtree_map = HashMap::<u32, u32>::new();
+    for (i, j) in cur_tree[cur_tree.len() - input_len..].iter().enumerate() {
+        rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
+    }
+    for (i, j) in cur_tree.iter().rev().enumerate() {
+        if !rev_curtree_map.contains_key(j) {
+            rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
+        }
+    }
+    test_println!("      rev_cur_tree: {:?}", rev_curtree_map);
+
+    let func_circuit = cur_tree
+        .iter()
+        .rev()
+        .copied()
+        .skip(input_len)
+        .collect::<Vec<_>>();
+    test_println!("      Func circuit: {:?}", func_circuit);
+
+    let mut calcs = vec![0; input_len + func_circuit.len()];
+    for value in 0..(1u64.overflowing_shl(input_len.try_into().unwrap()).0) {
+        for i in 0..input_len {
+            calcs[i] |= ((value >> i) & 1) << value;
+        }
+    }
+    let not_mask = 1u64
+        .checked_shl(1 << input_len)
+        .unwrap_or_default()
+        .overflowing_sub(1)
+        .0;
+
+    for (i, gi) in func_circuit.iter().enumerate() {
+        test_println!("        calc func {} {} {}", i, gi, *gi - base);
+        if *gi < base {
+            continue;
+        }
+        let (ogi0, ogi1) = opt_circuit.circuit[(*gi - base) as usize];
+        test_println!("        calc inputs: {:?}", (ogi0, ogi1));
+        if !rev_curtree_map.contains_key(&ogi1) || !rev_curtree_map.contains_key(&ogi1) {
+            continue;
+        }
+        let gi = (
+            rev_curtree_map[&ogi0] as usize,
+            rev_curtree_map[&ogi1] as usize,
+        );
+        test_println!("        calc convinputs {:?} to {}", gi, input_len + i);
+        calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
+    }
+    *calcs.last().unwrap()
+}
+
 impl OptCircuit2 {
     pub fn new(opt_circuit: OptCircuit) -> Self {
         test_println!("opt_circuit: {:?}", opt_circuit.circuit);
@@ -404,61 +458,7 @@ impl OptCircuit2 {
                         test_println!("      Func inputs: {:?}", &func.inputs[0..new_inputs.len()]);
                         let input_len = func.input_len as usize;
 
-                        // if not greater input than can be handled by function
-                        // then create new function and replace
-                        let mut rev_curtree_map = HashMap::<u32, u32>::new();
-                        for (i, j) in cur_tree[cur_tree.len() - input_len..].iter().enumerate() {
-                            rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
-                        }
-                        for (i, j) in cur_tree.iter().rev().enumerate() {
-                            if !rev_curtree_map.contains_key(j) {
-                                rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
-                            }
-                        }
-                        test_println!("      rev_cur_tree: {:?}", rev_curtree_map);
-
-                        let func_circuit = cur_tree
-                            .iter()
-                            .rev()
-                            .copied()
-                            .skip(input_len)
-                            .collect::<Vec<_>>();
-                        test_println!("      Func circuit: {:?}", func_circuit);
-
-                        // calculate values
-                        let mut calcs = vec![0; (func.input_len as usize) + func_circuit.len()];
-                        for value in 0..(1u64.overflowing_shl(func.input_len.into()).0) {
-                            for i in 0..(func.input_len as usize) {
-                                calcs[i] |= ((value >> i) & 1) << value;
-                            }
-                        }
-                        let not_mask = 1u64
-                            .checked_shl(1 << func.input_len)
-                            .unwrap_or_default()
-                            .overflowing_sub(1)
-                            .0;
-
-                        for (i, gi) in func_circuit.iter().enumerate() {
-                            test_println!("        calc func {} {} {}", i, gi, *gi - base);
-                            if *gi < base {
-                                continue;
-                            }
-                            let (ogi0, ogi1) = opt_circuit.circuit[(*gi - base) as usize];
-                            test_println!("        calc inputs: {:?}", (ogi0, ogi1));
-                            if !rev_curtree_map.contains_key(&ogi1)
-                                || !rev_curtree_map.contains_key(&ogi1)
-                            {
-                                continue;
-                            }
-                            let gi = (
-                                rev_curtree_map[&ogi0] as usize,
-                                rev_curtree_map[&ogi1] as usize,
-                            );
-                            test_println!("        calc convinputs {:?} to {}", gi, input_len + i);
-                            calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
-                        }
-                        test_println!("      Func calcs: {:?}", calcs);
-                        func.outputs = *calcs.last().unwrap();
+                        func.outputs = opt2_calc_func(&opt_circuit, &cur_tree, base, input_len);
 
                         func_visited = HashSet::<u32>::from_iter(
                             cur_tree
@@ -481,6 +481,9 @@ impl OptCircuit2 {
                         break;
                     }
                 }
+
+                // further optimization to function
+
                 (func, func_visited)
             };
             test_println!("collect and filter: {} {:?}", i, func);
