@@ -313,43 +313,63 @@ impl OptCircuit2 {
                             };
                             
                             // optimize not
-                            let (g1, orig_g1) = if orig_g1 >= base {
-                                let (orig_g1x, orig_g2x) = opt_circuit.circuit[
-                                            (orig_g1 - base) as usize];
-                                // same inputs then not - put not gate and get its input
-                                if orig_g1x == orig_g2x {
-                                    let g1x = if orig_g1x < base {
-                                        orig_g1x
+                            // let (mut old_g1, mut old_orig_g1) = (g1, orig_g1);
+                            let (mut g1, mut orig_g1) = (g1, orig_g1);
+                            //loop
+                            {
+                                test_println!("Xy: {:?}", (g1, orig_g1));
+                                (g1, orig_g1) = if orig_g1 >= base {
+                                    let (orig_g1x, orig_g2x) = opt_circuit.circuit[
+                                                (orig_g1 - base) as usize];
+                                    // same inputs then not - put not gate and get its input
+                                    if orig_g1x == orig_g2x {
+                                        let g1x = if orig_g1x < base {
+                                            orig_g1x
+                                        } else {
+                                            base + rev_ordering[(orig_g1x - base) as usize]
+                                        };
+                                        cur_tree.push(orig_g1);
+                                        (g1x, orig_g1x)
                                     } else {
-                                        base + rev_ordering[(orig_g1x - base) as usize]
-                                    };
-                                    cur_tree.push(orig_g1);
-                                    (g1x, orig_g1x)
+                                        (g1, orig_g1)
+                                    }
                                 } else {
                                     (g1, orig_g1)
-                                }
-                            } else {
-                                (g1, orig_g1)
-                            };
+                                };
+                                // if (old_g1, old_orig_g1) == (g1, orig_g1) {
+                                //     break;
+                                // }
+                                // (old_g1, old_orig_g1) = (g1, orig_g1);
+                            }
                             
-                            let (g2, orig_g2) = if orig_g2 >= base {
-                                let (orig_g1x, orig_g2x) = opt_circuit.circuit[
-                                            (orig_g2 - base) as usize];
-                                // same inputs then not - put not gate and get its input
-                                if orig_g1x == orig_g2x {
-                                    let g1x = if orig_g1x < base {
-                                        orig_g1x
+                            // let (mut old_g2, mut old_orig_g2) = (g2, orig_g2);
+                            let (mut g2, mut orig_g2) = (g2, orig_g2);
+                            //loop
+                            {
+                                test_println!("Xy2: {:?}", (g2, orig_g2));
+                                (g2, orig_g2) = if orig_g2 >= base {
+                                    let (orig_g1x, orig_g2x) = opt_circuit.circuit[
+                                                (orig_g2 - base) as usize];
+                                    // same inputs then not - put not gate and get its input
+                                    if orig_g1x == orig_g2x {
+                                        let g1x = if orig_g1x < base {
+                                            orig_g1x
+                                        } else {
+                                            base + rev_ordering[(orig_g1x - base) as usize]
+                                        };
+                                        cur_tree.push(orig_g2);
+                                        (g1x, orig_g1x)
                                     } else {
-                                        base + rev_ordering[(orig_g1x - base) as usize]
-                                    };
-                                    cur_tree.push(orig_g2);
-                                    (g1x, orig_g1x)
+                                        (g2, orig_g2)
+                                    }
                                 } else {
                                     (g2, orig_g2)
-                                }
-                            } else {
-                                (g2, orig_g2)
-                            };
+                                };
+                                // if (old_g2, old_orig_g2) == (g2, orig_g2) {
+                                //     break;
+                                // }
+                                // (old_g2, old_orig_g2) = (g2, orig_g2);
+                            }
                             
                             if !new_inputs.contains(&g1) {
                                 new_inputs.push(g1);
@@ -484,8 +504,8 @@ impl OptCircuit2 {
             }
         }
         test_println!("Final funcs: {:?}", final_funcs);
-        test_println!("Optcircuit len: {}", opt_circuit.circuit.len());
-        test_println!("Final funcs len: {}", final_funcs.len());
+        println!("Optcircuit len: {}", opt_circuit.circuit.len());
+        println!("Final funcs len: {}", final_funcs.len());
 
         OptCircuit2 {
             circuit: final_funcs,
