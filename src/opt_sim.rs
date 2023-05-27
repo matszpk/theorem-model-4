@@ -369,7 +369,7 @@ impl OptCircuit2 {
                 let mut func = FuncEntry::default();
                 let mut func_visited = HashSet::new();
                 // set to last function choice - length of curtree for after this choice
-                let mut choosen_curtree_len = 0;
+                //let mut choosen_curtree_len = 0;
                 // hold original index of output
                 let mut cur_tree: Vec<u32> = vec![base + orig_idx];
                 let mut inputs: Vec<u32> = vec![base + u32::try_from(ord_idx).unwrap()];
@@ -458,7 +458,7 @@ impl OptCircuit2 {
                                 .filter(|x| **x >= base)
                                 .map(|x| rev_ordering[(*x - base) as usize]),
                         );
-                        choosen_curtree_len = cur_tree.len();
+                        //choosen_curtree_len = cur_tree.len();
                     } else {
                         test_println!("      New inuts over 6: {}", new_inputs.len());
                         // simple heuristics
