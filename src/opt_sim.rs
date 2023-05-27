@@ -277,20 +277,31 @@ impl OptCircuit2 {
                 let mut inputs: Vec<u32> = vec![base + u32::try_from(ord_idx).unwrap()];
 
                 // deepening direct input usage
-                while inputs.iter().any(|x| *x >= base) {
+                //while inputs.iter().any(|x| *x >= base) {
+                loop {
                     test_println!("    Step:");
                     let mut new_inputs: Vec<u32> = vec![];
                     let mut new_cur_tree_pass: Vec<u32> = vec![];
 
                     test_println!("      Gen new inputs:");
+                    let mut expanded = 0;
                     for ai in &inputs {
-                        if *ai < base {
+                        if *ai < base ||
+                            (ord_idx != (*ai - base) as usize &&
+                             visited[(*ai - base) as usize] == UsedAsInput) {
                             test_println!("        Ii {}", ai);
                             if !new_inputs.contains(&ai) {
                                 new_inputs.push(*ai);
-                                new_cur_tree_pass.push(*ai);
+                                if *ai < base {
+                                    new_cur_tree_pass.push(*ai);
+                                } else {
+                                    let orig_idx = base + ordering[(ai - base) as usize].1;
+                                    test_println!("        Ii2 {} {}", ai, orig_idx);
+                                    new_cur_tree_pass.push(orig_idx);
+                                }
                             }
                         } else {
+                            expanded += 1;
                             // deep
                             test_println!("        Gi {}", ai);
                             let orig_idx = ordering[(ai - base) as usize].1 as usize;
@@ -432,6 +443,11 @@ impl OptCircuit2 {
                                 continue;
                             }
                             let (ogi0, ogi1) = opt_circuit.circuit[(*gi - base) as usize];
+                            test_println!("        calc inputs: {:?}", (ogi0, ogi1));
+                            if !rev_curtree_map.contains_key(&ogi0) ||
+                               !rev_curtree_map.contains_key(&ogi1) {
+                                continue;
+                            }
                             let gi = (
                                 rev_curtree_map[&ogi0] as usize,
                                 rev_curtree_map[&ogi1] as usize,
@@ -459,6 +475,9 @@ impl OptCircuit2 {
                     }
                     test_println!("      Func Nodes: {:?}", func_visited);
                     inputs = new_inputs.clone();
+                    if expanded == 0 {
+                        break;
+                    }
                 }
                 (func, func_visited)
             };
