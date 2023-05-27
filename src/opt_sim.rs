@@ -212,7 +212,7 @@ impl OptCircuit2 {
         let mut ordering = vec![(0u32, 0u32); circ_len];
         // to next ordering: index - original ordering, value - next ordering
         let mut rev_ordering = vec![0; circ_len];
-        
+
         let base = u32::try_from(circ_input_len + 1).unwrap();
         for (i, (igi1, igi2)) in opt_circuit.circuit.iter().enumerate() {
             // get step of calculation for inputs
@@ -264,7 +264,7 @@ impl OptCircuit2 {
             if visited[i] == Visited {
                 continue;
             }
-            
+
             let (func, calced_nodes) = {
                 let ord_idx = i;
                 let orig_idx = ordering[ord_idx].1;
@@ -286,9 +286,10 @@ impl OptCircuit2 {
                     test_println!("      Gen new inputs:");
                     let mut expanded = 0;
                     for ai in &inputs {
-                        if *ai < base ||
-                            (ord_idx != (*ai - base) as usize &&
-                             visited[(*ai - base) as usize] == UsedAsInput) {
+                        if *ai < base
+                            || (ord_idx != (*ai - base) as usize
+                                && visited[(*ai - base) as usize] == UsedAsInput)
+                        {
                             test_println!("        Ii {}", ai);
                             if !new_inputs.contains(&ai) {
                                 new_inputs.push(*ai);
@@ -322,7 +323,7 @@ impl OptCircuit2 {
                             } else {
                                 base + rev_ordering[(orig_g2 - base) as usize]
                             };
-                            
+
                             // optimize not
                             // let (mut old_g1, mut old_orig_g1) = (g1, orig_g1);
                             let (mut g1, mut orig_g1) = (g1, orig_g1);
@@ -330,8 +331,8 @@ impl OptCircuit2 {
                             {
                                 test_println!("Xy: {:?}", (g1, orig_g1));
                                 (g1, orig_g1) = if orig_g1 >= base {
-                                    let (orig_g1x, orig_g2x) = opt_circuit.circuit[
-                                                (orig_g1 - base) as usize];
+                                    let (orig_g1x, orig_g2x) =
+                                        opt_circuit.circuit[(orig_g1 - base) as usize];
                                     // same inputs then not - put not gate and get its input
                                     if orig_g1x == orig_g2x {
                                         let g1x = if orig_g1x < base {
@@ -352,15 +353,15 @@ impl OptCircuit2 {
                                 // }
                                 // (old_g1, old_orig_g1) = (g1, orig_g1);
                             }
-                            
+
                             // let (mut old_g2, mut old_orig_g2) = (g2, orig_g2);
                             let (mut g2, mut orig_g2) = (g2, orig_g2);
                             //loop
                             {
                                 test_println!("Xy2: {:?}", (g2, orig_g2));
                                 (g2, orig_g2) = if orig_g2 >= base {
-                                    let (orig_g1x, orig_g2x) = opt_circuit.circuit[
-                                                (orig_g2 - base) as usize];
+                                    let (orig_g1x, orig_g2x) =
+                                        opt_circuit.circuit[(orig_g2 - base) as usize];
                                     // same inputs then not - put not gate and get its input
                                     if orig_g1x == orig_g2x {
                                         let g1x = if orig_g1x < base {
@@ -381,7 +382,7 @@ impl OptCircuit2 {
                                 // }
                                 // (old_g2, old_orig_g2) = (g2, orig_g2);
                             }
-                            
+
                             if !new_inputs.contains(&g1) {
                                 new_inputs.push(g1);
                                 new_cur_tree_pass.push(orig_g1);
@@ -444,8 +445,9 @@ impl OptCircuit2 {
                             }
                             let (ogi0, ogi1) = opt_circuit.circuit[(*gi - base) as usize];
                             test_println!("        calc inputs: {:?}", (ogi0, ogi1));
-                            if !rev_curtree_map.contains_key(&ogi0) ||
-                               !rev_curtree_map.contains_key(&ogi1) {
+                            if !rev_curtree_map.contains_key(&ogi1)
+                                || !rev_curtree_map.contains_key(&ogi1)
+                            {
                                 continue;
                             }
                             let gi = (
@@ -523,8 +525,8 @@ impl OptCircuit2 {
             }
         }
         test_println!("Final funcs: {:?}", final_funcs);
-        println!("Optcircuit len: {}", opt_circuit.circuit.len());
-        println!("Final funcs len: {}", final_funcs.len());
+        test_println!("Optcircuit len: {}", opt_circuit.circuit.len());
+        test_println!("Final funcs len: {}", final_funcs.len());
 
         OptCircuit2 {
             circuit: final_funcs,
