@@ -767,11 +767,37 @@ impl SecondMachine {
 pub fn run_test_suite(
     circuit: &CircuitDebug,
     testsuite: impl IntoIterator<Item = TestCase>,
+    runner: RunnerType,
     trace: bool,
 ) -> bool {
     let mut passed = true;
     let mut passed_count = 0;
     let mut failed_count = 0;
+    let opt_circuits = match runner {
+        RunnerType::Normal | RunnerType::Optimized2 => None,
+        RunnerType::Optimized => {
+            let mut cmap = vec![OptCircuit::default(); circuit.subcircuits.len() + 1];
+            cmap[0] = OptCircuit::new(circuit.circuit.clone(), None);
+            for (_, id) in &circuit.subcircuits {
+                cmap[(*id as usize) + 1] =
+                    OptCircuit::new(circuit.circuit.clone(), Some(*id as usize));
+            }
+            Some(cmap)
+        }
+    };
+    let opt_circuits_2 = match runner {
+        RunnerType::Normal | RunnerType::Optimized => None,
+        RunnerType::Optimized2 => {
+            let mut cmap = vec![OptCircuit2::default(); circuit.subcircuits.len() + 1];
+            cmap[0] = OptCircuit2::new(OptCircuit::new(circuit.circuit.clone(), None));
+            for (_, id) in &circuit.subcircuits {
+                cmap[(*id as usize) + 1] =
+                    OptCircuit2::new(OptCircuit::new(circuit.circuit.clone(), Some(*id as usize)));
+            }
+            Some(cmap)
+        }
+    };
+
     for (i, tc) in testsuite.into_iter().enumerate() {
         println!("Testcase {}: {}", i, tc.name);
 
@@ -787,14 +813,32 @@ pub fn run_test_suite(
         let (output, output_len) = if tc.subcircuit != "main" {
             let sc = circuit.subcircuits[&tc.subcircuit] as usize;
             (
-                circuit
-                    .circuit
-                    .run_subcircuit(sc.try_into().unwrap(), &input[..], trace),
+                match runner {
+                    RunnerType::Normal => {
+                        circuit
+                            .circuit
+                            .run_subcircuit(sc.try_into().unwrap(), &input[..], trace)
+                    }
+                    RunnerType::Optimized => opt_circuits.as_ref().unwrap()[sc + 1].run_circuit(
+                        &input[..],
+                        circuit.circuit.subcircuits[sc].input_len as usize,
+                    ),
+                    RunnerType::Optimized2 => opt_circuits_2.as_ref().unwrap()[sc + 1].run_circuit(
+                        &input[..],
+                        circuit.circuit.subcircuits[sc].input_len as usize,
+                    ),
+                },
                 circuit.circuit.subcircuits[sc].output_len as usize,
             )
         } else {
             (
-                circuit.circuit.run(&input[..], trace),
+                match runner {
+                    RunnerType::Normal => circuit.circuit.run(&input[..], trace),
+                    RunnerType::Optimized => opt_circuits.as_ref().unwrap()[0]
+                        .run_circuit(&input[..], circuit.circuit.input_len as usize),
+                    RunnerType::Optimized2 => opt_circuits_2.as_ref().unwrap()[0]
+                        .run_circuit(&input[..], circuit.circuit.input_len as usize),
+                },
                 circuit.circuit.output_len as usize,
             )
         };

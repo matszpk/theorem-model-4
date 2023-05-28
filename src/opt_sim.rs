@@ -15,7 +15,7 @@ macro_rules! test_println {
     ($($arg:tt)*) => {};
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct OptCircuit {
     pub circuit: Vec<(u32, u32)>,
     pub input_len: u8,
@@ -202,7 +202,7 @@ struct FuncEntry {
     outputs: u64,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct OptCircuit2 {
     circuit: Vec<FuncEntry>,
     pub input_len: u8,

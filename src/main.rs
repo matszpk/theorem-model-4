@@ -55,6 +55,8 @@ struct TestCircuitArgs {
     trace: bool,
     #[clap(short, long, help = "Read circuit as dump")]
     read_dump: bool,
+    #[clap(value_enum, short = 'R', long, help = "Use specified runner")]
+    runner: Option<RunnerType>,
 }
 
 #[derive(Parser)]
@@ -110,7 +112,7 @@ fn main() -> ExitCode {
     let (circuit_file_name, read_dump, runner_type) = match cli.command {
         Commands::Check(ref r) => (r.circuit.clone(), r.read_dump, RunnerType::default()),
         Commands::Run(ref r) => (r.circuit.clone(), r.read_dump, RunnerType::default()),
-        Commands::Test(ref r) => (r.circuit.clone(), r.read_dump, RunnerType::default()),
+        Commands::Test(ref r) => (r.circuit.clone(), r.read_dump, r.runner.unwrap_or_default()),
         Commands::Dump(ref r) => (r.circuit.clone(), r.read_dump, RunnerType::default()),
         Commands::RunMachine(ref r) => {
             (r.circuit.clone(), r.read_dump, r.runner.unwrap_or_default())
@@ -261,7 +263,7 @@ fn main() -> ExitCode {
                     l.push('\n');
                     parse_test_case(&l).unwrap().1
                 });
-            if !run_test_suite(&circuit, tc_iter, r.trace) {
+            if !run_test_suite(&circuit, tc_iter, runner_type, r.trace) {
                 return ExitCode::FAILURE;
             }
         }
