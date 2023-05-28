@@ -190,8 +190,8 @@ impl OptCircuit {
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 struct FuncEntry {
     input_len: u8,
-    inputs: [u32; 6],
-    outputs: u64,
+    inputs: [u32; 9],
+    outputs: [u64; 8],
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -201,7 +201,8 @@ pub struct OptCircuit2 {
     pub outputs: Vec<u32>,
 }
 
-fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_len: usize) -> u64 {
+fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_len: usize)
+        -> [u64; 8] {
     // if not greater input than can be handled by function
     // then create new function and replace
     let mut rev_curtree_map = HashMap::<u32, u32>::new();
@@ -223,17 +224,27 @@ fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_l
         .collect::<Vec<_>>();
     test_println!("      Func circuit: {:?}", func_circuit);
 
-    let mut calcs = vec![0; input_len + func_circuit.len()];
-    for value in 0..(1u64.overflowing_shl(input_len.try_into().unwrap()).0) {
+    let mut calcs = vec![[0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64];
+                input_len + func_circuit.len()];
+    // for value in 0..(1u128.overflowing_shl(input_len.try_into().unwrap()).0) {
+    //     for i in 0..input_len {
+    //         calcs[i] |= ((value >> i) & 1) << value;
+    //     }
+    // }
+    for value in 0..(1u64 << input_len) {
         for i in 0..input_len {
-            calcs[i] |= ((value >> i) & 1) << value;
+            calcs[i][usize::try_from(value >> 6).unwrap()] |= ((value >> i) & 1) << (value & 63);
         }
     }
-    let not_mask = 1u64
-        .checked_shl(1 << input_len)
-        .unwrap_or_default()
-        .overflowing_sub(1)
-        .0;
+    let mut not_mask = [0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64];
+    // let not_mask = 1u128
+    //     .checked_shl(1 << input_len)
+    //     .unwrap_or_default()
+    //     .overflowing_sub(1)
+    //     .0;
+    for i in 0..(1 << input_len) {
+        not_mask[i >> 6] |= 1u64 << (i & 63);
+    }
 
     for (i, gi) in func_circuit.iter().enumerate() {
         test_println!("        calc func {} {} {}", i, gi, *gi - base);
@@ -250,7 +261,10 @@ fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_l
             rev_curtree_map[&ogi1] as usize,
         );
         test_println!("        calc convinputs {:?} to {}", gi, input_len + i);
-        calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
+        //calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
+        for k in 0..(1 << (9 - 6)) {
+            calcs[input_len + i][k] = not_mask[k] ^ (calcs[gi.0][k] & calcs[gi.1][k]);
+        }
     }
     *calcs.last().unwrap()
 }
@@ -441,7 +455,7 @@ impl OptCircuit2 {
                     test_println!("      New inputs: {:?}", new_inputs);
                     test_println!("      New cur_tree: {:?}", cur_tree);
 
-                    if new_inputs.len() <= 6 {
+                    if new_inputs.len() <= 9 {
                         func.input_len = u8::try_from(new_inputs.len()).unwrap();
                         func.inputs[0..new_inputs.len()]
                             .copy_from_slice(&new_inputs[0..new_inputs.len()]);
@@ -460,7 +474,7 @@ impl OptCircuit2 {
                         );
                         //choosen_curtree_len = cur_tree.len();
                     } else {
-                        test_println!("      New inuts over 6: {}", new_inputs.len());
+                        test_println!("      New inuts over 9: {}", new_inputs.len());
                         // simple heuristics
                         if new_inputs.len() > 30 {
                             break; // end of finding
@@ -554,10 +568,11 @@ impl OptCircuit2 {
             let mut input_idx = 0;
             for i in 0..func_input_len {
                 let idx = func.inputs[i] as usize;
-                input_idx |= u8::from(memory[idx]) << i;
+                input_idx |= usize::from(memory[idx]) << i;
             }
             let out_idx = base + i;
-            memory[out_idx] = ((func.outputs >> input_idx) & 1) != 0;
+            //memory[out_idx] = ((func.outputs >> input_idx) & 1) != 0;
+            memory[out_idx] = ((func.outputs[input_idx >> 6] >> (input_idx & 63)) & 1) != 0;
         }
         let mut final_output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for (i, idx) in self.outputs.iter().enumerate() {
