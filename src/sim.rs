@@ -8,8 +8,6 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
 
-// TODO: optimize run of circuit in TheoremModel4.
-
 #[derive(thiserror::Error, Debug)]
 pub enum DumpError {
     #[error("IO error: {0}")]
