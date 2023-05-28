@@ -509,6 +509,10 @@ impl PrimalMachine {
         let state_len = input_len - cell_len;
         assert_eq!(initial_state.len(), (state_len + 7) >> 3);
 
+        // if let Some(opt_circuit_2) = self.opt_circuit_2.as_ref() {
+        //     aggregate_opt_circuit2(opt_circuit_2);
+        // }
+
         let mut step_count = 0u64;
         let mut stop = false;
         let mut input = vec![0; ((input_len + 7) >> 3) as usize];

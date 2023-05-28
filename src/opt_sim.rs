@@ -680,6 +680,55 @@ impl OptCircuit2 {
     }
 }
 
+#[cfg(not(feature = "opt2_func9"))]
+pub fn aggregate_opt_circuit2(opt_circuit: &OptCircuit2) {
+    let base = (opt_circuit.input_len as u32) + 1;
+    let mut dep_sets = vec![HashSet::<u32>::new(); opt_circuit.circuit.len()];
+    for (i, func) in opt_circuit.circuit.iter().enumerate() {
+        for inp in &func.inputs[0..func.input_len as usize] {
+            if *inp >= base {
+                dep_sets[i].insert(*inp - base);
+                dep_sets[i] = &dep_sets[i] | &dep_sets[(*inp - base) as usize];
+            }
+        }
+    }
+    for (i, dep_set) in dep_sets.iter().enumerate() {
+        println!("dependencies: {} {:?}", i, dep_set);
+    }
+    // collect
+    let mut visited = vec![false; opt_circuit.circuit.len()];
+    let mut aggregates = vec![];
+    for (i, func) in opt_circuit.circuit.iter().enumerate() {
+        if visited[i] {
+            continue;
+        }
+        let mut input_sets = HashSet::<u32>::from_iter(
+            func.inputs[0..func.input_len as usize]
+                .iter()
+                .copied(),
+        );
+        visited[i] = true;
+        for (j, funcj) in opt_circuit.circuit.iter().enumerate() {
+            if visited[j] || dep_sets[i].contains(&u32::try_from(j).unwrap()) {
+                continue;
+            }
+            let j_input_sets = HashSet::<u32>::from_iter(
+                funcj.inputs[0..funcj.input_len as usize]
+                    .iter()
+                    .copied(),
+            );
+            let new_input_sets = &input_sets | &j_input_sets;
+            if new_input_sets.len() <= 6 {
+                input_sets = new_input_sets;
+                visited[j] = true;
+            }
+        }
+        aggregates.push((i, input_sets));
+    }
+    println!("aggegations: {:?}", aggregates);
+    println!("aggegations count: {:?}", aggregates.len());
+}
+
 // #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 // pub enum Opt2Entry {
 //     // range of input to argument 1 to gates: (Start, x), (Start+1,x2),...(end-1, xn)
