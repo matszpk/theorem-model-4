@@ -242,7 +242,7 @@ fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_l
         }
         let (ogi0, ogi1) = opt_circuit.circuit[(*gi - base) as usize];
         test_println!("        calc inputs: {:?}", (ogi0, ogi1));
-        if !rev_curtree_map.contains_key(&ogi1) || !rev_curtree_map.contains_key(&ogi1) {
+        if !rev_curtree_map.contains_key(&ogi0) || !rev_curtree_map.contains_key(&ogi1) {
             continue;
         }
         let gi = (
