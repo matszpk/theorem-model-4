@@ -187,11 +187,19 @@ impl OptCircuit {
     }
 }
 
+#[cfg(feature = "opt2_func9")]
+const FUNC_BITS: usize = 9;
+#[cfg(not(feature = "opt2_func9"))]
+const FUNC_BITS: usize = 6;
+
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 struct FuncEntry {
     input_len: u8,
     inputs: [u32; 9],
+    #[cfg(feature = "opt2_func9")]
     outputs: [u64; 8],
+    #[cfg(not(feature = "opt2_func9"))]
+    outputs: u64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -201,8 +209,13 @@ pub struct OptCircuit2 {
     pub outputs: Vec<u32>,
 }
 
-fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_len: usize)
-        -> [u64; 8] {
+#[cfg(feature = "opt2_func9")]
+fn opt2_calc_func(
+    opt_circuit: &OptCircuit,
+    cur_tree: &[u32],
+    base: u32,
+    input_len: usize,
+) -> [u64; 8] {
     // if not greater input than can be handled by function
     // then create new function and replace
     let mut rev_curtree_map = HashMap::<u32, u32>::new();
@@ -224,8 +237,8 @@ fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_l
         .collect::<Vec<_>>();
     test_println!("      Func circuit: {:?}", func_circuit);
 
-    let mut calcs = vec![[0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64];
-                input_len + func_circuit.len()];
+    let mut calcs =
+        vec![[0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64]; input_len + func_circuit.len()];
     // for value in 0..(1u128.overflowing_shl(input_len.try_into().unwrap()).0) {
     //     for i in 0..input_len {
     //         calcs[i] |= ((value >> i) & 1) << value;
@@ -265,6 +278,63 @@ fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_l
         for k in 0..(1 << (9 - 6)) {
             calcs[input_len + i][k] = not_mask[k] ^ (calcs[gi.0][k] & calcs[gi.1][k]);
         }
+    }
+    *calcs.last().unwrap()
+}
+
+#[cfg(not(feature = "opt2_func9"))]
+fn opt2_calc_func(opt_circuit: &OptCircuit, cur_tree: &[u32], base: u32, input_len: usize) -> u64 {
+    // if not greater input than can be handled by function
+    // then create new function and replace
+    let mut rev_curtree_map = HashMap::<u32, u32>::new();
+    for (i, j) in cur_tree[cur_tree.len() - input_len..].iter().enumerate() {
+        rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
+    }
+    for (i, j) in cur_tree.iter().rev().enumerate() {
+        if !rev_curtree_map.contains_key(j) {
+            rev_curtree_map.insert(*j, u32::try_from(i).unwrap());
+        }
+    }
+    test_println!("      rev_cur_tree: {:?}", rev_curtree_map);
+
+    let func_circuit = cur_tree
+        .iter()
+        .rev()
+        .copied()
+        .skip(input_len)
+        .collect::<Vec<_>>();
+    test_println!("      Func circuit: {:?}", func_circuit);
+
+    let mut calcs = vec![0u64; input_len + func_circuit.len()];
+    for value in 0..(1u64.overflowing_shl(input_len.try_into().unwrap()).0) {
+        for i in 0..input_len {
+            calcs[i] |= ((value >> i) & 1) << value;
+        }
+    }
+
+    let not_mask = 1u64
+        .checked_shl(1 << input_len)
+        .unwrap_or_default()
+        .overflowing_sub(1)
+        .0;
+
+    for (i, gi) in func_circuit.iter().enumerate() {
+        test_println!("        calc func {} {} {}", i, gi, *gi - base);
+        if *gi < base {
+            continue;
+        }
+        let (ogi0, ogi1) = opt_circuit.circuit[(*gi - base) as usize];
+        test_println!("        calc inputs: {:?}", (ogi0, ogi1));
+        if !rev_curtree_map.contains_key(&ogi0) || !rev_curtree_map.contains_key(&ogi1) {
+            continue;
+        }
+        let gi = (
+            rev_curtree_map[&ogi0] as usize,
+            rev_curtree_map[&ogi1] as usize,
+        );
+        test_println!("        calc convinputs {:?} to {}", gi, input_len + i);
+        //calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
+        calcs[input_len + i] = not_mask ^ (calcs[gi.0] & calcs[gi.1]);
     }
     *calcs.last().unwrap()
 }
@@ -455,7 +525,7 @@ impl OptCircuit2 {
                     test_println!("      New inputs: {:?}", new_inputs);
                     test_println!("      New cur_tree: {:?}", cur_tree);
 
-                    if new_inputs.len() <= 9 {
+                    if new_inputs.len() <= FUNC_BITS {
                         func.input_len = u8::try_from(new_inputs.len()).unwrap();
                         func.inputs[0..new_inputs.len()]
                             .copy_from_slice(&new_inputs[0..new_inputs.len()]);
@@ -486,7 +556,7 @@ impl OptCircuit2 {
                         break;
                     }
                 }
-                
+
                 (func, func_visited)
             };
             test_println!("collect and filter: {} {:?}", i, func);
@@ -555,6 +625,7 @@ impl OptCircuit2 {
         }
     }
 
+    #[cfg(feature = "opt2_func9")]
     pub fn run_circuit(&self, input: &[u8], input_len: usize) -> [u8; 128 >> 3] {
         let circ_input_len = self.input_len as usize;
         let mut memory = vec![false; self.circuit.len() + circ_input_len + 1];
@@ -571,8 +642,34 @@ impl OptCircuit2 {
                 input_idx |= usize::from(memory[idx]) << i;
             }
             let out_idx = base + i;
-            //memory[out_idx] = ((func.outputs >> input_idx) & 1) != 0;
             memory[out_idx] = ((func.outputs[input_idx >> 6] >> (input_idx & 63)) & 1) != 0;
+        }
+        let mut final_output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (i, idx) in self.outputs.iter().enumerate() {
+            let idx = *idx as usize;
+            final_output[i >> 3] |= u8::from(memory[idx]) << (i & 7);
+        }
+        final_output
+    }
+
+    #[cfg(not(feature = "opt2_func9"))]
+    pub fn run_circuit(&self, input: &[u8], input_len: usize) -> [u8; 128 >> 3] {
+        let circ_input_len = self.input_len as usize;
+        let mut memory = vec![false; self.circuit.len() + circ_input_len + 1];
+        let input_len = min(circ_input_len, input_len);
+        for i in 0..input_len {
+            memory[i] = ((input[i >> 3] >> (i & 7)) & 1) != 0;
+        }
+        let base = circ_input_len + 1;
+        for (i, func) in self.circuit.iter().enumerate() {
+            let func_input_len = func.input_len as usize;
+            let mut input_idx = 0;
+            for i in 0..func_input_len {
+                let idx = func.inputs[i] as usize;
+                input_idx |= usize::from(memory[idx]) << i;
+            }
+            let out_idx = base + i;
+            memory[out_idx] = ((func.outputs >> input_idx) & 1) != 0;
         }
         let mut final_output: [u8; 128 >> 3] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for (i, idx) in self.outputs.iter().enumerate() {

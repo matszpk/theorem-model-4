@@ -3,6 +3,10 @@ name = "theorem-model-4"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+opt2_func9 = []
+#default = ["opt2_func9"]
+
 [dependencies]
 nom = "7.1"
 thiserror = "1.0"
