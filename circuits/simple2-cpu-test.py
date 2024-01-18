@@ -1,5 +1,10 @@
 from testbase import *
 
+import argparse
+ap = argparse.ArgumentParser(prog = '6502 simple2-cpu codegen')
+ap.add_argument('--no-subcircuits', type=lambda x: int(x,0), default=0)
+args = ap.parse_args()
+
 def ite(case):
     a,b,c = case&1,(case>>1)&1,case>>2
     return (a&b) | (~a&c)
@@ -24,27 +29,28 @@ def carry_suber_4bit(case):
     a,b,c = v['a'],v['b'],v['c']
     return (a + (b ^ 0xf) + c) & 0x1f
 
-gen_testsuite("copy", "copy", 1, 1, range(0, 1<<1), lambda x: x)
-gen_testsuite("copy_4bit", "copy_4bit", 4, 4, range(0, 1<<4), lambda x: x)
-gen_testsuite("not_4bit", "not_4bit", 4, 4, range(0, 1<<4), lambda x: x^0xf)
-gen_testsuite("xor", "xor", 2, 1, range(0, 1<<2), lambda x: (x&1)^(x>>1))
-gen_testsuite("xor_4bit", "xor_4bit", 8, 4, range(0, 1<<8), lambda x: (x&0xf)^(x>>4))
-gen_testsuite("and", "and", 2, 1, range(0, 1<<2), lambda x: (x&1)&(x>>1))
-gen_testsuite("and_4bit", "and_4bit", 8, 4, range(0, 1<<8), lambda x: (x&0xf)&(x>>4))
-gen_testsuite("or", "or", 2, 1, range(0, 1<<2), lambda x: (x&1)|(x>>1))
-gen_testsuite("or_4bit", "or_4bit", 8, 4, range(0, 1<<8), lambda x: (x&0xf)|(x>>4))
-gen_testsuite("and_3", "and_3", 3, 1, range(0, 1<<3), lambda x: (x&1)&((x>>1)&1)&(x>>2))
-#gen_testsuite("and_4", "and_4", 4, 1, range(0, 1<<4), lambda x: (x&1)&((x>>1)&1)&((x>>2)&1)&(x>>3))
-gen_testsuite("or_4", "or_4", 4, 1, range(0, 1<<4), lambda x: (x&1)|((x>>1)&1)|((x>>2)&1)|(x>>3))
-gen_testsuite("ite", "ite", 3, 1, range(0, 1<<3), ite)
-gen_testsuite("ite_4bit", "ite_4bit", 9, 4, range(0, 1<<9), ite_4bit)
-gen_testsuite("full_adder", "full_adder", 3, 2, range(0, 1<<3), full_adder)
-#gen_testsuite("half_adder", "half_adder", 2, 2, range(0, 1<<2), full_adder)
-#gen_testsuite("half_suber", "half_suber", 2, 2, range(0, 1<<2), lambda x: full_adder(x+4))
-gen_testsuite("carry_adder_4bit", "carry_adder_4bit", 9, 5, range(0, 1<<9), carry_adder_4bit)
-gen_testsuite("carry_suber_4bit", "carry_suber_4bit", 9, 5, range(0, 1<<9), carry_suber_4bit)
-#gen_testsuite("dec_4bit", "dec_4bit", 4, 4, range(0, 1<<4), lambda x: (16+x-1)&0xf)
-gen_testsuite("inc_12bit", "inc_12bit", 12, 12, range(0, 1<<12), lambda x: (x+1)&0xfff)
+if args.no_subcircuits==0:
+    gen_testsuite("copy", "copy", 1, 1, range(0, 1<<1), lambda x: x)
+    gen_testsuite("copy_4bit", "copy_4bit", 4, 4, range(0, 1<<4), lambda x: x)
+    gen_testsuite("not_4bit", "not_4bit", 4, 4, range(0, 1<<4), lambda x: x^0xf)
+    gen_testsuite("xor", "xor", 2, 1, range(0, 1<<2), lambda x: (x&1)^(x>>1))
+    gen_testsuite("xor_4bit", "xor_4bit", 8, 4, range(0, 1<<8), lambda x: (x&0xf)^(x>>4))
+    gen_testsuite("and", "and", 2, 1, range(0, 1<<2), lambda x: (x&1)&(x>>1))
+    gen_testsuite("and_4bit", "and_4bit", 8, 4, range(0, 1<<8), lambda x: (x&0xf)&(x>>4))
+    gen_testsuite("or", "or", 2, 1, range(0, 1<<2), lambda x: (x&1)|(x>>1))
+    gen_testsuite("or_4bit", "or_4bit", 8, 4, range(0, 1<<8), lambda x: (x&0xf)|(x>>4))
+    gen_testsuite("and_3", "and_3", 3, 1, range(0, 1<<3), lambda x: (x&1)&((x>>1)&1)&(x>>2))
+    #gen_testsuite("and_4", "and_4", 4, 1, range(0, 1<<4), lambda x: (x&1)&((x>>1)&1)&((x>>2)&1)&(x>>3))
+    gen_testsuite("or_4", "or_4", 4, 1, range(0, 1<<4), lambda x: (x&1)|((x>>1)&1)|((x>>2)&1)|(x>>3))
+    gen_testsuite("ite", "ite", 3, 1, range(0, 1<<3), ite)
+    gen_testsuite("ite_4bit", "ite_4bit", 9, 4, range(0, 1<<9), ite_4bit)
+    gen_testsuite("full_adder", "full_adder", 3, 2, range(0, 1<<3), full_adder)
+    #gen_testsuite("half_adder", "half_adder", 2, 2, range(0, 1<<2), full_adder)
+    #gen_testsuite("half_suber", "half_suber", 2, 2, range(0, 1<<2), lambda x: full_adder(x+4))
+    gen_testsuite("carry_adder_4bit", "carry_adder_4bit", 9, 5, range(0, 1<<9), carry_adder_4bit)
+    gen_testsuite("carry_suber_4bit", "carry_suber_4bit", 9, 5, range(0, 1<<9), carry_suber_4bit)
+    #gen_testsuite("dec_4bit", "dec_4bit", 4, 4, range(0, 1<<4), lambda x: (16+x-1)&0xf)
+    gen_testsuite("inc_12bit", "inc_12bit", 12, 12, range(0, 1<<12), lambda x: (x+1)&0xfff)
 
 instr_lda=0
 instr_sta=1
@@ -104,8 +110,9 @@ def cpu_phase01_1_input_test_func(case):
     return bin_comp(cpu_phase01_input_str,
         {'phase0':case&1,'pc':((case>>1)&0xff)*5,'mem_value':(case>>9)&0x7f})
 
-gen_testsuite("cpu_phase01_1", "cpu_phase01", 21, 34, range(0, 1<<16), cpu_phase01,
-                cpu_phase01_1_input_test_func)
+if args.no_subcircuits==0:
+    gen_testsuite("cpu_phase01_1", "cpu_phase01", 21, 34, range(0, 1<<16), cpu_phase01,
+                    cpu_phase01_1_input_test_func)
 
 cpu_exec_0_input_str = (('instr',4),('acc',8),('flags',4),('mem_value',8))
 cpu_exec_0_output_str = (('acc',8),('flag_c',1),('flag_v',1))
@@ -150,8 +157,9 @@ def cpu_exec_0_1_input_test_func(case):
         {'instr':case&0x7, 'acc':(case>>3)&0xff, 'flags':((case>>11)&0x1)|6,
             'mem_value':(case>>12)&0xff})
 
-gen_testsuite("cpu_exec_0_1", "cpu_exec_0", 24, 10, range(0, 1<<20), cpu_exec_0,
-                cpu_exec_0_1_input_test_func)
+if args.no_subcircuits==0:
+    gen_testsuite("cpu_exec_0_1", "cpu_exec_0", 24, 10, range(0, 1<<20), cpu_exec_0,
+                    cpu_exec_0_1_input_test_func)
 
 cpu_exec_input_str = (('instr',4),('acc',8),('flags',4),('mem_value',8))
 cpu_exec_output_str = (('acc',8),('flags',4),('create',1),('stop',1))
@@ -203,12 +211,13 @@ def cpu_exec_t3_input_test_func(case):
         {'instr':14+(case&1), 'acc':(case>>1)&0xff, 'flags':((case>>9)&0x1)|6,
             'mem_value':(case>>10)&0xff})
 
-gen_testsuite("cpu_exec_t1", "cpu_exec", 24, 14, range(0, 1<<20), cpu_exec,
-                cpu_exec_t1_input_test_func)
-gen_testsuite("cpu_exec_t2", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
-                cpu_exec_t2_input_test_func)
-gen_testsuite("cpu_exec_t3", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
-                cpu_exec_t3_input_test_func)
+if args.no_subcircuits==0:
+    gen_testsuite("cpu_exec_t1", "cpu_exec", 24, 14, range(0, 1<<20), cpu_exec,
+                    cpu_exec_t1_input_test_func)
+    gen_testsuite("cpu_exec_t2", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
+                    cpu_exec_t2_input_test_func)
+    gen_testsuite("cpu_exec_t3", "cpu_exec", 24, 14, range(0, 1<<18), cpu_exec,
+                    cpu_exec_t3_input_test_func)
 
 cpu_phase23_input_str = (('phase0',1),('ign',1),('instr',4),('tmp',4),('acc',8),('flags',4),
                          ('pc',12),('mem_value',8))
@@ -257,12 +266,13 @@ def cpu_phase23_other_input_test_func(case):
         {'phase0':0, 'ign':0, 'instr':case&0xf, 'tmp':(case>>4)&0xf, 'acc':((case>>8)&0xf)<<2,
          'flags':(case>>12)&0x1,'pc':0x452+((case>>13)&0xf), 'mem_value':0x1c+((case>>17)&1)})
 
-gen_testsuite("cpu_phase23_sta", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
-                cpu_phase23_sta_input_test_func)
-gen_testsuite("cpu_phase23_branch", "cpu_phase23", 42, 49, range(0, 1<<20), cpu_phase23,
-                cpu_phase23_branch_input_test_func)
-gen_testsuite("cpu_phase23_other", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
-                cpu_phase23_other_input_test_func)
+if args.no_subcircuits==0:
+    gen_testsuite("cpu_phase23_sta", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
+                    cpu_phase23_sta_input_test_func)
+    gen_testsuite("cpu_phase23_branch", "cpu_phase23", 42, 49, range(0, 1<<20), cpu_phase23,
+                    cpu_phase23_branch_input_test_func)
+    gen_testsuite("cpu_phase23_other", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
+                    cpu_phase23_other_input_test_func)
 
 def cpu_phase23_3_t1_input_test_func(case):
     instr = instr_lda if case&7==instr_sta else case&7
@@ -274,10 +284,11 @@ def cpu_phase23_3_t3_input_test_func(case):
         {'phase0':1,'ign':0,'instr':14+(case&1),'tmp':11,'acc':(case>>1)&0xff,
             'flags':((case>>9)&0x1)|6,'pc':0xd7b,'mem_value':(case>>10)&0xff})
 
-gen_testsuite("cpu_phase23_3_t1", "cpu_phase23", 42, 49, range(0, 1<<20), cpu_phase23,
-                cpu_phase23_3_t1_input_test_func)
-gen_testsuite("cpu_phase23_3_t3", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
-                cpu_phase23_3_t3_input_test_func)
+if args.no_subcircuits==0:
+    gen_testsuite("cpu_phase23_3_t1", "cpu_phase23", 42, 49, range(0, 1<<20), cpu_phase23,
+                    cpu_phase23_3_t1_input_test_func)
+    gen_testsuite("cpu_phase23_3_t3", "cpu_phase23", 42, 49, range(0, 1<<18), cpu_phase23,
+                    cpu_phase23_3_t3_input_test_func)
 
 cpu_main_input_str = (('phase',2),('instr',4),('tmp',4),('acc',8),('flags',4),('pc',12),
                     ('mem_value',8))
