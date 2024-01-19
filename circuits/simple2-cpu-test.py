@@ -341,3 +341,5 @@ gen_testsuite("cpu_main_phase23_branch", "main", 42, 57, range(0, 1<<20), cpu_ma
                 cpu_main_phase23_branch_input_test_func)
 gen_testsuite("cpu_main_phase23_3_t3", "main", 42, 57, range(0, 1<<18), cpu_main,
                 cpu_main_phase23_3_t3_input_test_func)
+gen_testsuite("cpu_main_phase23_3_t1", "main", 42, 57, range(0, 1<<20), cpu_main,
+                cpu_main_phase23_3_t1_input_test_func)
