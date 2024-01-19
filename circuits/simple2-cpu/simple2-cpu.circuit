@@ -529,8 +529,11 @@ cpu_exec:
     cpu_acc_4_th1 cpu_acc_5_th1 cpu_acc_6_th1 cpu_acc_7_th1 = ite_8bit if_rol_ror_n \
         :8:cpu_acc_0 :8:cpu_acc_0_t89
     cpu_flag_c_th1 = ite cpu_instr_2 cpu_flag_c_tcdef cpu_flag_c_t89
-    #cpu_acc_changed = or cpu_instr_3_n if_rol_ror
-    cpu_acc_changed = nand cpu_instr_3 if_rol_ror_n
+    if_clc_sec = and_3 cpu_instr_0 cpu_instr_1 cpu_instr_2
+    if_clc_sec_n = nand if_clc_sec if_clc_sec
+    #cpu_acc_changed = or_4 cpu_instr_3_n if_rol_ror if_clc_sec_n zero
+    cpu_acc_changed_x = nand cpu_instr_3 if_rol_ror_n
+    cpu_acc_changed = and cpu_acc_changed_x if_clc_sec_n
     
     cpu_acc_0_tall cpu_acc_1_tall cpu_acc_2_tall cpu_acc_3_tall \
     cpu_acc_4_tall cpu_acc_5_tall cpu_acc_6_tall cpu_acc_7_tall = ite_8bit \

@@ -174,8 +174,9 @@ def cpu_exec(data):
         out_acc, fc, fv = outv['acc'], outv['flag_c'], outv['flag_v']
         flags = set_flag_c(flags, fc!=0)
         flags = set_flag_v(flags, fv!=0)
-        flags = set_flag_z(flags, out_acc==0)
-        flags = set_flag_n(flags, (out_acc&0x80)!=0)
+        if instr!=7:
+            flags = set_flag_z(flags, out_acc==0)
+            flags = set_flag_n(flags, (out_acc&0x80)!=0)
         outv = {'acc':out_acc, 'flags':flags, 'create':0,'stop':0}
     elif instr==instr_rol:
         out_acc = ((acc<<1) + (flags&1)) & 0xff
