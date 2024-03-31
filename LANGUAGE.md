@@ -15,7 +15,7 @@ that describe operations done by circuit. The first internal outputs are input o
 A body of circuit defined as list of instructions. A instruction can contains 2 or more bytes.
 Type of instructions:
 
-Two bytes value in 0-127 - call NAND function. Two bytes represents previous interal outputs.
+Two bytes value in 0-127 - call NAND function. Two bytes represents previous internal outputs.
 Instruction generates one next internal output.
 
 Byte value in 128-255 - call other circuit that get some inputs and generates some
